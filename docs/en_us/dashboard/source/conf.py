@@ -14,7 +14,7 @@ html_logo = "https://logos.openedx.org/open-edx-logo-color.png"
 html_favicon = "https://logos.openedx.org/open-edx-favicon.ico"
 
 html_theme_options = {
- "repository_url": "https://github.com/openedx/edx-analytics-dashboard",
+ "repository_url": "https://github.com/edx/edx-analytics-dashboard",
  "repository_branch": "master",
  "path_to_docs": "docs/en_us/dashboard/source",
  "home_page_in_toc": True,

@@ -2,7 +2,7 @@
   "name": "edx-analytics-dashboard",
   "repository": {
     "type": "git",
-    "url": "git://github.com/openedx/edx-analytics-dashboard"
+    "url": "git://github.com/edx/edx-analytics-dashboard"
   },
   "dependencies": {
     "@babel/core": "7.17.8",
