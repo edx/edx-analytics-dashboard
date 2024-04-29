@@ -472,7 +472,7 @@ edX Global Community meetup_ group.
 .. _edx/configuration: http://github.com/openedx/configuration/wiki
 .. _edX Data Analytics API: http://edx.readthedocs.org/projects/edx-data-analytics-api/en/latest/index.html
 .. _docs.edx.org: http://docs.edx.org
-.. _edx/edx-analytics-dashboard: https://github.com/openedx/edx-analytics-dashboard
+.. _edx/edx-analytics-dashboard: https://github.com/edx/edx-analytics-dashboard
 .. _edx/edx-platform: https://github.com/openedx/edx-platform
 .. _EdX Learner's Guide: http://edx-guide-for-students.readthedocs.org/en/latest/
 .. _edX Open Learning XML Guide: http://edx-open-learning-xml.readthedocs.org/en/latest/index.html
