@@ -1,5 +1,5 @@
 edX Analytics Dashboard
-=======================
+======================= 
 Dashboard to display course analytics to course teams
 
 # DEPRECATION NOTICE
