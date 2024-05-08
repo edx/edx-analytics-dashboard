@@ -2,16 +2,20 @@ FROM ubuntu:focal as app
 
 ENV DEBIAN_FRONTEND noninteractive
 
+ARG PYTHON_VERSION=3.8
+
 # Packages installed:
 
 # pkg-config; mysqlclient>=2.2.0 requires pkg-config (https://github.com/PyMySQL/mysqlclient/issues/620)
 
-RUN apt-get update && apt-get install --no-install-recommends -qy \
+RUN apt-get update && \
+  apt-get install -y software-properties-common && \
+  apt-add-repository -y ppa:deadsnakes/ppa && \
+  apt-get install --no-install-recommends -qy \
   language-pack-en \
   build-essential \
-  python3.8-dev \
-  python3-virtualenv \
-  python3.8-distutils \
+  python${PYTHON_VERSION}-dev \
+  python${PYTHON_VERSION}-distutils \
   libmysqlclient-dev \
   pkg-config \
   libssl-dev \
@@ -42,9 +46,13 @@ ARG INSIGHTS_NODEENV_DIR="${COMMON_APP_DIR}/insights/nodeenvs/insights"
 ENV PATH "${INSIGHTS_VENV_DIR}/bin:${INSIGHTS_NODEENV_DIR}/bin:$PATH"
 ENV INSIGHTS_APP_DIR ${INSIGHTS_APP_DIR}
 ENV THEME_SCSS "sass/themes/open-edx.scss"
+ENV PYTHON_VERSION "${PYTHON_VERSION}"
+
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python${PYTHON_VERSION}
+RUN pip install virtualenv
 
 # No need to activate insights virtualenv as it is already activated by putting in the path
-RUN virtualenv -p python3.8 --always-copy ${INSIGHTS_VENV_DIR}
+RUN virtualenv -p python${PYTHON_VERSION} --always-copy ${INSIGHTS_VENV_DIR}
 
 COPY requirements ${INSIGHTS_CODE_DIR}/requirements
 
