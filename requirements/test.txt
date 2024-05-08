@@ -16,8 +16,9 @@ astroid==3.2.4
     #   -r requirements/test.in
     #   pylint
     #   pylint-celery
-backports-zoneinfo==0.2.1
+backports-zoneinfo==0.2.1 ; python_version < "3.9"
     # via
+    #   -c requirements/constraints.txt
     #   -r requirements/base.txt
     #   django
     #   djangorestframework
