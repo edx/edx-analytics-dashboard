@@ -33,7 +33,7 @@ code-annotations==1.8.0
     # via
     #   -r requirements/base.txt
     #   edx-toggles
-cryptography==42.0.8
+cryptography==43.0.0
     # via
     #   -r requirements/base.txt
     #   pyjwt
@@ -72,7 +72,7 @@ django-braces==1.15.0
     # via -r requirements/base.txt
 django-countries==7.6.1
     # via -r requirements/base.txt
-django-crispy-forms==2.2
+django-crispy-forms==2.3
     # via -r requirements/base.txt
 django-crum==0.7.9
     # via
