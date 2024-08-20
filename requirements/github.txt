@@ -4,7 +4,7 @@
 #
 #    make upgrade
 #
-cachetools==5.4.0
+cachetools==5.5.0
     # via
     #   -r requirements/tox.txt
     #   tox
@@ -16,7 +16,7 @@ colorama==0.4.6
     # via
     #   -r requirements/tox.txt
     #   tox
-coverage==7.6.0
+coverage==7.6.1
     # via -r requirements/github.in
 distlib==0.3.8
     # via
@@ -50,7 +50,7 @@ tomli==2.0.1
     #   -r requirements/tox.txt
     #   pyproject-api
     #   tox
-tox==4.16.0
+tox==4.18.0
     # via -r requirements/tox.txt
 virtualenv==20.26.3
     # via
