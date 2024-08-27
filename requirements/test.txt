@@ -153,7 +153,7 @@ edx-drf-extensions==10.3.0
     # via -r requirements/base.txt
 edx-i18n-tools==1.6.2
     # via -r requirements/base.txt
-edx-lint==5.3.7
+edx-lint==5.4.0
     # via -r requirements/test.in
 edx-opaque-keys==2.10.0
     # via
@@ -168,7 +168,7 @@ exceptiongroup==1.2.2
     # via pytest
 httpretty==1.1.4
     # via -r requirements/test.in
-idna==3.7
+idna==3.8
     # via
     #   -r requirements/base.txt
     #   requests
@@ -212,7 +212,7 @@ path==16.16.0
     #   path-py
 path-py==12.5.0
     # via -r requirements/base.txt
-pbr==6.0.0
+pbr==6.1.0
     # via
     #   -r requirements/base.txt
     #   stevedore
@@ -335,7 +335,7 @@ sqlparse==0.5.1
     # via
     #   -r requirements/base.txt
     #   django
-stevedore==5.2.0
+stevedore==5.3.0
     # via
     #   -r requirements/base.txt
     #   code-annotations

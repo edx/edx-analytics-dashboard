@@ -145,7 +145,7 @@ edx-toggles==5.2.0
     # via -r requirements/base.txt
 gunicorn==23.0.0
     # via -r requirements/production.in
-idna==3.7
+idna==3.8
     # via
     #   -r requirements/base.txt
     #   requests
@@ -187,7 +187,7 @@ path==16.16.0
     #   path-py
 path-py==12.5.0
     # via -r requirements/base.txt
-pbr==6.0.0
+pbr==6.1.0
     # via
     #   -r requirements/base.txt
     #   stevedore
@@ -280,7 +280,7 @@ sqlparse==0.5.1
     # via
     #   -r requirements/base.txt
     #   django
-stevedore==5.2.0
+stevedore==5.3.0
     # via
     #   -r requirements/base.txt
     #   code-annotations
