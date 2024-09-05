@@ -9,9 +9,9 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get install --no-install-recommends -qy \
   language-pack-en \
   build-essential \
-  python3.8-dev \
+  python3.11-dev \
   python3-virtualenv \
-  python3.8-distutils \
+  python3.11-distutils \
   libmysqlclient-dev \
   pkg-config \
   libssl-dev \
@@ -44,7 +44,7 @@ ENV INSIGHTS_APP_DIR ${INSIGHTS_APP_DIR}
 ENV THEME_SCSS "sass/themes/open-edx.scss"
 
 # No need to activate insights virtualenv as it is already activated by putting in the path
-RUN virtualenv -p python3.8 --always-copy ${INSIGHTS_VENV_DIR}
+RUN virtualenv -p python3.11 --always-copy ${INSIGHTS_VENV_DIR}
 
 COPY requirements ${INSIGHTS_CODE_DIR}/requirements
 
