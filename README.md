@@ -17,7 +17,7 @@ The following sections are for historical purposes only.
 
 Prerequisites
 -------------
-* Python 3.8.x
+* Python 3.11.x
 * [gettext](http://www.gnu.org/software/gettext/)
 * [node](https://nodejs.org) 12.11.1
 * [npm](https://www.npmjs.org/) 6.11.3
