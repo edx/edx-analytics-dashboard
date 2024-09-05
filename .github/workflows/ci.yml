@@ -73,5 +73,12 @@ jobs:
           NODE: ${{ matrix.node }}
           TOXENV: ${{ matrix.toxenv }}
           TARGETS: "requirements.js static test_python"
-      - name: code cov
-        uses: codecov/codecov-action@v3
+      - name: Run coverage
+        if: matrix.python-version == '3.8' && matrix.toxenv == 'django42'
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MINIMUM_GREEN: 95
+          MINIMUM_ORANGE: 84
+          ANNOTATE_MISSING_LINES: true
+          ANNOTATION_TYPE: error

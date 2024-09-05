@@ -5,6 +5,7 @@ omit = analytics_dashboard/settings*
        *migrations*
        *admin.py
        *test*
+relative_files = True
 source = common, analytics_dashboard
 branch = True
 
