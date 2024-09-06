@@ -49,7 +49,7 @@ ENV THEME_SCSS "sass/themes/open-edx.scss"
 ENV PYTHON_VERSION "${PYTHON_VERSION}"
 
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python${PYTHON_VERSION}
-RUN pip install virtualenv
+RUN pip install virtualenv setuptools
 
 # No need to activate insights virtualenv as it is already activated by putting in the path
 RUN virtualenv -p python${PYTHON_VERSION} --always-copy ${INSIGHTS_VENV_DIR}
