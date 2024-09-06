@@ -4,3 +4,4 @@
 -r tox.txt
 
 coverage
+setuptools
