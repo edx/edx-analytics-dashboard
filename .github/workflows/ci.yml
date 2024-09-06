@@ -16,6 +16,7 @@ jobs:
         node: [16]
     env:
       DATA_API_VERSION: "latest"
+      PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
       - name: setup python
         uses: actions/setup-python@v2
@@ -26,8 +27,6 @@ jobs:
         with:
           fetch-depth: 0
       - name: start container
-        env: 
-          PYTHON_VERSION: ${{ matrix.python-version }}
         run: docker compose -f .github/docker-compose-github.yml up -d
       - name: setup analytics-api
         run: |
