@@ -85,7 +85,7 @@ jobs:
         env:
           TESTNAME: test-python
           NODE: ${{ matrix.node }}
-          TOXENV: ${{ env.FORMATTED_PYTHON_VERSION }}--${{ matrix.toxenv }}
+          TOXENV: ${{ env.FORMATTED_PYTHON_VERSION }}-${{ matrix.toxenv }}
           TARGETS: "requirements.js static test_python"
       - name: Run coverage
         if: matrix.python-version == '3.8' && matrix.toxenv == 'django42'
