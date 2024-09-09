@@ -109,9 +109,11 @@ isort: ## run isort to sort imports in all Python files
 	$(TOX)isort --recursive --diff acceptance_tests/ analytics_dashboard/ common/
 
 pycodestyle:  # run pycodestyle
+	python --version
 	$(TOX)pycodestyle acceptance_tests analytics_dashboard common
 
 pylint:  # run pylint
+	python --version
 	$(TOX)pylint -j 0 --rcfile=pylintrc acceptance_tests analytics_dashboard common
 
 # TODO: fix imports so this can run isort_check
