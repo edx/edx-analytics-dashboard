@@ -42,21 +42,21 @@ jobs:
         env:
           TESTNAME: quality
           TARGETS: "quality"
-          TOXENV: ${{ matrix.toxenv }}
+          TOXENV: py${{ matrix.python-version | replace('.', '') }}-${{ matrix.toxenv }}
       - name: test js
         run: ./.github/scripts/testing-js.sh
         shell: bash
         env:
           TESTNAME: js
           NODE: ${{ matrix.node }}
-          TOXENV: ${{ matrix.toxenv }}
+          TOXENV: py${{ matrix.python-version | replace('.', '') }}-${{ matrix.toxenv }}
           TARGETS: "requirements.js validate_js"
       - name: test i18n
         run: ./.github/scripts/testing.sh
         shell: bash
         env:
           TESTNAME: test-i18n
-          TOXENV: ${{ matrix.toxenv }}
+          TOXENV: py${{ matrix.python-version | replace('.', '') }}-${{ matrix.toxenv }}
           TARGETS: "generate_fake_translations"
       - name: test acceptance
         run: ./.github/scripts/testing-js.sh
@@ -64,7 +64,7 @@ jobs:
         env:
           TESTNAME: acceptance
           NODE: ${{ matrix.node }}
-          TOXENV: ${{ matrix.toxenv }}
+          TOXENV: py${{ matrix.python-version | replace('.', '') }}-${{ matrix.toxenv }}
           TARGETS: "requirements.a11y migrate requirements.js static accept"
       - name: test python
         run: ./.github/scripts/testing-js.sh
@@ -72,7 +72,7 @@ jobs:
         env:
           TESTNAME: test-python
           NODE: ${{ matrix.node }}
-          TOXENV: ${{ matrix.toxenv }}
+          TOXENV: py${{ matrix.python-version | replace('.', '') }}-${{ matrix.toxenv }}
           TARGETS: "requirements.js static test_python"
       - name: Run coverage
         if: matrix.python-version == '3.8' && matrix.toxenv == 'django42'
