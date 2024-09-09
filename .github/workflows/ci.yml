@@ -27,7 +27,8 @@ jobs:
         shell: bash
         run: |
           # Replace the dot in the Python version and remove 'py'
-          FORMATTED_VERSION=${{ matrix.python-version//./}}  # e.g., 3.12 becomes 312
+          FORMATTED_VERSION=${{ matrix.python-version }}  # e.g., 3.12
+          FORMATTED_VERSION=${FORMATTED_VERSION//./}    # becomes 312
 
           # Set environment variables
           echo "FORMATTED_PYTHON_VERSION=py${FORMATTED_VERSION}" >> $GITHUB_ENV
