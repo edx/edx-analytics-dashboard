@@ -4,5 +4,6 @@ docker exec -t insights_testing bash -c "
     PATH=\$PATH:/edx/app/insights/nodeenvs/insights/bin:/snap/bin &&
     export TOXENV=${TOXENV} &&
     pip install -r requirements/github.txt &&
+    pip install -r requirements/pip.txt &&
     make $TARGETS
 "
