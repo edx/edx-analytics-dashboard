@@ -143,13 +143,7 @@ dummy_translations: ## generate dummy translation (.po) files
 
 generate_fake_translations: extract_translations dummy_translations compile_translations ## generate and compile dummy translation files
 
-pull_translations: ## pull translations from Transifex
-	tx pull -a -f
-
-push_translations: ## push translations from insights to Transifex for those created new
-	tx push -s
-
-update_translations: pull_translations generate_fake_translations
+update_translations: generate_fake_translations
 
 detect_changed_source_translations: ## check if translation files are up-to-date
 	cd analytics_dashboard && i18n_tool changed
