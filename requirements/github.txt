@@ -56,7 +56,3 @@ virtualenv==20.26.3
     # via
     #   -r requirements/tox.txt
     #   tox
-
-# The following packages are considered to be unsafe in a requirements file:
-setuptools==74.1.2
-    # via -r requirements/github.in
