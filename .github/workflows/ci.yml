@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.8"]
+        python-version: ["3.8", "3.12"]
         os: [ubuntu-20.04]
         toxenv: [django42]
         node: [16]
@@ -21,11 +21,26 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Format Python Version
+        id: format_python_version
+        shell: bash
+        run: |
+          # Replace the dot in the Python version and remove 'py'
+          FORMATTED_VERSION=${{ matrix.python-version }}  # e.g., 3.12
+          FORMATTED_VERSION=${FORMATTED_VERSION//./}    # becomes 312
+
+          # Set environment variables
+          echo "FORMATTED_PYTHON_VERSION=py${FORMATTED_VERSION}" >> $GITHUB_ENV
+
+          # Output formatted version for use in subsequent steps
+          echo "Formatted Python Version: py${FORMATTED_VERSION}"
       - name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
       - name: start container
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}
         run: docker compose -f .github/docker-compose-github.yml up -d
       - name: setup analytics-api
         run: |
@@ -41,21 +56,21 @@ jobs:
         env:
           TESTNAME: quality
           TARGETS: "quality"
-          TOXENV: ${{ matrix.toxenv }}
+          TOXENV: ${{ env.FORMATTED_PYTHON_VERSION }}-${{ matrix.toxenv }}
       - name: test js
         run: ./.github/scripts/testing-js.sh
         shell: bash
         env:
           TESTNAME: js
           NODE: ${{ matrix.node }}
-          TOXENV: ${{ matrix.toxenv }}
+          TOXENV: ${{ env.FORMATTED_PYTHON_VERSION }}-${{ matrix.toxenv }}
           TARGETS: "requirements.js validate_js"
       - name: test i18n
         run: ./.github/scripts/testing.sh
         shell: bash
         env:
           TESTNAME: test-i18n
-          TOXENV: ${{ matrix.toxenv }}
+          TOXENV: ${{ env.FORMATTED_PYTHON_VERSION }}-${{ matrix.toxenv }}
           TARGETS: "generate_fake_translations"
       - name: test acceptance
         run: ./.github/scripts/testing-js.sh
@@ -63,7 +78,7 @@ jobs:
         env:
           TESTNAME: acceptance
           NODE: ${{ matrix.node }}
-          TOXENV: ${{ matrix.toxenv }}
+          TOXENV: ${{ env.FORMATTED_PYTHON_VERSION }}-${{ matrix.toxenv }}
           TARGETS: "requirements.a11y migrate requirements.js static accept"
       - name: test python
         run: ./.github/scripts/testing-js.sh
@@ -71,7 +86,7 @@ jobs:
         env:
           TESTNAME: test-python
           NODE: ${{ matrix.node }}
-          TOXENV: ${{ matrix.toxenv }}
+          TOXENV: ${{ env.FORMATTED_PYTHON_VERSION }}-${{ matrix.toxenv }}
           TARGETS: "requirements.js static test_python"
       - name: Run coverage
         if: matrix.python-version == '3.8' && matrix.toxenv == 'django42'
