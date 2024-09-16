@@ -2,7 +2,7 @@ FROM ubuntu:focal as app
 
 ENV DEBIAN_FRONTEND noninteractive
 
-ARG PYTHON_VERSION=3.8
+ARG PYTHON_VERSION=3.12
 
 # Packages installed:
 
