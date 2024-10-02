@@ -1,8 +1,8 @@
-if [[ $NODE == 18 ]]
+if [[ $NODE == 20 ]]
 then
-  export NODE_VERSION=18.20.2
+    export NODE_VERSION=20.15.1
 else
-  export NODE_VERSION=16.14.0
+    export NODE_VERSION=18.20.2
 fi
 
 docker exec -t insights_testing bash -c "
