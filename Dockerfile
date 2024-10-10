@@ -63,8 +63,8 @@ WORKDIR ${INSIGHTS_CODE_DIR}/
 # insights service config commands below
 RUN pip install  --no-cache-dir -r ${INSIGHTS_CODE_DIR}/requirements/production.txt 
 
-RUN nodeenv ${INSIGHTS_NODEENV_DIR} --node=18.20.2 --prebuilt \
-  && npm install -g npm@10.5.x
+RUN nodeenv ${INSIGHTS_NODEENV_DIR} --node=20.15.1 --prebuilt \
+  && npm install -g npm@10.7.x
 
 # Tried to cache the dependencies by copying related files after the npm install step but npm post install fails in that case.
 COPY . ${INSIGHTS_CODE_DIR}/
