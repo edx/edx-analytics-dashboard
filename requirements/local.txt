@@ -22,7 +22,7 @@ backports-zoneinfo==0.2.1 ; python_version < "3.9"
     #   -r requirements/test.txt
     #   django
     #   djangorestframework
-build==1.2.1
+build==1.2.2.post1
     # via
     #   -r requirements/pip_tools.txt
     #   pip-tools
@@ -30,11 +30,11 @@ cachetools==5.5.0
     # via
     #   -r requirements/tox.txt
     #   tox
-certifi==2024.7.4
+certifi==2024.8.30
     # via
     #   -r requirements/test.txt
     #   requests
-cffi==1.17.0
+cffi==1.17.1
     # via
     #   -r requirements/test.txt
     #   cryptography
@@ -43,7 +43,7 @@ chardet==5.2.0
     # via
     #   -r requirements/tox.txt
     #   tox
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via
     #   -r requirements/test.txt
     #   requests
@@ -73,7 +73,7 @@ coverage[toml]==7.6.1
     # via
     #   -r requirements/test.txt
     #   pytest-cov
-cryptography==43.0.0
+cryptography==43.0.3
     # via
     #   -r requirements/test.txt
     #   pyjwt
@@ -85,18 +85,19 @@ defusedxml==0.8.0rc2
     #   -r requirements/test.txt
     #   python3-openid
     #   social-auth-core
-dill==0.3.8
+dill==0.3.9
     # via
     #   -r requirements/test.txt
     #   pylint
-distlib==0.3.8
+distlib==0.3.9
     # via
     #   -r requirements/tox.txt
     #   virtualenv
-django==4.2.15
+django==4.2.16
     # via
     #   -c requirements/common_constraints.txt
     #   -c requirements/constraints.txt
+    #   -r requirements/test.txt
     #   django-appconf
     #   django-braces
     #   django-crispy-forms
@@ -118,7 +119,7 @@ django==4.2.15
     #   social-auth-app-django
 django-appconf==1.0.6
     # via -r requirements/test.txt
-django-braces==1.15.0
+django-braces==1.16.0
     # via -r requirements/test.txt
 django-countries==7.6.1
     # via -r requirements/test.txt
@@ -135,7 +136,7 @@ django-dynamic-fixture==4.0.1
     # via -r requirements/test.txt
 django-lang-pref-middleware==1.3.0
     # via -r requirements/test.txt
-django-model-utils==4.5.1
+django-model-utils==5.0.0
     # via -r requirements/test.txt
 django-soapbox==1.6.1
     # via -r requirements/test.txt
@@ -167,30 +168,30 @@ drf-jwt==1.19.2
     #   edx-drf-extensions
 edx-analytics-data-api-client==0.18.3
     # via -r requirements/test.txt
-edx-auth-backends==4.3.0
+edx-auth-backends==4.4.0
     # via -r requirements/test.txt
 edx-ccx-keys==1.3.0
     # via -r requirements/test.txt
 edx-django-release-util==1.4.0
     # via -r requirements/test.txt
-edx-django-utils==5.15.0
+edx-django-utils==7.0.0
     # via
     #   -r requirements/test.txt
     #   edx-drf-extensions
     #   edx-rest-api-client
     #   edx-toggles
-edx-drf-extensions==10.3.0
+edx-drf-extensions==10.4.0
     # via -r requirements/test.txt
-edx-i18n-tools==1.6.2
+edx-i18n-tools==1.6.3
     # via -r requirements/test.txt
-edx-lint==5.3.7
+edx-lint==5.4.0
     # via -r requirements/test.txt
-edx-opaque-keys==2.10.0
+edx-opaque-keys==2.11.0
     # via
     #   -r requirements/test.txt
     #   edx-ccx-keys
     #   edx-drf-extensions
-edx-rest-api-client==5.7.1
+edx-rest-api-client==6.0.0
     # via -r requirements/test.txt
 edx-toggles==5.2.0
     # via -r requirements/test.txt
@@ -198,18 +199,18 @@ exceptiongroup==1.2.2
     # via
     #   -r requirements/test.txt
     #   pytest
-filelock==3.15.4
+filelock==3.16.1
     # via
     #   -r requirements/tox.txt
     #   tox
     #   virtualenv
 httpretty==1.1.4
     # via -r requirements/test.txt
-idna==3.7
+idna==3.10
     # via
     #   -r requirements/test.txt
     #   requests
-importlib-metadata==8.3.0
+importlib-metadata==8.5.0
     # via
     #   -r requirements/pip_tools.txt
     #   build
@@ -229,10 +230,15 @@ libsass==0.23.0
     # via -r requirements/test.txt
 logutils==0.3.5
     # via -r requirements/test.txt
-lxml==5.3.0
+lxml[html-clean]==5.3.0
     # via
     #   -r requirements/test.txt
     #   edx-i18n-tools
+    #   lxml-html-clean
+lxml-html-clean==0.3.1
+    # via
+    #   -r requirements/test.txt
+    #   lxml
 markupsafe==2.1.5
     # via
     #   -r requirements/test.txt
@@ -241,9 +247,9 @@ mccabe==0.7.0
     # via
     #   -r requirements/test.txt
     #   pylint
-mysqlclient==2.2.4
+mysqlclient==2.2.5
     # via -r requirements/local.in
-newrelic==9.13.0
+newrelic==10.2.0
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
@@ -268,13 +274,13 @@ path==16.16.0
     #   path-py
 path-py==12.5.0
     # via -r requirements/test.txt
-pbr==6.0.0
+pbr==6.1.0
     # via
     #   -r requirements/test.txt
     #   stevedore
 pip-tools==7.4.1
     # via -r requirements/pip_tools.txt
-platformdirs==4.2.2
+platformdirs==4.3.6
     # via
     #   -r requirements/test.txt
     #   -r requirements/tox.txt
@@ -291,7 +297,7 @@ polib==1.2.0
     # via
     #   -r requirements/test.txt
     #   edx-i18n-tools
-psutil==6.0.0
+psutil==6.1.0
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
@@ -311,7 +317,7 @@ pyjwt[crypto]==2.9.0
     #   edx-drf-extensions
     #   edx-rest-api-client
     #   social-auth-core
-pylint==3.2.6
+pylint==3.2.7
     # via
     #   -r requirements/test.txt
     #   edx-lint
@@ -331,7 +337,7 @@ pylint-plugin-utils==0.8.2
     #   -r requirements/test.txt
     #   pylint-celery
     #   pylint-django
-pymongo==4.8.0
+pymongo==4.10.1
     # via
     #   -r requirements/test.txt
     #   edx-opaque-keys
@@ -339,23 +345,23 @@ pynacl==1.5.0
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
-pyproject-api==1.7.1
+pyproject-api==1.8.0
     # via
     #   -r requirements/tox.txt
     #   tox
-pyproject-hooks==1.1.0
+pyproject-hooks==1.2.0
     # via
     #   -r requirements/pip_tools.txt
     #   build
     #   pip-tools
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements/test.txt
     #   pytest-cov
     #   pytest-django
 pytest-cov==5.0.0
     # via -r requirements/test.txt
-pytest-django==4.8.0
+pytest-django==4.9.0
     # via -r requirements/test.txt
 python-slugify==8.0.4
     # via
@@ -365,7 +371,7 @@ python3-openid==3.2.0
     # via
     #   -r requirements/test.txt
     #   social-auth-core
-pytz==2024.1
+pytz==2024.2
     # via -r requirements/test.txt
 pyyaml==6.0.2
     # via
@@ -380,7 +386,6 @@ requests==2.32.3
     #   edx-drf-extensions
     #   edx-rest-api-client
     #   requests-oauthlib
-    #   slumber
     #   social-auth-core
 requests-oauthlib==2.0.0
     # via
@@ -397,10 +402,6 @@ six==1.16.0
     #   edx-ccx-keys
     #   edx-django-release-util
     #   edx-lint
-slumber==0.7.1
-    # via
-    #   -r requirements/test.txt
-    #   edx-rest-api-client
 snowballstemmer==2.2.0
     # via
     #   -r requirements/test.txt
@@ -419,7 +420,7 @@ sqlparse==0.5.1
     #   -r requirements/test.txt
     #   django
     #   django-debug-toolbar
-stevedore==5.2.0
+stevedore==5.3.0
     # via
     #   -r requirements/test.txt
     #   code-annotations
@@ -431,7 +432,7 @@ text-unidecode==1.3
     # via
     #   -r requirements/test.txt
     #   python-slugify
-tomli==2.0.1
+tomli==2.0.2
     # via
     #   -r requirements/pip_tools.txt
     #   -r requirements/test.txt
@@ -447,22 +448,24 @@ tomlkit==0.13.2
     # via
     #   -r requirements/test.txt
     #   pylint
-tox==4.18.0
+tox==4.23.2
     # via -r requirements/tox.txt
 typing-extensions==4.12.2
     # via
     #   -r requirements/test.txt
+    #   -r requirements/tox.txt
     #   asgiref
     #   astroid
     #   django-countries
     #   edx-opaque-keys
     #   pylint
-urllib3==1.26.19
+    #   tox
+urllib3==1.26.20
     # via
     #   -c requirements/constraints.txt
     #   -r requirements/test.txt
     #   requests
-virtualenv==20.26.3
+virtualenv==20.27.0
     # via
     #   -r requirements/tox.txt
     #   tox
@@ -470,7 +473,7 @@ wheel==0.44.0
     # via
     #   -r requirements/pip_tools.txt
     #   pip-tools
-zipp==3.20.0
+zipp==3.20.2
     # via
     #   -r requirements/pip_tools.txt
     #   importlib-metadata

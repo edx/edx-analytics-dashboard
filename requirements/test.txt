@@ -22,16 +22,16 @@ backports-zoneinfo==0.2.1 ; python_version < "3.9"
     #   -r requirements/base.txt
     #   django
     #   djangorestframework
-certifi==2024.7.4
+certifi==2024.8.30
     # via
     #   -r requirements/base.txt
     #   requests
-cffi==1.17.0
+cffi==1.17.1
     # via
     #   -r requirements/base.txt
     #   cryptography
     #   pynacl
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via
     #   -r requirements/base.txt
     #   requests
@@ -53,7 +53,7 @@ coverage[toml]==7.6.1
     # via
     #   -r requirements/test.in
     #   pytest-cov
-cryptography==43.0.0
+cryptography==43.0.3
     # via
     #   -r requirements/base.txt
     #   pyjwt
@@ -65,7 +65,7 @@ defusedxml==0.8.0rc2
     #   -r requirements/base.txt
     #   python3-openid
     #   social-auth-core
-dill==0.3.8
+dill==0.3.9
     # via pylint
     # via
     #   -c requirements/common_constraints.txt
@@ -91,7 +91,7 @@ dill==0.3.8
     #   social-auth-app-django
 django-appconf==1.0.6
     # via -r requirements/base.txt
-django-braces==1.15.0
+django-braces==1.16.0
     # via -r requirements/base.txt
 django-countries==7.6.1
     # via -r requirements/base.txt
@@ -106,7 +106,7 @@ django-dynamic-fixture==4.0.1
     # via -r requirements/test.in
 django-lang-pref-middleware==1.3.0
     # via -r requirements/base.txt
-django-model-utils==4.5.1
+django-model-utils==5.0.0
     # via -r requirements/base.txt
 django-soapbox==1.6.1
     # via -r requirements/base.txt
@@ -138,30 +138,30 @@ drf-jwt==1.19.2
     #   edx-drf-extensions
 edx-analytics-data-api-client==0.18.3
     # via -r requirements/base.txt
-edx-auth-backends==4.3.0
+edx-auth-backends==4.4.0
     # via -r requirements/base.txt
 edx-ccx-keys==1.3.0
     # via -r requirements/base.txt
 edx-django-release-util==1.4.0
     # via -r requirements/base.txt
-edx-django-utils==5.15.0
+edx-django-utils==7.0.0
     # via
     #   -r requirements/base.txt
     #   edx-drf-extensions
     #   edx-rest-api-client
     #   edx-toggles
-edx-drf-extensions==10.3.0
+edx-drf-extensions==10.4.0
     # via -r requirements/base.txt
-edx-i18n-tools==1.6.2
+edx-i18n-tools==1.6.3
     # via -r requirements/base.txt
-edx-lint==5.3.7
+edx-lint==5.4.0
     # via -r requirements/test.in
-edx-opaque-keys==2.10.0
+edx-opaque-keys==2.11.0
     # via
     #   -r requirements/base.txt
     #   edx-ccx-keys
     #   edx-drf-extensions
-edx-rest-api-client==5.7.1
+edx-rest-api-client==6.0.0
     # via -r requirements/base.txt
 edx-toggles==5.2.0
     # via -r requirements/base.txt
@@ -169,7 +169,7 @@ exceptiongroup==1.2.2
     # via pytest
 httpretty==1.1.4
     # via -r requirements/test.in
-idna==3.7
+idna==3.10
     # via
     #   -r requirements/base.txt
     #   requests
@@ -185,17 +185,22 @@ libsass==0.23.0
     # via -r requirements/base.txt
 logutils==0.3.5
     # via -r requirements/base.txt
-lxml==5.3.0
+lxml[html-clean]==5.3.0
     # via
     #   -r requirements/base.txt
     #   edx-i18n-tools
+    #   lxml-html-clean
+lxml-html-clean==0.3.1
+    # via
+    #   -r requirements/base.txt
+    #   lxml
 markupsafe==2.1.5
     # via
     #   -r requirements/base.txt
     #   jinja2
 mccabe==0.7.0
     # via pylint
-newrelic==9.13.0
+newrelic==10.2.0
     # via
     #   -r requirements/base.txt
     #   edx-django-utils
@@ -213,11 +218,11 @@ path==16.16.0
     #   path-py
 path-py==12.5.0
     # via -r requirements/base.txt
-pbr==6.0.0
+pbr==6.1.0
     # via
     #   -r requirements/base.txt
     #   stevedore
-platformdirs==4.2.2
+platformdirs==4.3.6
     # via pylint
 pluggy==1.5.0
     # via pytest
@@ -225,7 +230,7 @@ polib==1.2.0
     # via
     #   -r requirements/base.txt
     #   edx-i18n-tools
-psutil==6.0.0
+psutil==6.1.0
     # via
     #   -r requirements/base.txt
     #   edx-django-utils
@@ -245,7 +250,7 @@ pyjwt[crypto]==2.9.0
     #   edx-drf-extensions
     #   edx-rest-api-client
     #   social-auth-core
-pylint==3.2.6
+pylint==3.2.7
     # via
     #   -r requirements/test.in
     #   edx-lint
@@ -260,7 +265,7 @@ pylint-plugin-utils==0.8.2
     # via
     #   pylint-celery
     #   pylint-django
-pymongo==4.8.0
+pymongo==4.10.1
     # via
     #   -r requirements/base.txt
     #   edx-opaque-keys
@@ -268,14 +273,14 @@ pynacl==1.5.0
     # via
     #   -r requirements/base.txt
     #   edx-django-utils
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements/test.in
     #   pytest-cov
     #   pytest-django
 pytest-cov==5.0.0
     # via -r requirements/test.in
-pytest-django==4.8.0
+pytest-django==4.9.0
     # via -r requirements/test.in
 python-slugify==8.0.4
     # via
@@ -285,7 +290,7 @@ python3-openid==3.2.0
     # via
     #   -r requirements/base.txt
     #   social-auth-core
-pytz==2024.1
+pytz==2024.2
     # via -r requirements/base.txt
 pyyaml==6.0.2
     # via
@@ -300,7 +305,6 @@ requests==2.32.3
     #   edx-drf-extensions
     #   edx-rest-api-client
     #   requests-oauthlib
-    #   slumber
     #   social-auth-core
 requests-oauthlib==2.0.0
     # via
@@ -317,10 +321,6 @@ six==1.16.0
     #   edx-ccx-keys
     #   edx-django-release-util
     #   edx-lint
-slumber==0.7.1
-    # via
-    #   -r requirements/base.txt
-    #   edx-rest-api-client
 snowballstemmer==2.2.0
     # via pydocstyle
 social-auth-app-django==5.4.2
@@ -336,7 +336,7 @@ sqlparse==0.5.1
     # via
     #   -r requirements/base.txt
     #   django
-stevedore==5.2.0
+stevedore==5.3.0
     # via
     #   -r requirements/base.txt
     #   code-annotations
@@ -348,7 +348,7 @@ text-unidecode==1.3
     # via
     #   -r requirements/base.txt
     #   python-slugify
-tomli==2.0.1
+tomli==2.0.2
     # via
     #   coverage
     #   pylint
@@ -363,7 +363,7 @@ typing-extensions==4.12.2
     #   django-countries
     #   edx-opaque-keys
     #   pylint
-urllib3==1.26.19
+urllib3==1.26.20
     # via
     #   -c requirements/constraints.txt
     #   -r requirements/base.txt
