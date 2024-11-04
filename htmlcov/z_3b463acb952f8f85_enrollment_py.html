@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage for analytics_dashboard/courses/presenters/enrollment.py: 95%</title>
+    <title>Coverage for analytics_dashboard/courses/presenters/enrollment.py: 96%</title>
     <link rel="icon" sizes="32x32" href="favicon_32_cb_58284776.png">
     <link rel="stylesheet" href="style_cb_8e611ae1.css" type="text/css">
     <script src="coverage_html_cb_6fb7b396.js" defer></script>
@@ -12,7 +12,7 @@
     <div class="content">
         <h1>
             <span class="text">Coverage for </span><b>analytics_dashboard/courses/presenters/enrollment.py</b>:
-            <span class="pc_cov">95%</span>
+            <span class="pc_cov">96%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -59,15 +59,15 @@
             <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">260<span class="text"> run</span></button>
             <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">4<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">0<span class="text"> excluded</span></button>
-            <button type="button" class="par run show_par button_toggle_par" value="par" data-shortcut="p" title="Toggle lines partially run">12<span class="text"> partial</span></button>
+            <button type="button" class="par run show_par button_toggle_par" value="par" data-shortcut="p" title="Toggle lines partially run">11<span class="text"> partial</span></button>
         </h2>
         <p class="text">
             <a id="prevFileLink" class="nav" href="z_3b463acb952f8f85_engagement_py.html">&#xab; prev</a> &nbsp; &nbsp;
             <a id="indexLink" class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a id="nextFileLink" class="nav" href="z_3b463acb952f8f85_performance_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.6.1">coverage.py v7.6.1</a>,
-            created at 2024-10-11 05:15 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.6.4">coverage.py v7.6.4</a>,
+            created at 2024-11-04 09:57 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -528,7 +528,7 @@
     <p class="pln"><span class="n"><a id="t444" href="#t444">444</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t445" href="#t445">445</a></span><span class="t">        <span class="com"># bin all the ages above MAX_AGE (e.g. 100) and remove them from the dataset</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t446" href="#t446">446</a></span><span class="t">        <span class="nam">elderly</span> <span class="op">=</span> <span class="op">[</span><span class="nam">datum</span> <span class="key">for</span> <span class="nam">datum</span> <span class="key">in</span> <span class="nam">binned_ages</span> <span class="key">if</span> <span class="nam">datum</span><span class="op">[</span><span class="str">'age'</span><span class="op">]</span> <span class="op">></span> <span class="nam">self</span><span class="op">.</span><span class="nam">MAX_AGE</span><span class="op">]</span>&nbsp;</span><span class="r"></span></p>
-    <p class="par run show_par"><span class="n"><a id="t447" href="#t447">447</a></span><span class="t">        <span class="nam">elderly_bin</span> <span class="op">=</span> <span class="nam">next</span><span class="op">(</span><span class="nam">binned</span> <span class="key">for</span> <span class="nam">binned</span> <span class="key">in</span> <span class="nam">binned_ages</span> <span class="key">if</span> <span class="nam">binned</span><span class="op">[</span><span class="str">'age'</span><span class="op">]</span> <span class="key">is</span> <span class="nam">self</span><span class="op">.</span><span class="nam">MAX_AGE</span><span class="op">)</span>&nbsp;</span><span class="r"><span class="annotate short">447&#x202F;&#x219B;&#x202F;exit</span><span class="annotate long">line 447 didn't finish the generator expression on line 447</span></span></p>
+    <p class="run"><span class="n"><a id="t447" href="#t447">447</a></span><span class="t">        <span class="nam">elderly_bin</span> <span class="op">=</span> <span class="nam">next</span><span class="op">(</span><span class="nam">binned</span> <span class="key">for</span> <span class="nam">binned</span> <span class="key">in</span> <span class="nam">binned_ages</span> <span class="key">if</span> <span class="nam">binned</span><span class="op">[</span><span class="str">'age'</span><span class="op">]</span> <span class="key">is</span> <span class="nam">self</span><span class="op">.</span><span class="nam">MAX_AGE</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t448" href="#t448">448</a></span><span class="t">        <span class="key">for</span> <span class="nam">datum</span> <span class="key">in</span> <span class="nam">elderly</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t449" href="#t449">449</a></span><span class="t">            <span class="nam">elderly_bin</span><span class="op">[</span><span class="str">'count'</span><span class="op">]</span> <span class="op">=</span> <span class="nam">elderly_bin</span><span class="op">[</span><span class="str">'count'</span><span class="op">]</span> <span class="op">+</span> <span class="nam">datum</span><span class="op">[</span><span class="str">'count'</span><span class="op">]</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t450" href="#t450">450</a></span><span class="t">            <span class="nam">binned_ages</span><span class="op">.</span><span class="nam">remove</span><span class="op">(</span><span class="nam">datum</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -638,8 +638,8 @@
             <a class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a class="nav" href="z_3b463acb952f8f85_performance_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.6.1">coverage.py v7.6.1</a>,
-            created at 2024-10-11 05:15 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.6.4">coverage.py v7.6.4</a>,
+            created at 2024-11-04 09:57 +0000
         </p>
     </div>
 </footer>
