@@ -15,7 +15,6 @@ RUN apt-get update && \
   language-pack-en \
   build-essential \
   python${PYTHON_VERSION}-dev \
-  python${PYTHON_VERSION}-distutils \
   libmysqlclient-dev \
   pkg-config \
   libssl-dev \
