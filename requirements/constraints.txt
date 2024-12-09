@@ -10,9 +10,6 @@
 
 -c common_constraints.txt
 
-# Temporary to Support the python 3.12 Upgrade
-backports.zoneinfo;python_version<"3.9"  # Newer versions have zoneinfo available in the standard library
-
 # Newer version of django-webpack-loader is not compatible with npm webpack-bundle-tracker > 0.4.3
 django-webpack-loader==0.7.0
 
