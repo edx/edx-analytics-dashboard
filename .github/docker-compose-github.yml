@@ -14,11 +14,7 @@ services:
   insights:
     # Use this image once the Python version upgrade is complete
     # image: edxops/insights:latest
-    build:
-      context: ../.
-      target: dev
-      args:
-        PYTHON_VERSION: "${PYTHON_VERSION}"
+    image: edxops/insights-dev:test
     container_name: insights_testing
     volumes:
       - ..:/edx/app/insights/edx_analytics_dashboard
