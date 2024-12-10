@@ -26,3 +26,4 @@ disable+ =
     http-response-with-content-type-json,
     http-response-with-json-dumps,
     wrong-assert-type,
+    too-many-positional-arguments,
