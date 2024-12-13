@@ -34,8 +34,8 @@ defusedxml==0.8.0rc2
     #   social-auth-core
 django==4.2.17
     # via
-    #   -c /Users/usama.sadiq/Desktop/edX/edx-analytics-dashboard/requirements/common_constraints.txt
-    #   -c /Users/usama.sadiq/Desktop/edX/edx-analytics-dashboard/requirements/constraints.txt
+    #   -c requirements/common_constraints.txt
+    #   -c requirements/constraints.txt
     #   -r requirements/base.in
     #   django-appconf
     #   django-braces
@@ -81,7 +81,7 @@ django-waffle==4.2.0
     #   edx-toggles
 django-webpack-loader==0.7.0
     # via
-    #   -c /Users/usama.sadiq/Desktop/edX/edx-analytics-dashboard/requirements/constraints.txt
+    #   -c requirements/constraints.txt
     #   -r requirements/base.in
 djangorestframework==3.15.2
     # via
@@ -207,7 +207,7 @@ social-auth-core==4.5.4
     # via
     #   edx-auth-backends
     #   social-auth-app-django
-sqlparse==0.5.2
+sqlparse==0.5.3
     # via django
 stevedore==5.4.0
     # via
@@ -223,7 +223,7 @@ typing-extensions==4.12.2
     #   edx-opaque-keys
 urllib3==1.26.20
     # via
-    #   -c /Users/usama.sadiq/Desktop/edX/edx-analytics-dashboard/requirements/constraints.txt
+    #   -c requirements/constraints.txt
     #   requests
 
 # The following packages are considered to be unsafe in a requirements file:
