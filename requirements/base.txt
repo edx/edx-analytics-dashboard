@@ -18,7 +18,7 @@ cffi==1.17.1
     #   pynacl
 charset-normalizer==3.4.0
     # via requests
-click==8.1.7
+click==8.1.8
     # via
     #   code-annotations
     #   edx-django-utils
@@ -124,7 +124,7 @@ edx-toggles==5.2.0
     # via -r requirements/base.in
 idna==3.10
     # via requests
-jinja2==3.1.4
+jinja2==3.1.5
     # via code-annotations
 libsass==0.23.0
     # via -r requirements/base.in
@@ -154,7 +154,7 @@ pbr==6.1.0
     # via stevedore
 polib==1.2.0
     # via edx-i18n-tools
-psutil==6.1.0
+psutil==6.1.1
     # via edx-django-utils
 pycparser==2.22
     # via cffi
