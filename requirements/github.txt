@@ -16,7 +16,7 @@ colorama==0.4.6
     # via
     #   -r requirements/tox.txt
     #   tox
-coverage==7.6.9
+coverage==7.6.10
     # via -r requirements/github.in
 distlib==0.3.9
     # via
