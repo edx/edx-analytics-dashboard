@@ -349,6 +349,7 @@ typing-extensions==4.12.2
     #   edx-opaque-keys
 urllib3==1.26.20
     # via
+    #   -c requirements/common_constraints.txt
     #   -c requirements/constraints.txt
     #   -r requirements/base.txt
     #   requests
