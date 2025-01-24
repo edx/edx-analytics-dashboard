@@ -29,7 +29,7 @@ click==8.1.8
     #   -r requirements/base.txt
     #   code-annotations
     #   edx-django-utils
-code-annotations==2.1.0
+code-annotations==2.2.0
     # via
     #   -r requirements/base.txt
     #   edx-toggles
