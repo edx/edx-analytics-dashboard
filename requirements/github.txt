@@ -16,7 +16,7 @@ colorama==0.4.6
     # via
     #   -r requirements/tox.txt
     #   tox
-coverage==7.6.10
+coverage==7.6.12
     # via -r requirements/github.in
 distlib==0.3.9
     # via
@@ -47,7 +47,7 @@ pyproject-api==1.9.0
     #   tox
 tox==4.24.1
     # via -r requirements/tox.txt
-virtualenv==20.29.1
+virtualenv==20.29.2
     # via
     #   -r requirements/tox.txt
     #   tox
