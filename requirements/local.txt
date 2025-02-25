@@ -20,7 +20,7 @@ build==1.2.2.post1
     # via
     #   -r requirements/pip_tools.txt
     #   pip-tools
-cachetools==5.5.1
+cachetools==5.5.2
     # via
     #   -r requirements/tox.txt
     #   tox
@@ -67,14 +67,14 @@ coverage[toml]==7.6.12
     # via
     #   -r requirements/test.txt
     #   pytest-cov
-cryptography==44.0.0
+cryptography==44.0.1
     # via
     #   -r requirements/test.txt
     #   pyjwt
     #   social-auth-core
 ddt==1.7.2
     # via -r requirements/test.txt
-defusedxml==0.8.0rc2
+defusedxml==0.7.1
     # via
     #   -r requirements/test.txt
     #   python3-openid
@@ -111,7 +111,7 @@ django==4.2.19
     #   edx-toggles
     #   pinax-announcements
     #   social-auth-app-django
-django-appconf==1.0.6
+django-appconf==1.1.0
     # via -r requirements/test.txt
 django-braces==1.16.0
     # via -r requirements/test.txt
@@ -185,9 +185,9 @@ edx-opaque-keys==2.11.0
     #   -r requirements/test.txt
     #   edx-ccx-keys
     #   edx-drf-extensions
-edx-rest-api-client==6.0.0
+edx-rest-api-client==6.1.0
     # via -r requirements/test.txt
-edx-toggles==5.2.0
+edx-toggles==5.3.0
     # via -r requirements/test.txt
 filelock==3.17.0
     # via
@@ -283,7 +283,7 @@ polib==1.2.0
     # via
     #   -r requirements/test.txt
     #   edx-i18n-tools
-psutil==6.1.1
+psutil==7.0.0
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
@@ -392,11 +392,11 @@ snowballstemmer==2.2.0
     # via
     #   -r requirements/test.txt
     #   pydocstyle
-social-auth-app-django==5.4.2
+social-auth-app-django==5.4.3
     # via
     #   -r requirements/test.txt
     #   edx-auth-backends
-social-auth-core==4.5.4
+social-auth-core==4.5.6
     # via
     #   -r requirements/test.txt
     #   edx-auth-backends
@@ -406,7 +406,7 @@ sqlparse==0.5.3
     #   -r requirements/test.txt
     #   django
     #   django-debug-toolbar
-stevedore==5.4.0
+stevedore==5.4.1
     # via
     #   -r requirements/test.txt
     #   code-annotations
