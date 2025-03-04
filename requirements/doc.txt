@@ -43,7 +43,7 @@ code-annotations==2.2.0
     # via
     #   -r requirements/base.txt
     #   edx-toggles
-cryptography==44.0.1
+cryptography==44.0.2
     # via
     #   -r requirements/base.txt
     #   pyjwt
@@ -133,7 +133,7 @@ edx-ccx-keys==2.0.2
     # via -r requirements/base.txt
 edx-django-release-util==1.4.0
     # via -r requirements/base.txt
-edx-django-utils==7.1.0
+edx-django-utils==7.2.0
     # via
     #   -r requirements/base.txt
     #   edx-drf-extensions
@@ -231,7 +231,7 @@ pyjwt[crypto]==2.10.1
     #   edx-drf-extensions
     #   edx-rest-api-client
     #   social-auth-core
-pymongo==4.11.1
+pymongo==4.11.2
     # via
     #   -r requirements/base.txt
     #   edx-opaque-keys
@@ -293,7 +293,7 @@ social-auth-core==4.5.6
     #   social-auth-app-django
 soupsieve==2.6
     # via beautifulsoup4
-sphinx==8.2.1
+sphinx==8.2.3
     # via
     #   -r requirements/doc.in
     #   pydata-sphinx-theme
