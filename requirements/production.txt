@@ -68,7 +68,7 @@ django==4.2.20
     #   social-auth-app-django
 django-appconf==1.1.0
     # via -r requirements/base.txt
-django-braces==1.16.0
+django-braces==1.17.0
     # via -r requirements/base.txt
 django-countries==7.6.1
     # via -r requirements/base.txt
@@ -213,7 +213,7 @@ pyjwt[crypto]==2.10.1
     #   social-auth-core
 pymemcache==4.0.0
     # via -r requirements/production.in
-pymongo==4.11.2
+pymongo==4.11.3
     # via
     #   -r requirements/base.txt
     #   edx-opaque-keys
