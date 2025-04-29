@@ -24,7 +24,7 @@ cachetools==5.5.2
     # via
     #   -r requirements/tox.txt
     #   tox
-certifi==2025.1.31
+certifi==2025.4.26
     # via
     #   -r requirements/test.txt
     #   requests
@@ -79,7 +79,7 @@ defusedxml==0.7.1
     #   -r requirements/test.txt
     #   python3-openid
     #   social-auth-core
-dill==0.3.9
+dill==0.4.0
     # via
     #   -r requirements/test.txt
     #   pylint
@@ -124,7 +124,7 @@ django-crum==0.7.9
     #   -r requirements/test.txt
     #   edx-django-utils
     #   edx-toggles
-django-debug-toolbar==5.1.0
+django-debug-toolbar==5.2.0
     # via -r requirements/local.in
 django-dynamic-fixture==4.0.1
     # via -r requirements/test.txt
@@ -166,7 +166,7 @@ edx-auth-backends==4.5.0
     # via -r requirements/test.txt
 edx-ccx-keys==2.0.2
     # via -r requirements/test.txt
-edx-django-release-util==1.4.0
+edx-django-release-util==1.5.0
     # via -r requirements/test.txt
 edx-django-utils==7.4.0
     # via
@@ -176,11 +176,11 @@ edx-django-utils==7.4.0
     #   edx-toggles
 edx-drf-extensions==10.6.0
     # via -r requirements/test.txt
-edx-i18n-tools==1.7.0
+edx-i18n-tools==1.9.0
     # via -r requirements/test.txt
 edx-lint==5.6.0
     # via -r requirements/test.txt
-edx-opaque-keys==2.12.0
+edx-opaque-keys==3.0.0
     # via
     #   -r requirements/test.txt
     #   edx-ccx-keys
@@ -216,7 +216,7 @@ libsass==0.23.0
     # via -r requirements/test.txt
 logutils==0.3.5
     # via -r requirements/test.txt
-lxml[html-clean]==5.3.2
+lxml[html-clean]==5.4.0
     # via
     #   -r requirements/test.txt
     #   edx-i18n-tools
@@ -235,7 +235,7 @@ mccabe==0.7.0
     #   pylint
 mysqlclient==2.2.7
     # via -r requirements/local.in
-newrelic==10.9.0
+newrelic==10.10.0
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
@@ -244,7 +244,7 @@ oauthlib==3.2.2
     #   -r requirements/test.txt
     #   requests-oauthlib
     #   social-auth-core
-packaging==24.2
+packaging==25.0
     # via
     #   -r requirements/pip_tools.txt
     #   -r requirements/test.txt
@@ -396,7 +396,7 @@ social-auth-app-django==5.4.3
     # via
     #   -r requirements/test.txt
     #   edx-auth-backends
-social-auth-core==4.5.6
+social-auth-core==4.6.1
     # via
     #   -r requirements/test.txt
     #   edx-auth-backends
