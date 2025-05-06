@@ -16,7 +16,7 @@ cffi==1.17.1
     # via
     #   cryptography
     #   pynacl
-charset-normalizer==3.4.1
+charset-normalizer==3.4.2
     # via requests
 click==8.1.8
     # via
@@ -24,7 +24,7 @@ click==8.1.8
     #   edx-django-utils
 code-annotations==2.3.0
     # via edx-toggles
-cryptography==44.0.2
+cryptography==44.0.3
     # via
     #   pyjwt
     #   social-auth-core
@@ -138,7 +138,7 @@ lxml-html-clean==0.4.2
     # via lxml
 markupsafe==3.0.2
     # via jinja2
-newrelic==10.10.0
+newrelic==10.11.0
     # via edx-django-utils
 oauthlib==3.2.2
     # via
@@ -165,7 +165,7 @@ pyjwt[crypto]==2.10.1
     #   edx-drf-extensions
     #   edx-rest-api-client
     #   social-auth-core
-pymongo==4.12.0
+pymongo==4.12.1
     # via edx-opaque-keys
 pynacl==1.5.0
     # via edx-django-utils

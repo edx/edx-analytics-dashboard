@@ -4,5 +4,5 @@
 #
 #    make upgrade
 #
-newrelic==10.10.0
+newrelic==10.11.0
     # via -r requirements/optional.in
