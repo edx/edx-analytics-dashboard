@@ -11,7 +11,7 @@ asgiref==3.8.1
     #   -r requirements/test.txt
     #   django
     #   django-countries
-astroid==3.3.9
+astroid==3.3.10
     # via
     #   -r requirements/test.txt
     #   pylint
@@ -37,11 +37,11 @@ chardet==5.2.0
     # via
     #   -r requirements/tox.txt
     #   tox
-charset-normalizer==3.4.1
+charset-normalizer==3.4.2
     # via
     #   -r requirements/test.txt
     #   requests
-click==8.1.8
+click==8.2.0
     # via
     #   -r requirements/pip_tools.txt
     #   -r requirements/test.txt
@@ -67,7 +67,7 @@ coverage[toml]==7.8.0
     # via
     #   -r requirements/test.txt
     #   pytest-cov
-cryptography==44.0.2
+cryptography==44.0.3
     # via
     #   -r requirements/test.txt
     #   pyjwt
@@ -87,7 +87,7 @@ distlib==0.3.9
     # via
     #   -r requirements/tox.txt
     #   virtualenv
-django==4.2.20
+django==4.2.21
     # via
     #   -c requirements/common_constraints.txt
     #   -c requirements/constraints.txt
@@ -235,7 +235,7 @@ mccabe==0.7.0
     #   pylint
 mysqlclient==2.2.7
     # via -r requirements/local.in
-newrelic==10.10.0
+newrelic==10.12.0
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
@@ -266,7 +266,7 @@ pbr==6.1.1
     #   stevedore
 pip-tools==7.4.1
     # via -r requirements/pip_tools.txt
-platformdirs==4.3.7
+platformdirs==4.3.8
     # via
     #   -r requirements/test.txt
     #   -r requirements/tox.txt
@@ -303,7 +303,7 @@ pyjwt[crypto]==2.10.1
     #   edx-drf-extensions
     #   edx-rest-api-client
     #   social-auth-core
-pylint==3.3.6
+pylint==3.3.7
     # via
     #   -r requirements/test.txt
     #   edx-lint
@@ -323,7 +323,7 @@ pylint-plugin-utils==0.8.2
     #   -r requirements/test.txt
     #   pylint-celery
     #   pylint-django
-pymongo==4.12.0
+pymongo==4.12.1
     # via
     #   -r requirements/test.txt
     #   edx-opaque-keys
@@ -331,7 +331,7 @@ pynacl==1.5.0
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
-pyproject-api==1.9.0
+pyproject-api==1.9.1
     # via
     #   -r requirements/tox.txt
     #   tox
@@ -388,7 +388,7 @@ six==1.17.0
     #   edx-ccx-keys
     #   edx-django-release-util
     #   edx-lint
-snowballstemmer==2.2.0
+snowballstemmer==3.0.1
     # via
     #   -r requirements/test.txt
     #   pydocstyle
@@ -422,7 +422,7 @@ tomlkit==0.13.2
     # via
     #   -r requirements/test.txt
     #   pylint
-tox==4.25.0
+tox==4.26.0
     # via -r requirements/tox.txt
 typing-extensions==4.13.2
     # via
@@ -435,7 +435,7 @@ urllib3==1.26.20
     #   -c requirements/constraints.txt
     #   -r requirements/test.txt
     #   requests
-virtualenv==20.30.0
+virtualenv==20.31.2
     # via
     #   -r requirements/tox.txt
     #   tox

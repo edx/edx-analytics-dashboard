@@ -11,7 +11,7 @@ asgiref==3.8.1
     #   -r requirements/base.txt
     #   django
     #   django-countries
-astroid==3.3.9
+astroid==3.3.10
     # via
     #   -r requirements/test.in
     #   pylint
@@ -25,11 +25,11 @@ cffi==1.17.1
     #   -r requirements/base.txt
     #   cryptography
     #   pynacl
-charset-normalizer==3.4.1
+charset-normalizer==3.4.2
     # via
     #   -r requirements/base.txt
     #   requests
-click==8.1.8
+click==8.2.0
     # via
     #   -r requirements/base.txt
     #   click-log
@@ -47,7 +47,7 @@ coverage[toml]==7.8.0
     # via
     #   -r requirements/test.in
     #   pytest-cov
-cryptography==44.0.2
+cryptography==44.0.3
     # via
     #   -r requirements/base.txt
     #   pyjwt
@@ -192,7 +192,7 @@ markupsafe==3.0.2
     #   jinja2
 mccabe==0.7.0
     # via pylint
-newrelic==10.10.0
+newrelic==10.12.0
     # via
     #   -r requirements/base.txt
     #   edx-django-utils
@@ -214,7 +214,7 @@ pbr==6.1.1
     # via
     #   -r requirements/base.txt
     #   stevedore
-platformdirs==4.3.7
+platformdirs==4.3.8
     # via pylint
 pluggy==1.5.0
     # via pytest
@@ -242,7 +242,7 @@ pyjwt[crypto]==2.10.1
     #   edx-drf-extensions
     #   edx-rest-api-client
     #   social-auth-core
-pylint==3.3.6
+pylint==3.3.7
     # via
     #   -r requirements/test.in
     #   edx-lint
@@ -257,7 +257,7 @@ pylint-plugin-utils==0.8.2
     # via
     #   pylint-celery
     #   pylint-django
-pymongo==4.12.0
+pymongo==4.12.1
     # via
     #   -r requirements/base.txt
     #   edx-opaque-keys
@@ -313,7 +313,7 @@ six==1.17.0
     #   edx-ccx-keys
     #   edx-django-release-util
     #   edx-lint
-snowballstemmer==2.2.0
+snowballstemmer==3.0.1
     # via pydocstyle
 social-auth-app-django==5.4.3
     # via
