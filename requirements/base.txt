@@ -16,15 +16,15 @@ cffi==1.17.1
     # via
     #   cryptography
     #   pynacl
-charset-normalizer==3.4.1
+charset-normalizer==3.4.2
     # via requests
-click==8.1.8
+click==8.2.1
     # via
     #   code-annotations
     #   edx-django-utils
 code-annotations==2.3.0
     # via edx-toggles
-cryptography==44.0.2
+cryptography==45.0.3
     # via
     #   pyjwt
     #   social-auth-core
@@ -32,7 +32,7 @@ defusedxml==0.7.1
     # via
     #   python3-openid
     #   social-auth-core
-django==4.2.20
+django==4.2.21
     # via
     #   -c requirements/common_constraints.txt
     #   -c requirements/constraints.txt
@@ -103,7 +103,7 @@ edx-ccx-keys==2.0.2
     # via -r requirements/base.in
 edx-django-release-util==1.5.0
     # via -r requirements/base.in
-edx-django-utils==7.4.0
+edx-django-utils==8.0.0
     # via
     #   -r requirements/base.in
     #   edx-drf-extensions
@@ -138,8 +138,6 @@ lxml-html-clean==0.4.2
     # via lxml
 markupsafe==3.0.2
     # via jinja2
-newrelic==10.10.0
-    # via edx-django-utils
 oauthlib==3.2.2
     # via
     #   requests-oauthlib
@@ -165,7 +163,7 @@ pyjwt[crypto]==2.10.1
     #   edx-drf-extensions
     #   edx-rest-api-client
     #   social-auth-core
-pymongo==4.12.0
+pymongo==4.13.0
     # via edx-opaque-keys
 pynacl==1.5.0
     # via edx-django-utils
