@@ -1,7 +1,5 @@
 """Production settings and globals."""
 
-import django
-
 from analytics_dashboard.settings.base import *
 from analytics_dashboard.settings.logger import get_logger_config
 from analytics_dashboard.settings.yaml_config import *
