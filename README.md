@@ -57,12 +57,12 @@
 | analytics\_dashboard/help/utils.py                                         |       12 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/help/views.py                                         |        7 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/settings/\_\_init\_\_.py                              |        0 |        0 |        0 |        0 |    100% |           |
-| analytics\_dashboard/settings/base.py                                      |      119 |        0 |        0 |        0 |    100% |           |
+| analytics\_dashboard/settings/base.py                                      |      118 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/settings/dev.py                                       |       24 |       24 |        2 |        0 |      0% |      3-93 |
 | analytics\_dashboard/settings/devstack.py                                  |       21 |       21 |        2 |        0 |      0% |      3-45 |
 | analytics\_dashboard/settings/local.py                                     |       21 |       21 |        0 |        0 |      0% |      3-51 |
 | analytics\_dashboard/settings/logger.py                                    |       18 |        3 |        6 |        3 |     75% |30, 41, 91 |
-| analytics\_dashboard/settings/production.py                                |       15 |       15 |        6 |        0 |      0% |      3-43 |
+| analytics\_dashboard/settings/production.py                                |       12 |       12 |        4 |        0 |      0% |      3-38 |
 | analytics\_dashboard/settings/yaml\_config.py                              |       13 |       13 |        0 |        0 |      0% |      1-23 |
 | analytics\_dashboard/urls.py                                               |       23 |        8 |        6 |        1 |     55% |42, 46, 50-65 |
 | common/\_\_init\_\_.py                                                     |        0 |        0 |        0 |        0 |    100% |           |
@@ -71,7 +71,7 @@
 | common/tests/\_\_init\_\_.py                                               |        0 |        0 |        0 |        0 |    100% |           |
 | common/tests/course\_fixtures.py                                           |       68 |        1 |        4 |        0 |     99% |        20 |
 | common/tests/factories.py                                                  |       73 |        0 |        6 |        0 |    100% |           |
-|                                                                  **TOTAL** | **3710** |  **259** |  **738** |   **81** | **91%** |           |
+|                                                                  **TOTAL** | **3706** |  **256** |  **736** |   **81** | **92%** |           |
 
 
 ## Setup coverage badge
