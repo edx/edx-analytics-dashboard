@@ -23,7 +23,7 @@
 | analytics\_dashboard/core/templatetags/dashboard\_extras.py                |       85 |        0 |       16 |        0 |    100% |           |
 | analytics\_dashboard/core/tests/\_\_init\_\_.py                            |        0 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/core/utils.py                                         |       47 |        0 |       18 |        0 |    100% |           |
-| analytics\_dashboard/core/views.py                                         |       75 |       14 |       10 |        1 |     78% |18-19, 34->36, 123-125, 128-137 |
+| analytics\_dashboard/core/views.py                                         |       75 |       13 |       10 |        1 |     79% |35, 123-125, 128-137 |
 | analytics\_dashboard/courses/\_\_init\_\_.py                               |        0 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/courses/exceptions.py                                 |       23 |        3 |        0 |        0 |     87% |27, 30, 39 |
 | analytics\_dashboard/courses/middleware.py                                 |       25 |        0 |        4 |        0 |    100% |           |
@@ -71,7 +71,7 @@
 | common/tests/\_\_init\_\_.py                                               |        0 |        0 |        0 |        0 |    100% |           |
 | common/tests/course\_fixtures.py                                           |       68 |        1 |        4 |        0 |     99% |        20 |
 | common/tests/factories.py                                                  |       73 |        0 |        6 |        0 |    100% |           |
-|                                                                  **TOTAL** | **3706** |  **256** |  **736** |   **81** | **92%** |           |
+|                                                                  **TOTAL** | **3706** |  **255** |  **736** |   **81** | **92%** |           |
 
 
 ## Setup coverage badge
