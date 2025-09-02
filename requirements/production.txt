@@ -33,7 +33,7 @@ code-annotations==2.3.0
     # via
     #   -r requirements/base.txt
     #   edx-toggles
-cryptography==45.0.6
+cryptography==45.0.7
     # via
     #   -r requirements/base.txt
     #   pyjwt
