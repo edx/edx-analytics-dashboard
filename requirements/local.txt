@@ -6,7 +6,7 @@
 #
 -e git+https://github.com/openedx/pinax-announcements.git@60a3fdf171b520d8593a9b2190d1c01a6614ab59#egg=pinax-announcements
     # via -r requirements/test.txt
-asgiref==3.9.1
+asgiref==3.9.2
     # via
     #   -r requirements/test.txt
     #   django
@@ -28,7 +28,7 @@ certifi==2025.8.3
     # via
     #   -r requirements/test.txt
     #   requests
-cffi==1.17.1
+cffi==2.0.0
     # via
     #   -r requirements/test.txt
     #   cryptography
@@ -41,7 +41,7 @@ charset-normalizer==3.4.3
     # via
     #   -r requirements/test.txt
     #   requests
-click==8.2.1
+click==8.3.0
     # via
     #   -r requirements/pip_tools.txt
     #   -r requirements/test.txt
@@ -63,11 +63,11 @@ colorama==0.4.6
     # via
     #   -r requirements/tox.txt
     #   tox
-coverage[toml]==7.10.5
+coverage[toml]==7.10.7
     # via
     #   -r requirements/test.txt
     #   pytest-cov
-cryptography==45.0.6
+cryptography==46.0.1
     # via
     #   -r requirements/test.txt
     #   pyjwt
@@ -87,7 +87,7 @@ distlib==0.4.0
     # via
     #   -r requirements/tox.txt
     #   virtualenv
-django==4.2.23
+django==4.2.24
     # via
     #   -c requirements/common_constraints.txt
     #   -c requirements/constraints.txt
@@ -152,7 +152,7 @@ djangorestframework==3.16.1
     #   edx-drf-extensions
 djangorestframework-csv==3.0.2
     # via -r requirements/test.txt
-dnspython==2.7.0
+dnspython==2.8.0
     # via
     #   -r requirements/test.txt
     #   pymongo
@@ -219,7 +219,7 @@ libsass==0.23.0
     # via -r requirements/test.txt
 logutils==0.3.5
     # via -r requirements/test.txt
-lxml[html-clean]==6.0.1
+lxml[html-clean]==6.0.2
     # via
     #   -r requirements/test.txt
     #   edx-i18n-tools
@@ -279,13 +279,13 @@ polib==1.2.0
     # via
     #   -r requirements/test.txt
     #   edx-i18n-tools
-psutil==7.0.0
+psutil==7.1.0
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
 pycodestyle==2.14.0
     # via -r requirements/test.txt
-pycparser==2.22
+pycparser==2.23
     # via
     #   -r requirements/test.txt
     #   cffi
@@ -323,11 +323,11 @@ pylint-plugin-utils==0.9.0
     #   -r requirements/test.txt
     #   pylint-celery
     #   pylint-django
-pymongo==4.14.1
+pymongo==4.15.1
     # via
     #   -r requirements/test.txt
     #   edx-opaque-keys
-pynacl==1.5.0
+pynacl==1.6.0
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
@@ -340,12 +340,12 @@ pyproject-hooks==1.2.0
     #   -r requirements/pip_tools.txt
     #   build
     #   pip-tools
-pytest==8.4.1
+pytest==8.4.2
     # via
     #   -r requirements/test.txt
     #   pytest-cov
     #   pytest-django
-pytest-cov==6.2.1
+pytest-cov==7.0.0
     # via -r requirements/test.txt
 pytest-django==4.11.1
     # via -r requirements/test.txt
@@ -422,7 +422,7 @@ tomlkit==0.13.3
     # via
     #   -r requirements/test.txt
     #   pylint
-tox==4.28.4
+tox==4.30.2
     # via -r requirements/tox.txt
 typing-extensions==4.15.0
     # via
