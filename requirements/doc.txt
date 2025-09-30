@@ -19,7 +19,7 @@ babel==2.17.0
     # via
     #   pydata-sphinx-theme
     #   sphinx
-beautifulsoup4==4.13.5
+beautifulsoup4==4.14.2
     # via pydata-sphinx-theme
 certifi==2025.8.3
     # via
@@ -127,13 +127,13 @@ drf-jwt==1.19.2
     #   edx-drf-extensions
 edx-analytics-data-api-client==0.18.3
     # via -r requirements/base.txt
-edx-auth-backends==4.6.0
+edx-auth-backends==4.6.1
     # via -r requirements/base.txt
 edx-ccx-keys==2.0.2
     # via -r requirements/base.txt
 edx-django-release-util==1.5.0
     # via -r requirements/base.txt
-edx-django-utils==8.0.0
+edx-django-utils==8.0.1
     # via
     #   -r requirements/base.txt
     #   edx-auth-backends
@@ -179,7 +179,7 @@ lxml-html-clean==0.4.2
     # via
     #   -r requirements/base.txt
     #   lxml
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via
     #   -r requirements/base.txt
     #   jinja2
@@ -244,7 +244,7 @@ python3-openid==3.2.0
     #   social-auth-core
 pytz==2025.2
     # via -r requirements/base.txt
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   -r requirements/base.txt
     #   code-annotations
