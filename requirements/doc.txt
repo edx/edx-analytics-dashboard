@@ -10,7 +10,7 @@ accessible-pygments==0.0.5
     # via pydata-sphinx-theme
 alabaster==1.0.0
     # via sphinx
-asgiref==3.9.2
+asgiref==3.10.0
     # via
     #   -r requirements/base.txt
     #   django
@@ -19,9 +19,9 @@ babel==2.17.0
     # via
     #   pydata-sphinx-theme
     #   sphinx
-beautifulsoup4==4.13.5
+beautifulsoup4==4.14.2
     # via pydata-sphinx-theme
-certifi==2025.8.3
+certifi==2025.10.5
     # via
     #   -r requirements/base.txt
     #   requests
@@ -43,17 +43,16 @@ code-annotations==2.3.0
     # via
     #   -r requirements/base.txt
     #   edx-toggles
-cryptography==46.0.1
+cryptography==46.0.2
     # via
     #   -r requirements/base.txt
     #   pyjwt
-    #   social-auth-core
 defusedxml==0.7.1
     # via
     #   -r requirements/base.txt
     #   python3-openid
     #   social-auth-core
-django==4.2.24
+django==4.2.25
     # via
     #   -c requirements/common_constraints.txt
     #   -c requirements/constraints.txt
@@ -127,13 +126,13 @@ drf-jwt==1.19.2
     #   edx-drf-extensions
 edx-analytics-data-api-client==0.18.3
     # via -r requirements/base.txt
-edx-auth-backends==4.6.0
+edx-auth-backends==4.6.1
     # via -r requirements/base.txt
 edx-ccx-keys==2.0.2
     # via -r requirements/base.txt
 edx-django-release-util==1.5.0
     # via -r requirements/base.txt
-edx-django-utils==8.0.0
+edx-django-utils==8.0.1
     # via
     #   -r requirements/base.txt
     #   edx-auth-backends
@@ -175,11 +174,11 @@ lxml[html-clean]==6.0.2
     #   -r requirements/base.txt
     #   edx-i18n-tools
     #   lxml-html-clean
-lxml-html-clean==0.4.2
+lxml-html-clean==0.4.3
     # via
     #   -r requirements/base.txt
     #   lxml
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via
     #   -r requirements/base.txt
     #   jinja2
@@ -226,7 +225,7 @@ pyjwt[crypto]==2.10.1
     #   edx-drf-extensions
     #   edx-rest-api-client
     #   social-auth-core
-pymongo==4.15.1
+pymongo==4.15.2
     # via
     #   -r requirements/base.txt
     #   edx-opaque-keys
@@ -244,7 +243,7 @@ python3-openid==3.2.0
     #   social-auth-core
 pytz==2025.2
     # via -r requirements/base.txt
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   -r requirements/base.txt
     #   code-annotations
@@ -281,7 +280,7 @@ social-auth-app-django==5.4.3
     # via
     #   -r requirements/base.txt
     #   edx-auth-backends
-social-auth-core==4.7.0
+social-auth-core==4.8.0
     # via
     #   -r requirements/base.txt
     #   edx-auth-backends

@@ -6,11 +6,11 @@
 #
 -e git+https://github.com/openedx/pinax-announcements.git@60a3fdf171b520d8593a9b2190d1c01a6614ab59#egg=pinax-announcements
     # via -r requirements/base.in
-asgiref==3.9.2
+asgiref==3.10.0
     # via
     #   django
     #   django-countries
-certifi==2025.8.3
+certifi==2025.10.5
     # via requests
 cffi==2.0.0
     # via
@@ -24,15 +24,13 @@ click==8.3.0
     #   edx-django-utils
 code-annotations==2.3.0
     # via edx-toggles
-cryptography==46.0.1
-    # via
-    #   pyjwt
-    #   social-auth-core
+cryptography==46.0.2
+    # via pyjwt
 defusedxml==0.7.1
     # via
     #   python3-openid
     #   social-auth-core
-django==4.2.24
+django==4.2.25
     # via
     #   -c requirements/common_constraints.txt
     #   -c requirements/constraints.txt
@@ -97,13 +95,13 @@ drf-jwt==1.19.2
     # via edx-drf-extensions
 edx-analytics-data-api-client==0.18.3
     # via -r requirements/base.in
-edx-auth-backends==4.6.0
+edx-auth-backends==4.6.1
     # via -r requirements/base.in
 edx-ccx-keys==2.0.2
     # via -r requirements/base.in
 edx-django-release-util==1.5.0
     # via -r requirements/base.in
-edx-django-utils==8.0.0
+edx-django-utils==8.0.1
     # via
     #   -r requirements/base.in
     #   edx-auth-backends
@@ -137,9 +135,9 @@ lxml[html-clean]==6.0.2
     # via
     #   edx-i18n-tools
     #   lxml-html-clean
-lxml-html-clean==0.4.2
+lxml-html-clean==0.4.3
     # via lxml
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via jinja2
 oauthlib==3.3.1
     # via
@@ -164,7 +162,7 @@ pyjwt[crypto]==2.10.1
     #   edx-drf-extensions
     #   edx-rest-api-client
     #   social-auth-core
-pymongo==4.15.1
+pymongo==4.15.2
     # via edx-opaque-keys
 pynacl==1.6.0
     # via edx-django-utils
@@ -176,7 +174,7 @@ python3-openid==3.2.0
     # via social-auth-core
 pytz==2025.2
     # via -r requirements/base.in
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   code-annotations
     #   edx-django-release-util
@@ -202,7 +200,7 @@ social-auth-app-django==5.4.3
     # via
     #   -r requirements/base.in
     #   edx-auth-backends
-social-auth-core==4.7.0
+social-auth-core==4.8.0
     # via
     #   edx-auth-backends
     #   social-auth-app-django
