@@ -192,6 +192,8 @@ MIDDLEWARE = [
     'help.middleware.HelpURLMiddleware',
     'edx_django_utils.cache.middleware.TieredCacheMiddleware',
     'edx_rest_framework_extensions.middleware.RequestMetricsMiddleware',
+    # Adds monitoring attributes to requests.
+    'edx_rest_framework_extensions.middleware.RequestCustomAttributesMiddleware',
     'edx_rest_framework_extensions.auth.jwt.middleware.EnsureJWTAuthSettingsMiddleware',
 ]
 ########## END MIDDLEWARE CONFIGURATION
