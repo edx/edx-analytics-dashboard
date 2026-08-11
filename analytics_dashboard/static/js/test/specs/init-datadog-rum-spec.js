@@ -40,7 +40,7 @@ define(['load/init-datadog-rum'], (DatadogRum) => {
     });
 
     beforeEach(() => {
-      DatadogRum._resetForTests();
+      DatadogRum.resetForTests();
       removeConfigElement();
     });
 

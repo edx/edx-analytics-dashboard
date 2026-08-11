@@ -73,7 +73,7 @@ define(['utils/datadog-rum'], (DatadogRumUtils) => {
     initDatadogRum,
     readRumConfig,
     setContext,
-    _resetForTests: () => {
+    resetForTests: () => {
       initialized = false;
     },
   };

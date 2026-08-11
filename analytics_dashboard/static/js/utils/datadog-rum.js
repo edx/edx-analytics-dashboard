@@ -40,7 +40,7 @@ define([], () => {
 
   const sanitizeField = (object, fieldName) => {
     if (object && object[fieldName]) {
-      object[fieldName] = sanitizeString(object[fieldName]);
+      object[fieldName] = sanitizeString(object[fieldName]); // eslint-disable-line no-param-reassign
     }
   };
 
