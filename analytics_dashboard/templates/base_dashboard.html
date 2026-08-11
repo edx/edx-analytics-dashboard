@@ -70,6 +70,11 @@
       </script>
     {% endif %}
 
+    {% if datadog_rum_config.enabled %}
+      <script id="datadog-rum-config" type="application/json">{{ datadog_rum_config_json|safe }}</script>
+      <script type="text/javascript" src="{{ datadog_rum_config.scriptUrl }}"></script>
+    {% endif %}
+
     <div id="footer-sock-push"></div>
   </div>
   {% block footer %}

@@ -292,6 +292,22 @@ SEGMENT_IO_KEY = 'YOUR_KEY'
 SEGMENT_IGNORE_EMAIL_REGEX = None
 ########## END SEGMENT.IO
 
+########## DATADOG RUM
+# Browser RUM is disabled by default and requires deployment-provided public credentials.
+DATADOG_RUM_ENABLED = False
+DATADOG_RUM_APPLICATION_ID = None
+DATADOG_RUM_CLIENT_TOKEN = None
+DATADOG_RUM_SITE = 'datadoghq.com'
+DATADOG_RUM_SERVICE = 'edx-insights-frontend'
+DATADOG_RUM_ENV = None
+DATADOG_RUM_VERSION = '1.0.0'
+DATADOG_RUM_SCRIPT_URL = 'https://www.datadoghq-browser-agent.com/us1/v5/datadog-rum.js'
+DATADOG_RUM_SESSION_SAMPLE_RATE = 20
+DATADOG_RUM_SESSION_REPLAY_SAMPLE_RATE = 0
+DATADOG_RUM_DEFAULT_PRIVACY_LEVEL = 'mask'
+DATADOG_RUM_ENABLE_PRIVACY_FOR_ACTION_NAME = True
+########## END DATADOG RUM
+
 ########## SUPPORT -- Ths value should be overridden for production deployments.
 SUPPORT_EMAIL = 'support@example.com'
 HELP_URL = 'http://127.0.0.1/en/latest'
