@@ -45,6 +45,19 @@ class DatadogRumContextProcessorTests(SimpleTestCase):
         self.assertEqual(config['sessionReplaySampleRate'], 0)
 
     @override_settings(
+        DATADOG_RUM_ENABLED=True,
+        DATADOG_RUM_APPLICATION_ID='test-application-id',
+        DATADOG_RUM_CLIENT_TOKEN='test-client-token',
+        DATADOG_RUM_SESSION_SAMPLE_RATE='invalid',
+        DATADOG_RUM_SESSION_REPLAY_SAMPLE_RATE=None,
+    )
+    def test_datadog_rum_invalid_sample_rates_use_defaults(self):
+        config = self.get_datadog_rum_config()
+
+        self.assertEqual(config['sessionSampleRate'], 20)
+        self.assertEqual(config['sessionReplaySampleRate'], 0)
+
+    @override_settings(
         DATADOG_RUM_ENABLED='false',
         DATADOG_RUM_APPLICATION_ID='test-application-id',
         DATADOG_RUM_CLIENT_TOKEN='test-client-token',
