@@ -10,6 +10,12 @@ require('bootstrap-accessibility-plugin/plugins/js/bootstrap-accessibility');
 // eslint-disable-next-line import/no-dynamic-require
 require(process.env.THEME_SCSS);
 
+require(['load/init-datadog-rum'], (DatadogRum) => {
+  'use strict';
+
+  DatadogRum.initDatadogRum();
+});
+
 require(['views/announcement-view'], AnnouncementView => {
   'use strict';
 
