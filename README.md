@@ -7,7 +7,7 @@
 | analytics\_dashboard/\_\_init\_\_.py                                       |        0 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/core/\_\_init\_\_.py                                  |        0 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/core/apps.py                                          |       13 |        4 |        2 |        0 |     60% |13-15, 19-20 |
-| analytics\_dashboard/core/context\_processors.py                           |        3 |        0 |        0 |        0 |    100% |           |
+| analytics\_dashboard/core/context\_processors.py                           |       17 |        0 |        2 |        0 |    100% |           |
 | analytics\_dashboard/core/exceptions.py                                    |        1 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/core/management/\_\_init\_\_.py                       |        0 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/core/management/commands/\_\_init\_\_.py              |        0 |        0 |        0 |        0 |    100% |           |
@@ -27,27 +27,27 @@
 | analytics\_dashboard/courses/\_\_init\_\_.py                               |        0 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/courses/exceptions.py                                 |       23 |        3 |        0 |        0 |     87% |27, 30, 39 |
 | analytics\_dashboard/courses/middleware.py                                 |       25 |        0 |        4 |        0 |    100% |           |
-| analytics\_dashboard/courses/permissions.py                                |       78 |        1 |       16 |        2 |     97% |78->83, 109 |
-| analytics\_dashboard/courses/presenters/\_\_init\_\_.py                    |      209 |       13 |       50 |        4 |     93% |76->90, 124, 129->158, 148->156, 230-232, 258, 264, 268, 302-307 |
-| analytics\_dashboard/courses/presenters/course\_summaries.py               |       53 |        1 |       16 |        2 |     96% |20, 35->37 |
-| analytics\_dashboard/courses/presenters/engagement.py                      |      182 |        4 |       66 |        9 |     95% |83, 96, 115, 120->exit, 128->121, 139->142, 149->152, 150->149, 171, 212->220 |
-| analytics\_dashboard/courses/presenters/enrollment.py                      |      264 |        4 |       76 |       11 |     96% |207->236, 295->301, 312, 348->355, 383, 384->378, 390-392, 455->463, 512->519, 541->548 |
-| analytics\_dashboard/courses/presenters/performance.py                     |      331 |       21 |      108 |       14 |     92% |54-57, 71, 159-161, 187->198, 231-232, 246->exit, 248->exit, 269->290, 273->279, 309->318, 318->exit, 366->365, 368, 410, 414, 422, 431-432, 437, 445, 448, 504-505, 520->522, 601->603 |
-| analytics\_dashboard/courses/presenters/programs.py                        |       25 |        0 |        6 |        1 |     97% |    33->39 |
+| analytics\_dashboard/courses/permissions.py                                |       78 |        1 |       16 |        2 |     97% |78-\>83, 109 |
+| analytics\_dashboard/courses/presenters/\_\_init\_\_.py                    |      209 |       13 |       50 |        4 |     93% |76-\>90, 124, 129-\>158, 148-\>156, 230-232, 258, 264, 268, 302-307 |
+| analytics\_dashboard/courses/presenters/course\_summaries.py               |       53 |        1 |       16 |        2 |     96% |20, 35-\>37 |
+| analytics\_dashboard/courses/presenters/engagement.py                      |      182 |        4 |       66 |        9 |     95% |83, 96, 115, 120-\>exit, 128-\>121, 139-\>142, 149-\>152, 150-\>149, 171, 212-\>220 |
+| analytics\_dashboard/courses/presenters/enrollment.py                      |      264 |        4 |       76 |       11 |     96% |207-\>236, 295-\>301, 312, 348-\>355, 383, 384-\>378, 390-392, 455-\>463, 512-\>519, 541-\>548 |
+| analytics\_dashboard/courses/presenters/performance.py                     |      331 |       21 |      108 |       14 |     92% |54-57, 71, 159-161, 187-\>198, 231-232, 246-\>exit, 248-\>exit, 269-\>290, 273-\>279, 309-\>318, 318-\>exit, 366-\>365, 368, 410, 414, 422, 431-432, 437, 445, 448, 504-505, 520-\>522, 601-\>603 |
+| analytics\_dashboard/courses/presenters/programs.py                        |       25 |        0 |        6 |        1 |     97% |   33-\>39 |
 | analytics\_dashboard/courses/serializers.py                                |        8 |        1 |        2 |        1 |     80% |        15 |
 | analytics\_dashboard/courses/tests/\_\_init\_\_.py                         |        0 |        0 |        0 |        0 |    100% |           |
-| analytics\_dashboard/courses/tests/factories.py                            |      216 |        3 |       80 |        6 |     97% |285-286, 295->304, 354->358, 355->354, 363, 465->471 |
+| analytics\_dashboard/courses/tests/factories.py                            |      216 |        3 |       80 |        6 |     97% |285-286, 295-\>304, 354-\>358, 355-\>354, 363, 465-\>471 |
 | analytics\_dashboard/courses/tests/test\_presenters/\_\_init\_\_.py        |        0 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/courses/tests/test\_views/\_\_init\_\_.py             |      221 |        6 |       28 |        3 |     95% |55, 70, 324, 389-391 |
 | analytics\_dashboard/courses/tests/utils.py                                |      273 |        4 |       46 |        1 |     98% |448-449, 847-848 |
 | analytics\_dashboard/courses/urls.py                                       |       23 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/courses/utils.py                                      |       42 |        0 |        6 |        0 |    100% |           |
-| analytics\_dashboard/courses/views/\_\_init\_\_.py                         |      347 |       38 |       78 |       14 |     86% |86->97, 93-95, 101-140, 174, 189, 246-249, 404->408, 509, 541->553, 612, 625->681, 647, 696->728, 721, 732->743, 743->751, 774 |
-| analytics\_dashboard/courses/views/course\_summaries.py                    |       63 |        0 |       12 |        1 |     99% |    64->69 |
+| analytics\_dashboard/courses/views/\_\_init\_\_.py                         |      347 |       38 |       78 |       14 |     86% |86-\>97, 93-95, 101-140, 174, 189, 246-249, 404-\>408, 509, 541-\>553, 612, 625-\>681, 647, 696-\>728, 721, 732-\>743, 743-\>751, 774 |
+| analytics\_dashboard/courses/views/course\_summaries.py                    |       63 |        0 |       12 |        1 |     99% |   64-\>69 |
 | analytics\_dashboard/courses/views/csv.py                                  |       73 |        4 |        0 |        0 |     95% |109-110, 117-118 |
 | analytics\_dashboard/courses/views/engagement.py                           |      101 |        0 |        2 |        0 |    100% |           |
 | analytics\_dashboard/courses/views/enrollment.py                           |      136 |        0 |        2 |        0 |    100% |           |
-| analytics\_dashboard/courses/views/performance.py                          |      217 |        4 |       24 |        4 |     97% |67->79, 257, 445, 483-484 |
+| analytics\_dashboard/courses/views/performance.py                          |      217 |        4 |       24 |        4 |     97% |67-\>79, 257, 445, 483-484 |
 | analytics\_dashboard/courses/waffle.py                                     |        4 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/formats/\_\_init\_\_.py                               |        0 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/formats/en/\_\_init\_\_.py                            |        0 |        0 |        0 |        0 |    100% |           |
@@ -57,7 +57,7 @@
 | analytics\_dashboard/help/utils.py                                         |       12 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/help/views.py                                         |        7 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/settings/\_\_init\_\_.py                              |        0 |        0 |        0 |        0 |    100% |           |
-| analytics\_dashboard/settings/base.py                                      |      118 |        0 |        0 |        0 |    100% |           |
+| analytics\_dashboard/settings/base.py                                      |      130 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/settings/dev.py                                       |       24 |       24 |        2 |        0 |      0% |      3-93 |
 | analytics\_dashboard/settings/devstack.py                                  |       21 |       21 |        2 |        0 |      0% |      3-45 |
 | analytics\_dashboard/settings/local.py                                     |       21 |       21 |        0 |        0 |      0% |      3-51 |
@@ -67,11 +67,11 @@
 | analytics\_dashboard/urls.py                                               |       23 |        8 |        6 |        1 |     55% |42, 46, 50-65 |
 | common/\_\_init\_\_.py                                                     |        0 |        0 |        0 |        0 |    100% |           |
 | common/clients.py                                                          |       31 |       17 |        4 |        0 |     40% |     23-50 |
-| common/course\_structure.py                                                |       58 |        0 |       28 |        2 |     98% |28->33, 34->38 |
+| common/course\_structure.py                                                |       58 |        0 |       28 |        2 |     98% |28-\>33, 34-\>38 |
 | common/tests/\_\_init\_\_.py                                               |        0 |        0 |        0 |        0 |    100% |           |
 | common/tests/course\_fixtures.py                                           |       68 |        1 |        4 |        0 |     99% |        20 |
 | common/tests/factories.py                                                  |       73 |        0 |        6 |        0 |    100% |           |
-|                                                                  **TOTAL** | **3706** |  **255** |  **736** |   **81** | **92%** |           |
+| **TOTAL**                                                                  | **3732** |  **255** |  **738** |   **81** | **92%** |           |
 
 
 ## Setup coverage badge
