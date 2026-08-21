@@ -4,6 +4,8 @@
 
 -r base.txt
 
+# pinax-announcements imports pkg_resources, which is provided by setuptools.
+setuptools==68.2.2
 mysqlclient
 PyYAML										# MIT License
 gunicorn        							# MIT
