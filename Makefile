@@ -183,7 +183,7 @@ upgrade: $(COMMON_CONSTRAINTS_TXT)
 	pip-compile --upgrade -o requirements/tox.txt requirements/tox.in
 	pip-compile --upgrade -o requirements/local.txt requirements/local.in
 	pip-compile --upgrade -o requirements/optional.txt requirements/optional.in
-	pip-compile --upgrade -o requirements/production.txt requirements/production.in
+	pip-compile --allow-unsafe --upgrade -o requirements/production.txt requirements/production.in
 	pip-compile --upgrade -o requirements/github.txt requirements/github.in
 	# Let tox control the Django version for tests
 	grep -e "^django==" requirements/base.txt > requirements/django.txt
