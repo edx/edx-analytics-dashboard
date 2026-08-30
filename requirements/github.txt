@@ -4,7 +4,7 @@
 #
 #    make upgrade
 #
-cachetools==6.2.0
+cachetools==6.2.1
     # via
     #   -r requirements/tox.txt
     #   tox
@@ -16,13 +16,13 @@ colorama==0.4.6
     # via
     #   -r requirements/tox.txt
     #   tox
-coverage==7.10.7
+coverage==7.11.0
     # via -r requirements/github.in
 distlib==0.4.0
     # via
     #   -r requirements/tox.txt
     #   virtualenv
-filelock==3.19.1
+filelock==3.20.0
     # via
     #   -r requirements/tox.txt
     #   tox
@@ -32,7 +32,7 @@ packaging==25.0
     #   -r requirements/tox.txt
     #   pyproject-api
     #   tox
-platformdirs==4.4.0
+platformdirs==4.5.0
     # via
     #   -r requirements/tox.txt
     #   tox
@@ -41,13 +41,13 @@ pluggy==1.6.0
     # via
     #   -r requirements/tox.txt
     #   tox
-pyproject-api==1.9.1
+pyproject-api==1.10.0
     # via
     #   -r requirements/tox.txt
     #   tox
-tox==4.30.2
+tox==4.31.0
     # via -r requirements/tox.txt
-virtualenv==20.34.0
+virtualenv==20.35.3
     # via
     #   -r requirements/tox.txt
     #   tox
