@@ -41,6 +41,52 @@ from analytics_dashboard.help.views import ContextSensitiveHelpMixin
 logger = logging.getLogger(__name__)
 
 
+INSIGHTS_DATA_SOURCE_HEADER = 'X-Insights-Data-Source'
+INSIGHTS_DATA_SOURCES = {'aurora', 'snowflake'}
+
+
+def _record_insights_data_source(request, response):
+    """Record a valid Analytics API source on the current dashboard request."""
+    source = response.headers.get(INSIGHTS_DATA_SOURCE_HEADER, '').lower()
+    if source in INSIGHTS_DATA_SOURCES:
+        request.insights_data_sources.add(source)
+
+
+def _set_insights_data_source_header(request, response):
+    """Expose the sources used by Analytics API calls on the dashboard response."""
+    sources = getattr(request, 'insights_data_sources', set())
+    if len(sources) == 1:
+        response[INSIGHTS_DATA_SOURCE_HEADER] = next(iter(sources))
+    elif len(sources) > 1:
+        response[INSIGHTS_DATA_SOURCE_HEADER] = 'mixed'
+
+
+class SourceTrackingClient(Client):
+    """Analytics API client that records the source header for this request."""
+
+    def __init__(self, *args, dashboard_request, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dashboard_request = dashboard_request
+
+    def _request(self, *args, **kwargs):
+        response = super()._request(*args, **kwargs)
+        _record_insights_data_source(self.dashboard_request, response)
+        return response
+
+
+class AnalyticsDataSourceMixin:
+    """Track Analytics API sources and expose them on the dashboard response."""
+
+    def setup(self, request, *args, **kwargs):
+        request.insights_data_sources = set()
+        super().setup(request, *args, **kwargs)
+
+    def dispatch(self, request, *args, **kwargs):
+        response = super().dispatch(request, *args, **kwargs)
+        _set_insights_data_source_header(request, response)
+        return response
+
+
 class CourseAPIMixin:
     access_token = None
     course_api_enabled = False
@@ -415,7 +461,7 @@ class CourseNavBarMixin:
         return context
 
 
-class AnalyticsV0Mixin(View):
+class AnalyticsV0Mixin(AnalyticsDataSourceMixin, View):
     """
     put views on analytics v0 unless v1 is requested
     this mixin will be removed when transition is complete
@@ -426,12 +472,15 @@ class AnalyticsV0Mixin(View):
         super().setup(request, *args, **kwargs)
         api_version = request.GET.get('v', '0')
         analytics_base_url = settings.DATA_API_URL_V1 if api_version == '1' else settings.DATA_API_URL
-        self.analytics_client = Client(base_url=analytics_base_url,
-                                       auth_token=settings.DATA_API_AUTH_TOKEN,
-                                       timeout=settings.ANALYTICS_API_DEFAULT_TIMEOUT)
+        self.analytics_client = SourceTrackingClient(
+            base_url=analytics_base_url,
+            auth_token=settings.DATA_API_AUTH_TOKEN,
+            timeout=settings.ANALYTICS_API_DEFAULT_TIMEOUT,
+            dashboard_request=request,
+        )
 
 
-class AnalyticsV1Mixin(View):
+class AnalyticsV1Mixin(AnalyticsDataSourceMixin, View):
     """
     put views on analytics v1 if it is available, otherwise v0
     still preserves a v0 escape valve during transition
@@ -447,9 +496,12 @@ class AnalyticsV1Mixin(View):
 
         api_version = request.GET.get('v', v_default)
         analytics_base_url = settings.DATA_API_URL_V1 if api_version == '1' else settings.DATA_API_URL
-        self.analytics_client = Client(base_url=analytics_base_url,
-                                       auth_token=settings.DATA_API_AUTH_TOKEN,
-                                       timeout=settings.ANALYTICS_API_DEFAULT_TIMEOUT)
+        self.analytics_client = SourceTrackingClient(
+            base_url=analytics_base_url,
+            auth_token=settings.DATA_API_AUTH_TOKEN,
+            timeout=settings.ANALYTICS_API_DEFAULT_TIMEOUT,
+            dashboard_request=request,
+        )
 
 
 class CourseView(LoginRequiredMixin, CourseValidMixin, CoursePermissionMixin, TemplateView):
