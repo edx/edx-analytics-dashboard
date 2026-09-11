@@ -1,10 +1,16 @@
 import unittest.mock as mock
 from django.conf import settings
+from django.http import HttpResponse
 from django.test import RequestFactory, TestCase
 from django.test.utils import override_settings
 
 from analytics_dashboard.courses.tests.utils import CourseSamples
-from analytics_dashboard.courses.views import CourseValidMixin, AnalyticsV0Mixin, AnalyticsV1Mixin
+from analytics_dashboard.courses.views import (
+    AnalyticsV0Mixin,
+    AnalyticsV1Mixin,
+    CourseValidMixin,
+    _set_insights_data_source_header,
+)
 
 
 class CourseValidMixinTests(TestCase):
@@ -77,3 +83,40 @@ class AnalyticsV1MixinTests(TestCase):
         r = self.req.get('whatever?v=1')
         self.mixin.setup(r)
         self.assertEqual(self.mixin.analytics_client.base_url, settings.DATA_API_URL_V1)
+
+
+class InsightsDataSourceHeaderTests(TestCase):
+    def setUp(self):
+        self.request = RequestFactory().get('whatever')
+
+    def test_snowflake_source_is_forwarded(self):
+        self.request.insights_data_sources = {'snowflake'}
+        response = HttpResponse()
+
+        _set_insights_data_source_header(self.request, response)
+
+        self.assertEqual(response['X-Insights-Data-Source'], 'snowflake')
+
+    def test_aurora_source_is_forwarded(self):
+        self.request.insights_data_sources = {'aurora'}
+        response = HttpResponse()
+
+        _set_insights_data_source_header(self.request, response)
+
+        self.assertEqual(response['X-Insights-Data-Source'], 'aurora')
+
+    def test_mixed_sources_are_reported(self):
+        self.request.insights_data_sources = {'aurora', 'snowflake'}
+        response = HttpResponse()
+
+        _set_insights_data_source_header(self.request, response)
+
+        self.assertEqual(response['X-Insights-Data-Source'], 'mixed')
+
+    def test_no_source_does_not_add_header(self):
+        self.request.insights_data_sources = set()
+        response = HttpResponse()
+
+        _set_insights_data_source_header(self.request, response)
+
+        self.assertNotIn('X-Insights-Data-Source', response)
