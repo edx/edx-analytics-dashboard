@@ -42,7 +42,7 @@
 | analytics\_dashboard/courses/tests/utils.py                                |      273 |        4 |       46 |        1 |     98% |448-449, 847-848 |
 | analytics\_dashboard/courses/urls.py                                       |       23 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/courses/utils.py                                      |       42 |        0 |        6 |        0 |    100% |           |
-| analytics\_dashboard/courses/views/\_\_init\_\_.py                         |      347 |       38 |       78 |       14 |     86% |86-\>97, 93-95, 101-140, 174, 189, 246-249, 404-\>408, 509, 541-\>553, 612, 625-\>681, 647, 696-\>728, 721, 732-\>743, 743-\>751, 774 |
+| analytics\_dashboard/courses/views/\_\_init\_\_.py                         |      375 |       43 |       84 |       14 |     85% |50-52, 73-74, 132-\>143, 139-141, 147-186, 220, 235, 292-295, 450-\>454, 561, 593-\>605, 664, 677-\>733, 699, 748-\>780, 773, 784-\>795, 795-\>803, 826 |
 | analytics\_dashboard/courses/views/course\_summaries.py                    |       63 |        0 |       12 |        1 |     99% |   64-\>69 |
 | analytics\_dashboard/courses/views/csv.py                                  |       73 |        4 |        0 |        0 |     95% |109-110, 117-118 |
 | analytics\_dashboard/courses/views/engagement.py                           |      101 |        0 |        2 |        0 |    100% |           |
@@ -71,7 +71,7 @@
 | common/tests/\_\_init\_\_.py                                               |        0 |        0 |        0 |        0 |    100% |           |
 | common/tests/course\_fixtures.py                                           |       68 |        1 |        4 |        0 |     99% |        20 |
 | common/tests/factories.py                                                  |       73 |        0 |        6 |        0 |    100% |           |
-| **TOTAL**                                                                  | **3732** |  **255** |  **738** |   **81** | **92%** |           |
+| **TOTAL**                                                                  | **3760** |  **260** |  **744** |   **81** | **91%** |           |
 
 
 ## Setup coverage badge
