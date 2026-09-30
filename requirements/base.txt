@@ -95,7 +95,7 @@ dnspython==2.8.0
     # via pymongo
 drf-jwt==1.19.2
     # via edx-drf-extensions
-edx-analytics-data-api-client==0.18.3
+edx-analytics-data-api-client==0.19.0
     # via -r requirements/base.in
 edx-auth-backends==4.6.0
     # via -r requirements/base.in
