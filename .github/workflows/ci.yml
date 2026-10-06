@@ -61,7 +61,6 @@ jobs:
         shell: bash
         env:
           TESTNAME: js
-          NODE: ${{ matrix.node }}
           TOXENV: ${{ env.FORMATTED_PYTHON_VERSION }}-${{ matrix.toxenv }}
           TARGETS: "requirements.js validate_js"
       - name: test i18n
@@ -76,7 +75,6 @@ jobs:
         shell: bash
         env:
           TESTNAME: acceptance
-          NODE: ${{ matrix.node }}
           TOXENV: ${{ env.FORMATTED_PYTHON_VERSION }}-${{ matrix.toxenv }}
           TARGETS: "requirements.a11y migrate requirements.js static accept"
       - name: test python
@@ -84,7 +82,6 @@ jobs:
         shell: bash
         env:
           TESTNAME: test-python
-          NODE: ${{ matrix.node }}
           TOXENV: ${{ env.FORMATTED_PYTHON_VERSION }}-${{ matrix.toxenv }}
           TARGETS: "requirements.js static test_python"
       - name: Run coverage
