@@ -23,7 +23,7 @@ from django.views.generic import TemplateView
 from requests.exceptions import HTTPError
 from requests.exceptions import RequestException
 from opaque_keys.edx.keys import CourseKey
-from waffle import switch_is_active
+from waffle import flag_is_active, switch_is_active
 
 from analytics_dashboard.core.cache import INSIGHTS_DATA_SOURCES, is_cache_bypass_enabled
 from analytics_dashboard.core.exceptions import ServiceUnavailableError
@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 INSIGHTS_DATA_SOURCE_HEADER = 'X-Insights-Data-Source'
 INSIGHTS_DATA_CACHE_HEADER = 'X-Insights-Data-Cache'
+INSIGHTS_DATA_HEADERS_ENABLED_FLAG = 'insights_dashboard_headers_enabled'
 
 
 def _record_insights_data_source(request, response):
@@ -106,8 +107,9 @@ class AnalyticsDataSourceMixin:
 
     def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)
-        _set_insights_data_source_header(request, response)
-        _set_insights_data_cache_header(request, response)
+        if flag_is_active(request, INSIGHTS_DATA_HEADERS_ENABLED_FLAG):
+            _set_insights_data_source_header(request, response)
+            _set_insights_data_cache_header(request, response)
         return response
 
 

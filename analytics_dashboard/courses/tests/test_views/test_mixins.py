@@ -4,17 +4,29 @@ from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase
 from django.test.utils import override_settings
+from django.views import View
 
 from analytics_dashboard.courses.tests.utils import CourseSamples
 from analytics_dashboard.core.cache import get_source_aware_cache, set_source_aware_cache
 from analytics_dashboard.courses.views import (
     AnalyticsV0Mixin,
     AnalyticsV1Mixin,
+    AnalyticsDataSourceMixin,
+    INSIGHTS_DATA_CACHE_HEADER,
+    INSIGHTS_DATA_SOURCE_HEADER,
+    INSIGHTS_DATA_HEADERS_ENABLED_FLAG,
     CourseValidMixin,
     _record_insights_data_source,
     _set_insights_data_cache_header,
     _set_insights_data_source_header,
 )
+
+
+class HeaderFlagView(AnalyticsDataSourceMixin, View):
+    def get(self, request, *args, **kwargs):
+        request.insights_data_sources.add('snowflake')
+        request.insights_cache_statuses.add('hit')
+        return HttpResponse()
 
 
 class CourseValidMixinTests(TestCase):
@@ -98,6 +110,28 @@ class AnalyticsV1MixinTests(TestCase):
         r = self.req.get('whatever?v=1')
         self.mixin.setup(r)
         self.assertEqual(self.mixin.analytics_client.base_url, settings.DATA_API_URL_V1)
+
+
+class InsightsDataHeadersFlagTests(TestCase):
+    def test_headers_are_added_when_flag_is_enabled(self):
+        request = RequestFactory().get('whatever')
+
+        with mock.patch('analytics_dashboard.courses.views.flag_is_active', return_value=True) as flag:
+            response = HeaderFlagView.as_view()(request)
+
+        self.assertEqual(response[INSIGHTS_DATA_SOURCE_HEADER], 'snowflake')
+        self.assertEqual(response[INSIGHTS_DATA_CACHE_HEADER], 'hit')
+        flag.assert_called_once_with(request, INSIGHTS_DATA_HEADERS_ENABLED_FLAG)
+
+    def test_headers_are_omitted_when_flag_is_disabled(self):
+        request = RequestFactory().get('whatever')
+
+        with mock.patch('analytics_dashboard.courses.views.flag_is_active', return_value=False) as flag:
+            response = HeaderFlagView.as_view()(request)
+
+        self.assertNotIn(INSIGHTS_DATA_SOURCE_HEADER, response)
+        self.assertNotIn(INSIGHTS_DATA_CACHE_HEADER, response)
+        flag.assert_called_once_with(request, INSIGHTS_DATA_HEADERS_ENABLED_FLAG)
 
 
 class InsightsDataSourceHeaderTests(TestCase):
