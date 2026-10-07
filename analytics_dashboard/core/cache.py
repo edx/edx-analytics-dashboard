@@ -11,6 +11,11 @@ INSIGHTS_CACHE_KEY_PREFIX = f'insights_source_v{INSIGHTS_CACHE_ENVELOPE_VERSION}
 INSIGHTS_DATA_SOURCES = frozenset(('aurora', 'snowflake'))
 
 
+def _is_known_source(source):
+    """Return whether source is a supported Analytics API provenance value."""
+    return isinstance(source, str) and source in INSIGHTS_DATA_SOURCES
+
+
 def _cache_key(key):
     """Return the versioned key used for source-aware cache entries."""
     return f'{INSIGHTS_CACHE_KEY_PREFIX}{key}'
@@ -38,7 +43,7 @@ def _record_cache_event(client, status, source=None):
     cache_statuses = getattr(request, 'insights_cache_statuses', None)
     if cache_statuses is not None:
         cache_statuses.add(status)
-    if source in INSIGHTS_DATA_SOURCES:
+    if _is_known_source(source):
         data_sources = getattr(request, 'insights_data_sources', None)
         if data_sources is not None:
             data_sources.add(source)
@@ -60,7 +65,7 @@ def get_source_aware_cache(key, client):
         return None
 
     source = entry.get('source')
-    if source in INSIGHTS_DATA_SOURCES:
+    if _is_known_source(source):
         _record_cache_event(client, 'hit', source)
     else:
         # Unknown provenance remains cacheable, but must not inherit a source
@@ -79,7 +84,7 @@ def set_source_aware_cache(key, value, client, timeout=DEFAULT_TIMEOUT):
     cache.set(
         _cache_key(key),
         {
-            'source': source if source in INSIGHTS_DATA_SOURCES else None,
+            'source': source if _is_known_source(source) else None,
             'value': value,
         },
         timeout,

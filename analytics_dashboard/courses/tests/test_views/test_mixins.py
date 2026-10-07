@@ -1,10 +1,12 @@
 import unittest.mock as mock
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase
 from django.test.utils import override_settings
 
 from analytics_dashboard.courses.tests.utils import CourseSamples
+from analytics_dashboard.core.cache import get_source_aware_cache, set_source_aware_cache
 from analytics_dashboard.courses.views import (
     AnalyticsV0Mixin,
     AnalyticsV1Mixin,
@@ -44,6 +46,17 @@ class AnalyticsV0MixinTests(TestCase):
         self.mixin.setup(r)
         self.assertEqual(self.mixin.request, r)
         self.assertEqual(self.mixin.analytics_client.base_url, settings.DATA_API_URL)
+
+    @mock.patch('analytics_dashboard.core.cache.flag_is_active', return_value=True)
+    def test_cache_bypass_flag_is_evaluated_once_per_request(self, mock_flag_is_active):
+        r = self.req.get('whatever')
+        r.user = AnonymousUser()
+        self.mixin.setup(r)
+
+        get_source_aware_cache('missing-key', self.mixin.analytics_client)
+        set_source_aware_cache('missing-key', {'value': 1}, self.mixin.analytics_client)
+
+        mock_flag_is_active.assert_called_once_with(r, 'insights_dashboard_cache_bypass')
 
     def test_v0(self):
         r = self.req.get('whatever?v=0')
