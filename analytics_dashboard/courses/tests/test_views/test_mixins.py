@@ -14,7 +14,6 @@ from analytics_dashboard.courses.views import (
     AnalyticsDataSourceMixin,
     INSIGHTS_DATA_CACHE_HEADER,
     INSIGHTS_DATA_SOURCE_HEADER,
-    INSIGHTS_DATA_HEADERS_ENABLED_FLAG,
     CourseValidMixin,
     _record_insights_data_source,
     _set_insights_data_cache_header,
@@ -112,26 +111,22 @@ class AnalyticsV1MixinTests(TestCase):
         self.assertEqual(self.mixin.analytics_client.base_url, settings.DATA_API_URL_V1)
 
 
-class InsightsDataHeadersFlagTests(TestCase):
-    def test_headers_are_added_when_flag_is_enabled(self):
+class InsightsDataHeadersTemporaryBypassTests(TestCase):
+    def test_headers_are_added_during_temporary_bypass(self):
         request = RequestFactory().get('whatever')
 
-        with mock.patch('analytics_dashboard.courses.views.flag_is_active', return_value=True) as flag:
-            response = HeaderFlagView.as_view()(request)
+        response = HeaderFlagView.as_view()(request)
 
         self.assertEqual(response[INSIGHTS_DATA_SOURCE_HEADER], 'snowflake')
         self.assertEqual(response[INSIGHTS_DATA_CACHE_HEADER], 'hit')
-        flag.assert_called_once_with(request, INSIGHTS_DATA_HEADERS_ENABLED_FLAG)
 
-    def test_headers_are_omitted_when_flag_is_disabled(self):
+    def test_headers_remain_enabled_while_flag_gate_is_bypassed(self):
         request = RequestFactory().get('whatever')
 
-        with mock.patch('analytics_dashboard.courses.views.flag_is_active', return_value=False) as flag:
-            response = HeaderFlagView.as_view()(request)
+        response = HeaderFlagView.as_view()(request)
 
-        self.assertNotIn(INSIGHTS_DATA_SOURCE_HEADER, response)
-        self.assertNotIn(INSIGHTS_DATA_CACHE_HEADER, response)
-        flag.assert_called_once_with(request, INSIGHTS_DATA_HEADERS_ENABLED_FLAG)
+        self.assertEqual(response[INSIGHTS_DATA_SOURCE_HEADER], 'snowflake')
+        self.assertEqual(response[INSIGHTS_DATA_CACHE_HEADER], 'hit')
 
 
 class InsightsDataSourceHeaderTests(TestCase):
