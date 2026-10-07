@@ -48,7 +48,7 @@ class SourceAwareCacheTests(TestCase):
         user_model = get_user_model()
         enabled_user = user_model.objects.create_user(username='cache-enabled-user')
         disabled_user = user_model.objects.create_user(username='cache-disabled-user')
-        flag = Flag.objects.create(name=INSIGHTS_CACHE_BYPASS_FLAG, active=True, everyone=False)
+        flag = Flag.objects.create(name=INSIGHTS_CACHE_BYPASS_FLAG, everyone=False)
         flag.users.add(enabled_user)
 
         enabled_request = RequestFactory().get('/courses/')
