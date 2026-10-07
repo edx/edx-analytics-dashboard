@@ -21,10 +21,15 @@ from analytics_dashboard.courses.views import (
 )
 
 
-class HeaderFlagView(AnalyticsDataSourceMixin, View):
+class HeaderView(AnalyticsDataSourceMixin, View):
     def get(self, request, *args, **kwargs):
         request.insights_data_sources.add('snowflake')
         request.insights_cache_statuses.add('hit')
+        return HttpResponse()
+
+
+class HeaderViewWithoutAnalyticsData(AnalyticsDataSourceMixin, View):
+    def get(self, request, *args, **kwargs):
         return HttpResponse()
 
 
@@ -111,22 +116,22 @@ class AnalyticsV1MixinTests(TestCase):
         self.assertEqual(self.mixin.analytics_client.base_url, settings.DATA_API_URL_V1)
 
 
-class InsightsDataHeadersTemporaryBypassTests(TestCase):
-    def test_headers_are_added_during_temporary_bypass(self):
+class AnalyticsDataSourceMixinHeaderTests(TestCase):
+    def test_headers_are_added_for_analytics_data(self):
         request = RequestFactory().get('whatever')
 
-        response = HeaderFlagView.as_view()(request)
+        response = HeaderView.as_view()(request)
 
         self.assertEqual(response[INSIGHTS_DATA_SOURCE_HEADER], 'snowflake')
         self.assertEqual(response[INSIGHTS_DATA_CACHE_HEADER], 'hit')
 
-    def test_headers_remain_enabled_while_flag_gate_is_bypassed(self):
+    def test_lms_only_response_has_no_analytics_headers(self):
         request = RequestFactory().get('whatever')
 
-        response = HeaderFlagView.as_view()(request)
+        response = HeaderViewWithoutAnalyticsData.as_view()(request)
 
-        self.assertEqual(response[INSIGHTS_DATA_SOURCE_HEADER], 'snowflake')
-        self.assertEqual(response[INSIGHTS_DATA_CACHE_HEADER], 'hit')
+        self.assertNotIn(INSIGHTS_DATA_SOURCE_HEADER, response)
+        self.assertNotIn(INSIGHTS_DATA_CACHE_HEADER, response)
 
 
 class InsightsDataSourceHeaderTests(TestCase):
