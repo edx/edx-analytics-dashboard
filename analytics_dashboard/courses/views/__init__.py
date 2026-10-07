@@ -25,7 +25,7 @@ from requests.exceptions import RequestException
 from opaque_keys.edx.keys import CourseKey
 from waffle import switch_is_active
 
-from analytics_dashboard.core.cache import is_cache_bypass_enabled
+from analytics_dashboard.core.cache import INSIGHTS_DATA_SOURCES, is_cache_bypass_enabled
 from analytics_dashboard.core.exceptions import ServiceUnavailableError
 from analytics_dashboard.core.utils import (
     CourseStructureApiClient,
@@ -43,7 +43,6 @@ logger = logging.getLogger(__name__)
 
 
 INSIGHTS_DATA_SOURCE_HEADER = 'X-Insights-Data-Source'
-INSIGHTS_DATA_SOURCES = {'aurora', 'snowflake'}
 INSIGHTS_DATA_CACHE_HEADER = 'X-Insights-Data-Cache'
 
 
