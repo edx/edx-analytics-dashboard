@@ -9,6 +9,8 @@ from analytics_dashboard.courses.views import (
     AnalyticsV0Mixin,
     AnalyticsV1Mixin,
     CourseValidMixin,
+    _record_insights_data_source,
+    _set_insights_data_cache_header,
     _set_insights_data_source_header,
 )
 
@@ -120,3 +122,53 @@ class InsightsDataSourceHeaderTests(TestCase):
         _set_insights_data_source_header(self.request, response)
 
         self.assertNotIn('X-Insights-Data-Source', response)
+
+    def test_cache_hit_is_forwarded(self):
+        self.request.insights_cache_statuses = {'hit'}
+        response = HttpResponse()
+
+        _set_insights_data_cache_header(self.request, response)
+
+        self.assertEqual(response['X-Insights-Data-Cache'], 'hit')
+
+    def test_cache_miss_is_forwarded(self):
+        self.request.insights_cache_statuses = {'miss'}
+        response = HttpResponse()
+
+        _set_insights_data_cache_header(self.request, response)
+
+        self.assertEqual(response['X-Insights-Data-Cache'], 'miss')
+
+    def test_mixed_cache_statuses_are_reported(self):
+        self.request.insights_cache_statuses = {'hit', 'miss'}
+        response = HttpResponse()
+
+        _set_insights_data_cache_header(self.request, response)
+
+        self.assertEqual(response['X-Insights-Data-Cache'], 'mixed')
+
+    def test_no_cache_status_does_not_add_header(self):
+        self.request.insights_cache_statuses = set()
+        response = HttpResponse()
+
+        _set_insights_data_cache_header(self.request, response)
+
+        self.assertNotIn('X-Insights-Data-Cache', response)
+
+    def test_source_response_records_cache_miss(self):
+        self.request.insights_cache_bypass = False
+        self.request.insights_cache_statuses = set()
+        response = HttpResponse()
+        response['X-Insights-Data-Source'] = 'snowflake'
+
+        self.assertEqual(_record_insights_data_source(self.request, response), 'snowflake')
+        self.assertEqual(self.request.insights_cache_statuses, {'miss'})
+
+    def test_source_response_records_cache_bypass(self):
+        self.request.insights_cache_bypass = True
+        self.request.insights_cache_statuses = set()
+        response = HttpResponse()
+        response['X-Insights-Data-Source'] = 'aurora'
+
+        self.assertEqual(_record_insights_data_source(self.request, response), 'aurora')
+        self.assertEqual(self.request.insights_cache_statuses, {'bypass'})

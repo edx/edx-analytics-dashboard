@@ -25,6 +25,7 @@ from requests.exceptions import RequestException
 from opaque_keys.edx.keys import CourseKey
 from waffle import switch_is_active
 
+from analytics_dashboard.core.cache import is_cache_bypass_enabled
 from analytics_dashboard.core.exceptions import ServiceUnavailableError
 from analytics_dashboard.core.utils import (
     CourseStructureApiClient,
@@ -43,13 +44,23 @@ logger = logging.getLogger(__name__)
 
 INSIGHTS_DATA_SOURCE_HEADER = 'X-Insights-Data-Source'
 INSIGHTS_DATA_SOURCES = {'aurora', 'snowflake'}
+INSIGHTS_DATA_CACHE_HEADER = 'X-Insights-Data-Cache'
 
 
 def _record_insights_data_source(request, response):
     """Record a valid Analytics API source on the current dashboard request."""
     source = response.headers.get(INSIGHTS_DATA_SOURCE_HEADER, '').lower()
     if source in INSIGHTS_DATA_SOURCES:
-        request.insights_data_sources.add(source)
+        data_sources = getattr(request, 'insights_data_sources', None)
+        if data_sources is not None:
+            data_sources.add(source)
+        cache_statuses = getattr(request, 'insights_cache_statuses', None)
+        if cache_statuses is not None:
+            cache_statuses.add(
+                'bypass' if getattr(request, 'insights_cache_bypass', False) else 'miss'
+            )
+        return source
+    return None
 
 
 def _set_insights_data_source_header(request, response):
@@ -61,16 +72,27 @@ def _set_insights_data_source_header(request, response):
         response[INSIGHTS_DATA_SOURCE_HEADER] = 'mixed'
 
 
+def _set_insights_data_cache_header(request, response):
+    """Expose whether source-backed data was cached for this Dashboard request."""
+    statuses = getattr(request, 'insights_cache_statuses', set())
+    if len(statuses) == 1:
+        response[INSIGHTS_DATA_CACHE_HEADER] = next(iter(statuses))
+    elif len(statuses) > 1:
+        response[INSIGHTS_DATA_CACHE_HEADER] = 'mixed'
+
+
 class SourceTrackingClient(Client):
     """Analytics API client that records the source header for this request."""
 
     def __init__(self, *args, dashboard_request, **kwargs):
         super().__init__(*args, **kwargs)
         self.dashboard_request = dashboard_request
+        self.last_data_source = None
 
     def _request(self, *args, **kwargs):
+        self.last_data_source = None
         response = super()._request(*args, **kwargs)
-        _record_insights_data_source(self.dashboard_request, response)
+        self.last_data_source = _record_insights_data_source(self.dashboard_request, response)
         return response
 
 
@@ -79,11 +101,14 @@ class AnalyticsDataSourceMixin:
 
     def setup(self, request, *args, **kwargs):
         request.insights_data_sources = set()
+        request.insights_cache_statuses = set()
+        request.insights_cache_bypass = is_cache_bypass_enabled(request)
         super().setup(request, *args, **kwargs)
 
     def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)
         _set_insights_data_source_header(request, response)
+        _set_insights_data_cache_header(request, response)
         return response
 
 

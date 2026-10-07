@@ -1,8 +1,8 @@
 from analyticsclient.constants import enrollment_modes
 from django.conf import settings
-from django.core.cache import cache
 from waffle import switch_is_active
 
+from analytics_dashboard.core.cache import get_source_aware_cache, set_source_aware_cache
 from analytics_dashboard.courses.presenters import BasePresenter
 
 
@@ -29,7 +29,7 @@ class CourseSummariesPresenter(BasePresenter):
         summaries = None
         if course_ids is None:
             # we only cache the full list of summaries
-            summaries = cache.get(self.CACHE_KEY)
+            summaries = get_source_aware_cache(self.CACHE_KEY, self.client)
         if summaries is None:
             exclude = ['programs']  # we make a separate call to the programs endpoint
             if not switch_is_active('enable_course_passing'):
@@ -45,7 +45,12 @@ class CourseSummariesPresenter(BasePresenter):
                 } for summary in summaries
             ]
             if course_ids is None:
-                cache.set(self.CACHE_KEY, summaries, settings.COURSE_SUMMARIES_CACHE_TIMEOUT)
+                set_source_aware_cache(
+                    self.CACHE_KEY,
+                    summaries,
+                    self.client,
+                    settings.COURSE_SUMMARIES_CACHE_TIMEOUT,
+                )
         return summaries
 
     def _get_last_updated(self, summaries):
