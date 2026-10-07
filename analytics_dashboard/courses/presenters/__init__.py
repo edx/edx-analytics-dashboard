@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.cache import cache
 
 from common.course_structure import CourseStructure
+from analytics_dashboard.core.cache import get_source_aware_cache, set_source_aware_cache
 from analytics_dashboard.core.utils import CourseStructureApiClient, sanitize_cache_key
 from analytics_dashboard.courses.exceptions import BaseCourseError
 
@@ -190,9 +191,9 @@ class CourseAPIPresenterMixin(metaclass=abc.ABCMeta):
         """ Retrieves course problems (from cache or course API) and calls process_module_data to attach data. """
 
         key = self.get_cache_key(self.module_type)
-        module_data = cache.get(key)
+        module_data = get_source_aware_cache(key, self.client)
 
-        if not module_data:
+        if module_data is None:
             module_data = self.fetch_course_module_data()
 
             # Create a lookup table so that submission data can be quickly retrieved by downstream consumers.
@@ -215,7 +216,7 @@ class CourseAPIPresenterMixin(metaclass=abc.ABCMeta):
                 self._last_updated = last_updated
 
             module_data = table
-            cache.set(key, module_data)
+            set_source_aware_cache(key, module_data, self.client)
 
         return module_data
 

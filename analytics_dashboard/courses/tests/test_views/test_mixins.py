@@ -1,16 +1,36 @@
 import unittest.mock as mock
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase
 from django.test.utils import override_settings
+from django.views import View
 
 from analytics_dashboard.courses.tests.utils import CourseSamples
+from analytics_dashboard.core.cache import get_source_aware_cache, set_source_aware_cache
 from analytics_dashboard.courses.views import (
     AnalyticsV0Mixin,
     AnalyticsV1Mixin,
+    AnalyticsDataSourceMixin,
+    INSIGHTS_DATA_CACHE_HEADER,
+    INSIGHTS_DATA_SOURCE_HEADER,
     CourseValidMixin,
+    _record_insights_data_source,
+    _set_insights_data_cache_header,
     _set_insights_data_source_header,
 )
+
+
+class HeaderView(AnalyticsDataSourceMixin, View):
+    def get(self, request, *args, **kwargs):
+        request.insights_data_sources.add('snowflake')
+        request.insights_cache_statuses.add('hit')
+        return HttpResponse()
+
+
+class HeaderViewWithoutAnalyticsData(AnalyticsDataSourceMixin, View):
+    def get(self, request, *args, **kwargs):
+        return HttpResponse()
 
 
 class CourseValidMixinTests(TestCase):
@@ -42,6 +62,17 @@ class AnalyticsV0MixinTests(TestCase):
         self.mixin.setup(r)
         self.assertEqual(self.mixin.request, r)
         self.assertEqual(self.mixin.analytics_client.base_url, settings.DATA_API_URL)
+
+    @mock.patch('analytics_dashboard.core.cache.flag_is_active', return_value=True)
+    def test_cache_bypass_flag_is_evaluated_once_per_request(self, mock_flag_is_active):
+        r = self.req.get('whatever')
+        r.user = AnonymousUser()
+        self.mixin.setup(r)
+
+        get_source_aware_cache('missing-key', self.mixin.analytics_client)
+        set_source_aware_cache('missing-key', {'value': 1}, self.mixin.analytics_client)
+
+        mock_flag_is_active.assert_called_once_with(r, 'insights_dashboard_cache_bypass')
 
     def test_v0(self):
         r = self.req.get('whatever?v=0')
@@ -85,6 +116,24 @@ class AnalyticsV1MixinTests(TestCase):
         self.assertEqual(self.mixin.analytics_client.base_url, settings.DATA_API_URL_V1)
 
 
+class AnalyticsDataSourceMixinHeaderTests(TestCase):
+    def test_headers_are_added_for_analytics_data(self):
+        request = RequestFactory().get('whatever')
+
+        response = HeaderView.as_view()(request)
+
+        self.assertEqual(response[INSIGHTS_DATA_SOURCE_HEADER], 'snowflake')
+        self.assertEqual(response[INSIGHTS_DATA_CACHE_HEADER], 'hit')
+
+    def test_lms_only_response_has_no_analytics_headers(self):
+        request = RequestFactory().get('whatever')
+
+        response = HeaderViewWithoutAnalyticsData.as_view()(request)
+
+        self.assertNotIn(INSIGHTS_DATA_SOURCE_HEADER, response)
+        self.assertNotIn(INSIGHTS_DATA_CACHE_HEADER, response)
+
+
 class InsightsDataSourceHeaderTests(TestCase):
     def setUp(self):
         self.request = RequestFactory().get('whatever')
@@ -120,3 +169,53 @@ class InsightsDataSourceHeaderTests(TestCase):
         _set_insights_data_source_header(self.request, response)
 
         self.assertNotIn('X-Insights-Data-Source', response)
+
+    def test_cache_hit_is_forwarded(self):
+        self.request.insights_cache_statuses = {'hit'}
+        response = HttpResponse()
+
+        _set_insights_data_cache_header(self.request, response)
+
+        self.assertEqual(response['X-Insights-Data-Cache'], 'hit')
+
+    def test_cache_miss_is_forwarded(self):
+        self.request.insights_cache_statuses = {'miss'}
+        response = HttpResponse()
+
+        _set_insights_data_cache_header(self.request, response)
+
+        self.assertEqual(response['X-Insights-Data-Cache'], 'miss')
+
+    def test_mixed_cache_statuses_are_reported(self):
+        self.request.insights_cache_statuses = {'hit', 'miss'}
+        response = HttpResponse()
+
+        _set_insights_data_cache_header(self.request, response)
+
+        self.assertEqual(response['X-Insights-Data-Cache'], 'mixed')
+
+    def test_no_cache_status_does_not_add_header(self):
+        self.request.insights_cache_statuses = set()
+        response = HttpResponse()
+
+        _set_insights_data_cache_header(self.request, response)
+
+        self.assertNotIn('X-Insights-Data-Cache', response)
+
+    def test_source_response_records_cache_miss(self):
+        self.request.insights_cache_bypass = False
+        self.request.insights_cache_statuses = set()
+        response = HttpResponse()
+        response['X-Insights-Data-Source'] = 'snowflake'
+
+        self.assertEqual(_record_insights_data_source(self.request, response), 'snowflake')
+        self.assertEqual(self.request.insights_cache_statuses, {'miss'})
+
+    def test_source_response_records_cache_bypass(self):
+        self.request.insights_cache_bypass = True
+        self.request.insights_cache_statuses = set()
+        response = HttpResponse()
+        response['X-Insights-Data-Source'] = 'aurora'
+
+        self.assertEqual(_record_insights_data_source(self.request, response), 'aurora')
+        self.assertEqual(self.request.insights_cache_statuses, {'bypass'})

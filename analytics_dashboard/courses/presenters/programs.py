@@ -1,5 +1,4 @@
-from django.core.cache import cache
-
+from analytics_dashboard.core.cache import get_source_aware_cache, set_source_aware_cache
 from analytics_dashboard.courses.presenters import BasePresenter
 
 
@@ -29,13 +28,13 @@ class ProgramsPresenter(BasePresenter):
         Returns all programs. If not cached, programs will be fetched
         from the analytics data API.
         """
-        all_programs = cache.get(self.CACHE_KEY)
+        all_programs = get_source_aware_cache(self.CACHE_KEY, self.client)
         if all_programs is None:
             all_programs = self.client.programs().programs()
             all_programs = [
                 {field: ('' if val is None and field in self.NON_NULL_STRING_FIELDS else val)
                  for field, val in program.items()} for program in all_programs]
-            cache.set(self.CACHE_KEY, all_programs)
+            set_source_aware_cache(self.CACHE_KEY, all_programs, self.client)
         return all_programs
 
     def get_programs(self, program_ids=None, course_ids=None):
