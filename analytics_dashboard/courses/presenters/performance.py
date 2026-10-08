@@ -11,6 +11,7 @@ from requests.exceptions import HTTPError
 from slugify import slugify
 
 from common.course_structure import CourseStructure
+from analytics_dashboard.core.cache import get_source_aware_cache, set_source_aware_cache
 from analytics_dashboard.core.utils import CourseStructureApiClient, sanitize_cache_key
 from analytics_dashboard.courses import utils
 from analytics_dashboard.courses.exceptions import BaseCourseError, NoAnswerSubmissionsError
@@ -264,9 +265,9 @@ class CoursePerformancePresenter(CourseAPIPresenterMixin, CoursePresenter):
 
         assignment_type_name = None if assignment_type is None else assignment_type['name']
         assignment_type_key = self.get_cache_key(f'assignments_{assignment_type_name}')
-        assignments = cache.get(assignment_type_key)
+        assignments = get_source_aware_cache(assignment_type_key, self.client)
 
-        if not assignments:
+        if assignments is None:
             all_assignments_key = self.get_cache_key('assignments')
             assignments = cache.get(all_assignments_key)
 
@@ -285,7 +286,7 @@ class CoursePerformancePresenter(CourseAPIPresenterMixin, CoursePresenter):
             self.attach_data_to_parents(assignments, self._build_assignment_url)
 
             # Cache the data for the course-assignment_type combination.
-            cache.set(assignment_type_key, assignments)
+            set_source_aware_cache(assignment_type_key, assignments, self.client)
 
         return assignments
 
