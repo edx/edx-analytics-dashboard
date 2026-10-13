@@ -1,5 +1,7 @@
 import 'backgrid-paginator/backgrid-paginator.min.css';
 
+import loadReactWidgets from 'course-list/app/react-loader';
+
 Promise.all([
   import('load/init-page'),
   import('apps/course-list/app/app'),
@@ -15,4 +17,7 @@ Promise.all([
   });
 
   app.start();
+
+  // Loads the React widgets only when the enable_react_course_list waffle flag is on (see react-loader.js).
+  loadReactWidgets(modelData);
 });
