@@ -15,7 +15,8 @@
         "$": true
     },
     "settings": {
-        "import/resolver": "webpack"
+        "import/resolver": "webpack",
+        "react": { "version": "18.3" }
     },
     "rules": {
         "import/no-unresolved": ["error", {"amd": true}],

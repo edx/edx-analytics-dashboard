@@ -7,17 +7,21 @@ const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 const extractCSS = new ExtractTextPlugin('styles-css.css');
 const extractSCSS = new ExtractTextPlugin('styles-scss.css');
+
+// Must be set before webpack.common.config.js is loaded: its DefinePlugin reads it, and React and
+// Redux Toolkit use it to bundle their production builds.
+process.env.NODE_ENV = 'production';
 const commonConfig = require('./webpack.common.config.js');
 
 module.exports = Merge.smart(commonConfig, {
   module: {
     // Specify file-by-file rules to Webpack. Some file-types need a particular kind of loader.
     rules: [
-      // The babel-loader transforms newer ES2015 syntax to older ES5 for legacy browsers.
+      // The babel-loader transforms newer ES2015 syntax to older ES5 for legacy browsers, and JSX for React.
       // The 'transform-runtime' plugin tells babel to require the runtime instead of inlining it (saves bundle
       // size).
       {
-        test: /\.js$/,
+        test: /\.jsx?$/,
         exclude: /(node_modules|bower_components)/,
         use: {
           loader: 'babel-loader',
@@ -28,6 +32,7 @@ module.exports = Merge.smart(commonConfig, {
                   browsers: ['last 2 versions', 'ie >= 11'],
                 },
               }],
+              ['@babel/preset-react', { runtime: 'automatic' }],
             ],
             plugins: ['@babel/plugin-transform-runtime', '@babel/plugin-syntax-dynamic-import'],
           },

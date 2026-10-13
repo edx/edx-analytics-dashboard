@@ -19,9 +19,9 @@ module.exports = Merge.smart(commonConfig, {
   module: {
     // Specify file-by-file rules to Webpack. Some file-types need a particular kind of loader.
     rules: [
-      // The babel-loader transforms newer ES2015 syntax to older ES5 for legacy browsers.
+      // The babel-loader transforms newer ES2015 syntax to older ES5 for legacy browsers, and JSX for React.
       {
-        test: /\.js$/,
+        test: /\.jsx?$/,
         exclude: /(node_modules|bower_components)/,
         use: {
           loader: 'babel-loader',
@@ -32,6 +32,7 @@ module.exports = Merge.smart(commonConfig, {
                   browsers: ['last 2 versions', 'ie >= 11'],
                 },
               }],
+              ['@babel/preset-react', { runtime: 'automatic' }],
             ],
             plugins: ['@babel/plugin-syntax-dynamic-import'],
             cacheDirectory: true,
