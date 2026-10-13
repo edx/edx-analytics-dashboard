@@ -66,6 +66,8 @@ describe('WidgetErrorBoundary with mountReact', () => {
     spyOn(console, 'error');
     setFixtures(`<div id="mount-point" class="col col-12" data-react-widget="test-widget">${SERVER_CARD}</div>`);
     element = document.getElementById('mount-point');
+    // On the page, load/init-tooltips.js activates the server-rendered tooltips before React mounts.
+    $(element).find('.has-tooltip').tooltip();
   });
 
   afterEach(() => {
