@@ -5,6 +5,7 @@ import $ from 'jquery';
 
 import mountReact from 'components/react/mount-react';
 import { resetMonitoringForTests } from 'components/react/monitoring';
+import ignoreExpectedErrors from 'components/react/spec/ignore-expected-errors';
 
 const SERVER_CARD = '<div class="summary-point text-center"><div class="summary-point-wrapper">'
   + '<div class="summary-point-number" title="1,234">1,234</div>'
@@ -50,8 +51,10 @@ describe('WidgetErrorBoundary with mountReact', () => {
   let element;
   let originalRum;
   let rum;
+  let restoreOnError;
 
   beforeEach(() => {
+    restoreOnError = ignoreExpectedErrors(['render failed']);
     resetMonitoringForTests();
     originalRum = window.DD_RUM;
     rum = {
@@ -67,6 +70,7 @@ describe('WidgetErrorBoundary with mountReact', () => {
 
   afterEach(() => {
     window.DD_RUM = originalRum;
+    restoreOnError();
   });
 
   it('restores the server-rendered HTML exactly, without a wrapper, when the first render fails', (done) => {
