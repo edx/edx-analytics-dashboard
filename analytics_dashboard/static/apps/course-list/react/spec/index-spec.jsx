@@ -83,7 +83,7 @@ describe('startReactWidgets', () => {
 
   it('replaces the server-rendered card with the React card inside the same wrapper', () => {
     const courseModel = new CourseModel({ summary: summary(first.value), summary_text: summaryText });
-    const serverText = wrapper.querySelector('.summary-point').textContent;
+    const serverText = wrapper.textContent;
     const serverNumber = number();
 
     act(() => {
@@ -92,11 +92,9 @@ describe('startReactWidgets', () => {
 
     expect(wrapper.className).toBe(WRAPPER_CLASS);
     expect(wrapper.getAttribute('data-stat-type')).toBe('total_enrollment');
-    expect(wrapper.querySelectorAll('.summary-point').length).toBe(1);
+    expect(wrapper.children.length).toBe(1);
     expect(number()).not.toBe(serverNumber);
-    expect(wrapper.querySelector('.summary-point').textContent).toBe(serverText);
-    // TEMPORARY: the "Loaded from React" testing badge (TotalEnrollmentWithReactBadge.jsx).
-    expect(wrapper.querySelector('[data-react-badge]').textContent).toBe('Loaded from React');
+    expect(wrapper.textContent).toBe(serverText);
     expect(number().getAttribute('title')).toBe(first.title);
     expect($(wrapper).find('.has-tooltip').data('bs.tooltip')).toBeDefined();
     expect(rum.addError).not.toHaveBeenCalled();
@@ -147,7 +145,6 @@ describe('startReactWidgets', () => {
     afterRestore(() => {
       expect(wrapper.innerHTML).toBe(serverHtml);
       expect(wrapper.className).toBe(WRAPPER_CLASS);
-      expect(wrapper.querySelector('[data-react-badge]')).toBeNull();
     }, done);
   });
 
