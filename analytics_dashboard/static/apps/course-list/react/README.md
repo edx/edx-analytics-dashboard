@@ -41,7 +41,7 @@ analytics_dashboard/static/apps/
 │   ├── mount-react.jsx            mounts a component into an existing element; restores HTML on failure
 │   ├── widget-error-boundary.jsx  catches render errors and reports the last on-screen HTML
 │   ├── monitoring.js              minimal Datadog RUM reporting (imports nothing)
-│   ├── react-debug.js             widget markers and the ?react_debug=1 outline (imports nothing)
+│   ├── widget-markers.js          data-react-rendered / data-react-fallback markers (imports nothing)
 │   ├── paragon/                   what Paragon needs on an Insights page (section 17)
 │   │   ├── ParagonProvider.jsx    react-intl provider (English) and the .paragon-styles scope
 │   │   ├── paragon-styles.js      webpack entry for Paragon's CSS
@@ -188,15 +188,6 @@ Insights isn't internationalized, so React widgets show English.
 
 The markers are invisible. Check them in DevTools → Elements.
 
-**Debug outline.** Open any page once with `?react_debug=1`, for example `/courses/?react_debug=1`. This browser
-remembers the setting in `localStorage`, and from then on:
-
-- React widgets get a blue dashed outline labelled "React: <widget>";
-- widgets showing the fallback get a red dashed outline labelled "Fallback: <widget>".
-
-`?react_debug=0` turns it off. It affects only your browser, never moves anything (it uses `outline`), and
-sends nothing anywhere. `components/react/react-debug.js` implements it.
-
 ## 10. Fallback behavior
 
 Every widget must keep these rules:
@@ -275,7 +266,7 @@ Rules:
   output, as `courses/tests/test_views/test_course_summaries.py` does.
 - Never import React, Redux or anything under `course-list/react/` from legacy code. The only exceptions are
   `react-loader.js`'s dynamic `import()` and its imports of `components/react/monitoring.js` and
-  `components/react/react-debug.js`, which import nothing.
+  `components/react/widget-markers.js`, which import nothing.
 - **Bundle check.** Build with a stats report and list each chunk's modules:
 
   ```bash
@@ -375,7 +366,7 @@ The course list is expected to move to a micro-frontend (MFE) later.
   Only their imports of `react/platform/` adapters are replaced, and their text is wrapped in `react-intl`
   messages.
 - **Not carried over:** `react/platform/` (page-model bridge, formatting, tracking), `components/react/` (mounting,
-  error boundary, RUM adapter, `ParagonProvider`, debug markers), `insights-theme.css`,
+  error boundary, RUM adapter, `ParagonProvider`, widget markers), `insights-theme.css`,
   `react-loader.js`, the waffle flag, the Django mount points, `webpack/paragon/`, and the Karma tests. In the MFE,
   frontend-platform provides the providers, and its theme and monitoring apply.
 

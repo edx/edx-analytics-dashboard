@@ -5,7 +5,7 @@ import $ from 'jquery';
 
 import WidgetErrorBoundary from 'components/react/widget-error-boundary';
 import { reportFallbackActivated, reportWidgetFailure } from 'components/react/monitoring';
-import { enableReactDebugIfRequested, markFallback, markRendered } from 'components/react/react-debug';
+import { markFallback, markRendered } from 'components/react/widget-markers';
 
 /**
  * Renders a React component into an existing element and returns a function that unmounts it.
@@ -17,7 +17,7 @@ import { enableReactDebugIfRequested, markFallback, markRendered } from 'compone
  * (no wrapper element) and its Bootstrap tooltips are re-activated. Nothing about the error is shown to users.
  *
  * The element gets data-react-rendered="<widget>" after the first successful render, or
- * data-react-fallback="<widget>" when the fallback is shown. ?react_debug=1 outlines them (react-debug.js).
+ * data-react-fallback="<widget>" when the fallback is shown.
  *
  * @param {Element} element - Element to render into. Its existing content is the initial fallback.
  * @param {Function} Component - React component to render.
@@ -37,7 +37,6 @@ export default function mountReact(element, Component, {
   }
   const widget = name || element.getAttribute('data-react-widget') || 'unknown';
   const serverHtml = element.innerHTML;
-  enableReactDebugIfRequested();
   const root = createRoot(element);
   let mounted = true;
 
