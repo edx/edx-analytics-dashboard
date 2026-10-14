@@ -86,7 +86,8 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
 - **Use Paragon components and utility classes** (`d-flex`, `text-center`, `py-3`, `h2`, ...). Don't write CSS
   for them. Paragon takes its colours, font and corners from `--pgn-*` theme variables, and
   `components/react/paragon/insights-theme.css` sets those to Insights' values (Open Sans, the edX blue
-  `#0075B4`, the card border and corner radius). Change the look there, in one place.
+  `#0075B4`, the card border and corner radius). Change the look there, in one place. The same file has the rules that make the summary card, and its help
+  icon, look like the legacy cards (scale, border, font sizes, icon colour).
 - **Paragon's CSS is scoped.** The build applies it only inside the `.paragon-styles` element that
   `ParagonProvider` renders, so it can't affect the rest of the page (section 17). The page links it only when
   the flag is on.

@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import {
   Card, Icon, IconButton, OverlayTrigger, Tooltip,
 } from '@openedx/paragon';
-import { InfoOutline } from '@openedx/paragon/icons';
+import { Info } from '@openedx/paragon/icons';
 
 import { formatSummaryNumber } from 'course-list/react/platform/format';
 
@@ -17,10 +17,10 @@ export default function SummaryCard({
   const { full, display } = formatSummaryNumber(value);
 
   return (
-    <Card className="w-100">
+    <Card className="w-100 insights-summary-card">
       {/* Card.Section sets its own text alignment, so the centring goes on it, not on the card. */}
-      <Card.Section className="position-relative text-center py-3">
-        <div className="position-absolute" style={{ top: 0, right: 0 }}>
+      <Card.Section className="position-relative text-center insights-summary-card-section">
+        <div className="position-absolute insights-summary-help">
           <OverlayTrigger
             placement="top"
             onToggle={(shown) => {
@@ -31,15 +31,16 @@ export default function SummaryCard({
             overlay={<Tooltip id={tooltipId}>{tooltip}</Tooltip>}
           >
             <IconButton
-              src={InfoOutline}
+              src={Info}
               iconAs={Icon}
               alt={`${label} help`}
               size="sm"
+              className="insights-help-icon"
             />
           </OverlayTrigger>
         </div>
-        <div className="h2 font-weight-normal mb-1" title={full}>{display}</div>
-        <div className="h4 font-weight-normal mb-0">{label}</div>
+        <div className="h2 insights-summary-number" title={full}>{display}</div>
+        <div className="h4 insights-summary-label">{label}</div>
         {/* Like the legacy card: screen readers get the description without having to open the tooltip. */}
         <span className="sr-only">{tooltip}</span>
       </Card.Section>
