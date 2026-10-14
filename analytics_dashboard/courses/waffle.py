@@ -5,6 +5,7 @@ for edx's analytics dashboard.
 
 
 from edx_toggles.toggles import SettingToggle
+from waffle import flag_is_active
 
 # .. toggle_name: ENROLLMENT_AGE_AVAILABLE
 # .. toggle_implementation: SettingToggle
@@ -19,3 +20,20 @@ ENROLLMENT_AGE_AVAILABLE = SettingToggle('ENROLLMENT_AGE_AVAILABLE', default=Tru
 
 def age_available():
     return ENROLLMENT_AGE_AVAILABLE.is_enabled()
+
+
+# .. toggle_name: enable_react_course_list
+# .. toggle_implementation: WaffleFlag
+# .. toggle_default: False
+# .. toggle_description: Renders the course list page's React widgets (first: the Total Enrollment summary card)
+#      instead of the server-rendered versions. When off, the page is unchanged and the React code is not
+#      downloaded. Evaluated once per request in CourseIndex.get_context_data.
+# .. toggle_use_cases: temporary
+# .. toggle_creation_date: 2026-10-13
+# .. toggle_target_removal_date: 2027-04-30
+ENABLE_REACT_COURSE_LIST_FLAG = 'enable_react_course_list'
+
+
+def react_course_list_enabled(request):
+    """ Returns True if the course list should render its React widgets for this request. """
+    return flag_is_active(request, ENABLE_REACT_COURSE_LIST_FLAG)

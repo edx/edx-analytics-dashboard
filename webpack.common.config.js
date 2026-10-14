@@ -40,6 +40,8 @@ module.exports = {
       'analytics_dashboard/static/js',
       'analytics_dashboard/static/apps',
     ],
+    // Lets imports omit the extension of React component files (.jsx).
+    extensions: ['.js', '.jsx', '.json'],
     alias: {
       // Marionette in bower was called 'marionette'. In npm it's 'backbone.marionette'.
       marionette: 'backbone.marionette',
@@ -104,10 +106,12 @@ module.exports = {
       $: 'jquery',
       jQuery: 'jquery',
     }),
-    // This defines the theme that the SCSS should be building with
+    // This defines the theme that the SCSS should be building with, and the build mode.
     new webpack.DefinePlugin({
       'process.env': {
         THEME_SCSS: JSON.stringify(process.env.THEME_SCSS || 'sass/themes/open-edx.scss'),
+        // React and Redux Toolkit choose their production or development build from this value.
+        NODE_ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
       },
     }),
     // AggressiveMergingPlugin in conjunction with these CommonChunkPlugins turns many GBs worth of individual

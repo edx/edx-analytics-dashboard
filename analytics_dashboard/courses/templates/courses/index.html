@@ -21,7 +21,7 @@
     {% if summary %}
         <div class="section-content" role="region">
             <div class="row">
-                <div class="col col-12 sm-col-12 md-col-3" data-stat-type="total_enrollment">
+                <div class="col col-12 sm-col-12 md-col-3" data-stat-type="total_enrollment"{% if enable_react_course_list %} data-react-widget="total-enrollment"{% endif %}>
                     {# Translators: This is a label to identify the maximum number of learners ever in all of the instructor's courses. #}
                     {% trans "Total Enrollment" as label %}
                     {% trans "Total enrollments across all of your courses." as tooltip %}

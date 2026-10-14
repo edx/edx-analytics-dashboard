@@ -21,6 +21,7 @@ from analytics_dashboard.courses.views import (
     AnalyticsV1Mixin,
 )
 from analytics_dashboard.courses.views.csv import DatetimeCSVResponseMixin
+from analytics_dashboard.courses.waffle import react_course_list_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,8 @@ class CourseIndex(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, TrackedV
 
         summaries_presenter = CourseSummariesPresenter(analytics_client=self.analytics_client)
         summaries, last_updated = summaries_presenter.get_course_summaries(courses)
+        summary = summaries_presenter.get_course_summary_metrics(summaries)
+        react_enabled = react_course_list_enabled(self.request)
 
         context.update({
             'update_message': self.get_last_updated_message(last_updated)
@@ -66,9 +69,22 @@ class CourseIndex(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, TrackedV
             programs = programs_presenter.get_programs(course_ids=courses)
             data['programs_json'] = programs
 
+        if react_enabled:
+            # Only sent when the flag is on, so the flag-off page data stays exactly as it was.
+            data['enable_react_course_list'] = True
+            data['summary'] = summary
+            data['summary_text'] = {
+                'total_enrollment': {
+                    # Same message IDs as courses/index.html, so both versions of the card show the same translations.
+                    'label': _('Total Enrollment'),
+                    'tooltip': _('Total enrollments across all of your courses.'),
+                },
+            }
+
         context['js_data']['course'] = data
         context['page_data'] = self.get_page_data(context)
-        context['summary'] = summaries_presenter.get_course_summary_metrics(summaries)
+        context['summary'] = summary
+        context['enable_react_course_list'] = react_enabled
 
         return context
 

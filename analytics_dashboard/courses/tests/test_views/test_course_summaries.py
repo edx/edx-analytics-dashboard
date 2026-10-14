@@ -1,15 +1,32 @@
+import contextlib
 import json
+from pathlib import Path
 
 import unittest.mock as mock
 from ddt import data, ddt
 from django.test import TestCase
-from waffle.testutils import override_switch
+from waffle.testutils import override_flag, override_switch
 
 import analytics_dashboard.courses.tests.utils as utils
 from analytics_dashboard.courses.exceptions import PermissionsRetrievalFailedError
 from analytics_dashboard.courses.tests.test_middleware import CoursePermissionsExceptionMixin
 from analytics_dashboard.courses.tests.test_views import ViewTestMixin
 from analytics_dashboard.courses.tests.utils import CourseSamples
+
+PERMISSIONS_METHOD = 'analytics_dashboard.courses.views.course_summaries.permissions.get_user_course_permissions'
+SUMMARIES_METHOD = \
+    'analytics_dashboard.courses.presenters.course_summaries.CourseSummariesPresenter.get_course_summaries'
+SUMMARY_METRICS_METHOD = \
+    'analytics_dashboard.courses.presenters.course_summaries.CourseSummariesPresenter.get_course_summary_metrics'
+PROGRAMS_METHOD = 'analytics_dashboard.courses.presenters.programs.ProgramsPresenter.get_programs'
+
+# Expected text of the Total Enrollment card. The React card's JavaScript tests read the same file, so the
+# server-rendered and React versions are held to the same expectations.
+TOTAL_ENROLLMENT_CARD_FIXTURE = (
+    Path(__file__).resolve().parents[3]
+    / 'static' / 'apps' / 'course-list' / 'react' / 'spec' / 'fixtures' / 'total-enrollment-card.json'
+)
+TOTAL_ENROLLMENT_CARD = json.loads(TOTAL_ENROLLMENT_CARD_FIXTURE.read_text(encoding='utf-8'))
 
 
 @ddt
@@ -78,3 +95,87 @@ class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, T
     def test_get_with_permissions_error(self):
         response = self.client.get(self.path())
         self.assertIsPermissionsRetrievalFailedResponse(response)
+
+    def get_course_index(self, summary=None):
+        """ Requests the course list page with the course data mocked, and optionally the summary metrics. """
+        course_ids = [CourseSamples.DEMO_COURSE_ID]
+        patches = [
+            mock.patch(PERMISSIONS_METHOD, return_value=course_ids),
+            mock.patch(SUMMARIES_METHOD, return_value=self.get_mock_data(course_ids)),
+            mock.patch(PROGRAMS_METHOD, return_value=self.get_programs_mock_data(course_ids)),
+        ]
+        if summary is not None:
+            patches.append(mock.patch(SUMMARY_METRICS_METHOD, return_value=summary))
+        with contextlib.ExitStack() as stack:
+            for patch in patches:
+                stack.enter_context(patch)
+            response = self.client.get(self.path())
+        self.assertEqual(response.status_code, 200)
+        return response
+
+    @staticmethod
+    def summary_with_total_enrollment(value):
+        """ Returns summary metrics where only the Total Enrollment card can match the fixture's values. """
+        return {
+            'total_enrollment': value,
+            'current_enrollment': 101,
+            'enrollment_change_7_days': 202,
+            'verified_enrollment': 303,
+            'masters_enrollment': 404,
+        }
+
+    def assert_total_enrollment_card(self, response, case):
+        """ Asserts the server-rendered Total Enrollment card shows the fixture's number, label and tooltip. """
+        content = response.content.decode('utf-8')
+        self.assertInHTML(
+            f'<div class="summary-point-number" title="{case["title"]}">{case["display"]}</div>', content, count=1,
+        )
+        self.assertInHTML(f'<div class="summary-point-label">{TOTAL_ENROLLMENT_CARD["label"]}</div>', content, count=1)
+        self.assertInHTML(f'<span class="sr-only">{TOTAL_ENROLLMENT_CARD["tooltip"]}</span>', content, count=1)
+
+    def test_react_flag_off_by_default(self):
+        """ With the enable_react_course_list flag off, the page and its page data are unchanged. """
+        response = self.get_course_index()
+        self.assertFalse(response.context['enable_react_course_list'])
+        course_data = json.loads(response.context['page_data'])['course']
+        for key in ('enable_react_course_list', 'summary', 'summary_text'):
+            self.assertNotIn(key, course_data)
+        self.assertContains(response, 'data-stat-type="total_enrollment">')
+        self.assertNotContains(response, 'data-react-widget')
+
+    @override_flag('enable_react_course_list', active=True)
+    def test_react_flag_on(self):
+        """ With the flag on, the page data carries the summary and the card is marked as the React mount point. """
+        response = self.get_course_index()
+        self.assertTrue(response.context['enable_react_course_list'])
+        course_data = json.loads(response.context['page_data'])['course']
+        self.assertIs(course_data['enable_react_course_list'], True)
+        self.assertEqual(course_data['summary'], response.context['summary'])
+        self.assertEqual(course_data['summary_text'], {
+            'total_enrollment': {
+                'label': TOTAL_ENROLLMENT_CARD['label'],
+                'tooltip': TOTAL_ENROLLMENT_CARD['tooltip'],
+            },
+        })
+        self.assertContains(response, 'data-stat-type="total_enrollment" data-react-widget="total-enrollment">')
+        # The server-rendered card stays inside the mount point as the fallback.
+        self.assertInHTML(
+            f'<div class="summary-point-label">{TOTAL_ENROLLMENT_CARD["label"]}</div>',
+            response.content.decode('utf-8'),
+            count=1,
+        )
+
+    @data(*TOTAL_ENROLLMENT_CARD['cases'])
+    def test_total_enrollment_card_flag_off(self, case):
+        """ The server-rendered card matches the shared fixture (the React card's tests use the same fixture). """
+        response = self.get_course_index(self.summary_with_total_enrollment(case['value']))
+        self.assert_total_enrollment_card(response, case)
+
+    @override_flag('enable_react_course_list', active=True)
+    @data(*TOTAL_ENROLLMENT_CARD['cases'])
+    def test_total_enrollment_card_flag_on(self, case):
+        """ With the flag on, the fallback card is unchanged and the page data carries the same value. """
+        response = self.get_course_index(self.summary_with_total_enrollment(case['value']))
+        self.assert_total_enrollment_card(response, case)
+        course_data = json.loads(response.context['page_data'])['course']
+        self.assertEqual(course_data['summary']['total_enrollment'], case['value'])

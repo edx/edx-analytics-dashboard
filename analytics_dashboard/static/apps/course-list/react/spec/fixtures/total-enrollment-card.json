@@ -1,0 +1,9 @@
+{
+  "label": "Total Enrollment",
+  "tooltip": "Total enrollments across all of your courses.",
+  "cases": [
+    { "value": 3378149, "title": "3,378,149", "display": "3,378,149" },
+    { "value": 12345678901234, "title": "12,345,678,901,234", "display": "12,345,678,9…" },
+    { "value": null, "title": "0", "display": "0" }
+  ]
+}

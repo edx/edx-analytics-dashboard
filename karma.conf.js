@@ -72,6 +72,7 @@ module.exports = function (config) {
           'analytics_dashboard/static/js',
           'analytics_dashboard/static/apps',
         ],
+        extensions: ['.js', '.jsx', '.json'],
         alias: {
           marionette: 'backbone.marionette',
           cldr: 'cldrjs/dist/cldr',
@@ -107,9 +108,9 @@ module.exports = function (config) {
               path.join(__dirname, 'node_modules'),
             ],
           },
-          // The babel-loader transforms newer ES2015 syntax to older ES5 for legacy browsers.
+          // The babel-loader transforms newer ES2015 syntax to older ES5 for legacy browsers, and JSX for React.
           {
-            test: /\.js$/,
+            test: /\.jsx?$/,
             exclude: /(node_modules|bower_components)/,
             use: {
               loader: 'babel-loader',
@@ -120,12 +121,14 @@ module.exports = function (config) {
                       browsers: ['last 2 versions', 'ie >= 11'],
                     },
                   }],
+                  ['@babel/preset-react', { runtime: 'automatic' }],
                 ],
                 plugins: [
                   '@babel/plugin-syntax-dynamic-import',
                   ['istanbul', {
                     exclude: [
                       '**/*spec.js',
+                      '**/*spec.jsx',
                     ],
                   }],
                 ],
@@ -170,10 +173,12 @@ module.exports = function (config) {
           gettext: 'test/browser-shims/gettext',
           ngettext: 'test/browser-shims/ngettext',
         }),
-        // This defines the theme that the SCSS should be building with. For test, this is always open-edx
+        // This defines the theme that the SCSS should be building with. For test, this is always open-edx.
+        // Tests use React's development build, which reports more problems.
         new webpack.DefinePlugin({
           'process.env': {
             THEME_SCSS: 'sass/themes/open-edx.scss',
+            NODE_ENV: JSON.stringify('development'),
           },
         }),
       ],
