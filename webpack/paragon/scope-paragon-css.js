@@ -120,9 +120,14 @@ const scopeRules = prefixer({
   },
 });
 
-/** Throws if any selector would apply outside the scope. Returns counts, for logging and tests. */
+/**
+ * Throws if any selector would apply outside the scope, or if a global :root rule sets anything but a --*
+ * custom property (a custom property styles nothing by itself; any other declaration would restyle the whole
+ * page). Returns counts, for logging and tests.
+ */
 function verifyScoped(css) {
   const unscoped = [];
+  const globalDeclarations = [];
   const counts = { selectors: 0, scoped: 0, root: 0, overlay: 0 };
   postcss.parse(css).walkRules((rule) => {
     if (isInKeyframes(rule)) {
@@ -134,6 +139,11 @@ function verifyScoped(css) {
         counts.scoped += 1;
       } else if (selector === ':root') {
         counts.root += 1;
+        rule.each((node) => {
+          if (node.type === 'decl' && !node.prop.startsWith('--')) {
+            globalDeclarations.push(node.prop);
+          }
+        });
       } else if (OVERLAY_RESULT.test(selector)) {
         counts.overlay += 1;
       } else {
@@ -145,6 +155,13 @@ function verifyScoped(css) {
     throw new Error(
       `Paragon CSS has ${unscoped.length} selector(s) that would apply outside ${SCOPE}: `
       + `${unscoped.slice(0, 10).join(' | ')}. Extend webpack/paragon/scope-paragon-css.js.`,
+    );
+  }
+  if (globalDeclarations.length) {
+    throw new Error(
+      `Paragon CSS has a global :root rule with declarations other than --* custom properties: `
+      + `${Array.from(new Set(globalDeclarations)).slice(0, 10).join(', ')}. They would restyle the whole page. `
+      + 'Scope them in webpack/paragon/scope-paragon-css.js.',
     );
   }
   return counts;

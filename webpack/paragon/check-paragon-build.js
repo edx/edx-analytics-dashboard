@@ -6,6 +6,7 @@ const os = require('os');
 const path = require('path');
 
 const babel = require('@babel/core');
+const postcss = require('postcss');
 
 const { PARAGON_CSS_PATTERN } = require('./css');
 const { scopeParagonCss, verifyScoped } = require('./scope-paragon-css');
@@ -184,6 +185,37 @@ check('scopes the real Paragon CSS and the Insights theme with no leaks', () => 
     const counts = verifyScoped(scopeParagonCss(fs.readFileSync(file, 'utf8'), customMedia));
     assert.ok(counts.selectors > 0, file);
   });
+});
+
+check('verifyScoped throws on a global :root rule that sets more than custom properties', () => {
+  assert.throws(() => verifyScoped(':root { --x: 1px; font-size: 10px }'), /font-size/);
+  assert.throws(() => verifyScoped(':root { color: red } .paragon-styles .a { top: 0 }'), /color/);
+  assert.doesNotThrow(() => verifyScoped(':root { --x: 1px; --y: 2px }'));
+});
+
+// @keyframes names are global, so scoping can't protect against a clash with another stylesheet. Paragon defines
+// only these today, and Insights' own CSS has none of them (it defines fa-spin). When a Paragon upgrade adds or
+// renames one, this fails so that someone checks the new name against Insights' CSS before updating the list.
+const KNOWN_PARAGON_KEYFRAMES = [
+  'progress-bar-stripes', 'react-loading-skeleton', 'spinner-border', 'spinner-grow',
+];
+
+check('Paragon defines only the @keyframes names that were checked against Insights\' CSS', () => {
+  const paragonDir = path.dirname(require.resolve('@openedx/paragon/package.json'));
+  const names = {};
+  ['core.min.css', 'light.min.css'].forEach((file) => {
+    postcss.parse(fs.readFileSync(path.join(paragonDir, 'dist', file), 'utf8')).walkAtRules(/keyframes$/, (rule) => {
+      names[rule.params] = true;
+    });
+  });
+
+  assert.deepStrictEqual(
+    Object.keys(names).sort(),
+    KNOWN_PARAGON_KEYFRAMES,
+    'Paragon\'s @keyframes names changed. Check the new names against the @keyframes in Insights\' CSS '
+    + '(grep -r "@keyframes" analytics_dashboard/static/sass node_modules/bootstrap-sass), then update '
+    + 'KNOWN_PARAGON_KEYFRAMES in webpack/paragon/check-paragon-build.js.',
+  );
 });
 
 check('the Insights theme sets the Insights font, colour and card border', () => {

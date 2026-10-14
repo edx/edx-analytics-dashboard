@@ -43,6 +43,8 @@ export default function SummaryCard({
         </div>
         <div className="h2 font-weight-normal mb-1" title={full}>{display}</div>
         <div className="h4 font-weight-normal mb-0">{label}</div>
+        {/* Like the legacy card: screen readers get the description without having to open the tooltip. */}
+        <span className="sr-only">{tooltip}</span>
       </Card.Section>
     </Card>
   );

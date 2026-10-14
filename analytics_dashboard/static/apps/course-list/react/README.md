@@ -264,6 +264,10 @@ Rules:
   - list flags: `python manage.py waffle_flag --list`
 - **Stage and production:** Django admin, Waffle → Flags. A Flag can be turned on for staff, specific users or
   a percentage of users first.
+- **Build before you turn the flag on.** With the flag on, `courses/index.html` links the `paragon-styles` bundle,
+  so `webpack-stats.json` must contain it. If the static files were built before this code was pulled (or not
+  built at all), the course list page fails with a webpack-loader "bundle not found" error until you run
+  `make static` (or `npm run build`) and restart. With the flag off, the page doesn't need that bundle.
 
 ## 13. Preserving the legacy fallback
 
@@ -329,7 +333,7 @@ Rules:
   legacy `.tooltip` elements, so select Paragon's with `.tooltip[class*="bs-tooltip-"]`.
 - Run axe-core on new widgets (`axe.a11yCheck`).
 - Python view tests use `waffle.testutils.override_flag`.
-- The build helpers have their own checks: `npm run check:paragon`.
+- The build helpers have their own checks: `npm run check:paragon`. `make validate_js` (so CI) runs it.
 - Commands: `npm test`, `npm run lint`, `npm run check:paragon`, `make test_python`, `make quality`,
   `make validate_translations`.
 - The spec "Data Table View should format display of a date" assumes the machine's timezone is UTC. It fails on a
@@ -405,8 +409,11 @@ course list with the flag on.
 2. `npm run build`. If it fails with "from UglifyJs" or "Module parse failed", run
    `node scripts/find-non-es5-modules.js`, add the packages it lists to `webpack/paragon/transpiled-packages.js`,
    and build again.
-3. If the build reports selectors that would apply outside `.paragon-styles`, extend
-   `webpack/paragon/scope-paragon-css.js` and add a case to `webpack/paragon/check-paragon-build.js`.
+3. If the build reports selectors that would apply outside `.paragon-styles`, or a global `:root` rule with
+   declarations other than `--*` custom properties, extend `webpack/paragon/scope-paragon-css.js` and add a case
+   to `webpack/paragon/check-paragon-build.js`. If `npm run check:paragon` reports new `@keyframes` names
+   (keyframe names are global), check them against the `@keyframes` in Insights' CSS, then update the list in
+   that script.
 4. Run `npm run check:paragon` and `npm test`. Check that the breakpoints in `breakpoints.js` still match
    Paragon's `styles/scss/core/_exports.module.scss`, and that the `--pgn-*` variables in `insights-theme.css`
    still exist.

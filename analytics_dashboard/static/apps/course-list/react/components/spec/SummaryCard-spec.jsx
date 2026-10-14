@@ -76,6 +76,14 @@ describe('SummaryCard', () => {
     expect(element.querySelector('.h4').textContent).toBe(card.label);
   });
 
+  it('gives screen readers the description without opening the tooltip, like the legacy card', () => {
+    renderCard({ value: card.cases[0].value });
+
+    const hidden = element.querySelector('.sr-only');
+    expect(hidden.textContent).toBe(card.tooltip);
+    expect(tooltips().length).toBe(0);
+  });
+
   it('has a help button that screen readers can name', () => {
     renderCard({ value: card.cases[0].value });
 
