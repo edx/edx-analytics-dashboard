@@ -88,6 +88,8 @@ describe('WidgetErrorBoundary with mountReact', () => {
       expect(element.firstElementChild.className).toBe('summary-point text-center');
       expect(element.className).toBe('col col-12');
       expect(element.textContent).not.toContain('render failed');
+      expect(element.hasAttribute('data-react-rendered')).toBe(false);
+      expect(element.getAttribute('data-react-fallback')).toBe('test-widget');
     }, done);
   });
 
@@ -131,6 +133,7 @@ describe('WidgetErrorBoundary with mountReact', () => {
     });
     const lastRenderedHtml = element.innerHTML;
     expect(element.textContent).toBe('B');
+    expect(element.getAttribute('data-react-rendered')).toBe('test-widget');
 
     act(() => {
       store.dispatch({ type: 'set', value: 'fail' });
@@ -140,6 +143,8 @@ describe('WidgetErrorBoundary with mountReact', () => {
       expect(element.innerHTML).toBe(lastRenderedHtml);
       expect(element.textContent).toBe('B');
       expect(element.children.length).toBe(1);
+      expect(element.hasAttribute('data-react-rendered')).toBe(false);
+      expect(element.getAttribute('data-react-fallback')).toBe('test-widget');
       expect(rum.addError.calls.argsFor(0)[1]['insights.react.recovery']).toBe('last_rendered');
       expect(rum.addAction).toHaveBeenCalledWith(
         'insights_react_fallback_activated',

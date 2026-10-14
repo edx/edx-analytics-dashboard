@@ -37,6 +37,7 @@ analytics_dashboard/static/apps/
 │   ├── mount-react.jsx            mounts a component into an existing element; restores HTML on failure
 │   ├── widget-error-boundary.jsx  catches render errors and reports the last on-screen HTML
 │   ├── monitoring.js              minimal Datadog RUM reporting (imports nothing)
+│   ├── react-debug.js             widget markers and the ?react_debug=1 outline (imports nothing)
 │   └── spec/
 └── course-list/
     ├── app/
@@ -133,12 +134,31 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
 
 - **Elements rendered by Django:** in the template, add `data-react-widget="<name>"` to the existing element
   only when the flag is on (`{% if enable_react_course_list %}`). Then mount from `react/index.js` with
-  `mountReact(element, Widget, { store })`. React manages only that element's children; its classes and
-  attributes stay unchanged.
+  `mountReact(element, Widget, { store })`. React manages only that element's children. Its classes and
+  attributes stay unchanged, apart from the markers below.
 - **Widgets inside the Backbone app:** mount into a Marionette region through a region adapter (planned, not in
   the code yet).
 - Mount one widget per element.
 - Always keep the server-rendered or Backbone version in the element. It is the fallback.
+
+### Seeing which parts are React
+
+`mountReact` marks every mount element automatically; widgets need no code for this:
+
+- `data-react-rendered="<widget>"` after the first successful render;
+- `data-react-fallback="<widget>"` when the server-rendered HTML is shown instead (render failure, or the React
+  chunk failed to load or start).
+
+The markers are invisible. Check them in DevTools → Elements.
+
+**Debug outline.** Open any page once with `?react_debug=1`, for example `/courses/?react_debug=1`. This browser
+remembers the setting in `localStorage`, and from then on:
+
+- React widgets get a blue dashed outline labelled "React: <widget>";
+- widgets showing the fallback get a red dashed outline labelled "Fallback: <widget>".
+
+`?react_debug=0` turns it off. It affects only your browser, never moves anything (it uses `outline`), and
+sends nothing anywhere. `components/react/react-debug.js` implements it.
 
 ## 10. Fallback behavior
 
@@ -213,7 +233,8 @@ Rules:
 - With the flag off, the page HTML must stay unchanged. Add a Python view test for the flag-off and flag-on
   output, as `courses/tests/test_views/test_course_summaries.py` does.
 - Never import React, Redux or anything under `course-list/react/` from legacy code. The only exceptions are
-  `react-loader.js`'s dynamic `import()` and its import of `components/react/monitoring.js`.
+  `react-loader.js`'s dynamic `import()` and its imports of `components/react/monitoring.js` and
+  `components/react/react-debug.js`, which import nothing.
 - **Bundle check.** Build with a stats report and list each chunk's modules:
 
   ```bash

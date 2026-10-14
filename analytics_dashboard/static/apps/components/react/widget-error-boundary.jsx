@@ -24,6 +24,7 @@ export default class WidgetErrorBoundary extends Component {
       this.props.onFallback(null, this.state.error);
     } else {
       this.hasRendered = true;
+      this.props.onRendered();
     }
   }
 
@@ -51,4 +52,10 @@ WidgetErrorBoundary.propTypes = {
   children: PropTypes.node.isRequired,
   container: PropTypes.instanceOf(Element).isRequired,
   onFallback: PropTypes.func.isRequired,
+  // Called once, after the first successful render.
+  onRendered: PropTypes.func,
+};
+
+WidgetErrorBoundary.defaultProps = {
+  onRendered: () => {},
 };

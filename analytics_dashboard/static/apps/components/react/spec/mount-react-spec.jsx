@@ -57,6 +57,30 @@ describe('mountReact', () => {
     expect(element.innerHTML).toBe('');
   });
 
+  it('marks the element with the widget name after a successful render, and unmarks it on unmount', () => {
+    element.setAttribute('data-react-widget', 'greeting');
+    let unmount;
+    act(() => {
+      unmount = mountReact(element, Greeting, { props: { name: 'Insights' } });
+    });
+
+    expect(element.getAttribute('data-react-rendered')).toBe('greeting');
+
+    act(() => unmount());
+
+    expect(element.hasAttribute('data-react-rendered')).toBe(false);
+  });
+
+  it('uses the name option for the marker when given', () => {
+    let unmount;
+    act(() => {
+      unmount = mountReact(element, Greeting, { props: { name: 'Insights' }, name: 'named-widget' });
+    });
+
+    expect(element.getAttribute('data-react-rendered')).toBe('named-widget');
+    act(() => unmount());
+  });
+
   it('throws when there is no element to render into', () => {
     expect(() => mountReact(null, Greeting)).toThrowError(/no element to render Greeting into/);
   });

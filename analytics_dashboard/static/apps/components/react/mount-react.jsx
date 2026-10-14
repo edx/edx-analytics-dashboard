@@ -5,6 +5,7 @@ import $ from 'jquery';
 
 import WidgetErrorBoundary from 'components/react/widget-error-boundary';
 import { reportFallbackActivated, reportWidgetFailure } from 'components/react/monitoring';
+import { enableReactDebugIfRequested, markFallback, markRendered } from 'components/react/react-debug';
 
 /**
  * Renders a React component into an existing element and returns a function that unmounts it.
@@ -14,6 +15,9 @@ import { reportFallbackActivated, reportWidgetFailure } from 'components/react/m
  * HTML that was on screen just before. That is the server-rendered HTML if React never rendered
  * successfully, otherwise the last successful React output. The HTML is written directly into the element
  * (no wrapper element) and its Bootstrap tooltips are re-activated. Nothing about the error is shown to users.
+ *
+ * The element gets data-react-rendered="<widget>" after the first successful render, or
+ * data-react-fallback="<widget>" when the fallback is shown. ?react_debug=1 outlines them (react-debug.js).
  *
  * @param {Element} element - Element to render into. Its existing content is the initial fallback.
  * @param {Function} Component - React component to render.
@@ -29,8 +33,15 @@ export default function mountReact(element, Component, { store, props = {}, name
   }
   const widget = name || element.getAttribute('data-react-widget') || 'unknown';
   const serverHtml = element.innerHTML;
+  enableReactDebugIfRequested();
   const root = createRoot(element);
   let mounted = true;
+
+  const onRendered = () => {
+    if (mounted) {
+      markRendered(element, widget);
+    }
+  };
 
   const restore = (lastRenderedHtml, error) => {
     const fallback = lastRenderedHtml ? 'last_rendered' : 'server_html';
@@ -41,6 +52,7 @@ export default function mountReact(element, Component, { store, props = {}, name
       }
       mounted = false;
       root.unmount();
+      markFallback(element, widget);
       // eslint-disable-next-line no-param-reassign
       element.innerHTML = lastRenderedHtml || serverHtml;
       if ($.fn.tooltip) {
@@ -55,7 +67,7 @@ export default function mountReact(element, Component, { store, props = {}, name
 
   const tree = <Component {...props} />;
   root.render(
-    <WidgetErrorBoundary container={element} onFallback={restore}>
+    <WidgetErrorBoundary container={element} onFallback={restore} onRendered={onRendered}>
       {store ? <Provider store={store}>{tree}</Provider> : tree}
     </WidgetErrorBoundary>,
   );
@@ -64,6 +76,7 @@ export default function mountReact(element, Component, { store, props = {}, name
     if (mounted) {
       mounted = false;
       root.unmount();
+      element.removeAttribute('data-react-rendered');
     }
   };
 }

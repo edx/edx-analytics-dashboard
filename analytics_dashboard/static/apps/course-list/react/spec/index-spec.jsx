@@ -97,6 +97,8 @@ describe('startReactWidgets', () => {
     expect(wrapper.textContent).toBe(serverText);
     expect(number().getAttribute('title')).toBe(first.title);
     expect($(wrapper).find('.has-tooltip').data('bs.tooltip')).toBeDefined();
+    expect(wrapper.getAttribute('data-react-rendered')).toBe('total-enrollment');
+    expect(wrapper.hasAttribute('data-react-fallback')).toBe(false);
     expect(rum.addError).not.toHaveBeenCalled();
     expect(rum.addAction).not.toHaveBeenCalled();
   });
@@ -145,6 +147,8 @@ describe('startReactWidgets', () => {
     afterRestore(() => {
       expect(wrapper.innerHTML).toBe(serverHtml);
       expect(wrapper.className).toBe(WRAPPER_CLASS);
+      expect(wrapper.hasAttribute('data-react-rendered')).toBe(false);
+      expect(wrapper.getAttribute('data-react-fallback')).toBe('total-enrollment');
     }, done);
   });
 

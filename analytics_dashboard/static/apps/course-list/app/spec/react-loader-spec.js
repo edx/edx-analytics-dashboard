@@ -41,6 +41,7 @@ describe('loadReactWidgets', () => {
       loadReactWidgets(new CourseModel(attributes), importWidgets).then((started) => {
         expect(started).toBe(false);
         expect(importWidgets).not.toHaveBeenCalled();
+        expect(page.querySelector('[data-react-fallback]')).toBeNull();
         expect(rum.addError).not.toHaveBeenCalled();
         expect(rum.addAction).not.toHaveBeenCalled();
         done();
@@ -78,11 +79,14 @@ describe('loadReactWidgets', () => {
     },
   ].forEach(({ failureType, description, importWidgets }) => {
     it(`keeps the server markup and reports once when ${description}`, (done) => {
-      const serverMarkup = page.innerHTML;
+      const widget = page.querySelector('[data-react-widget]');
+      const serverMarkup = widget.innerHTML;
 
       loadReactWidgets(flagOn(), importWidgets).then((started) => {
         expect(started).toBe(false);
-        expect(page.innerHTML).toBe(serverMarkup);
+        expect(widget.innerHTML).toBe(serverMarkup);
+        // Marked for the debug outline (?react_debug=1); invisible otherwise.
+        expect(widget.getAttribute('data-react-fallback')).toBe('total-enrollment');
 
         expect(rum.addError).toHaveBeenCalledTimes(1);
         const context = rum.addError.calls.argsFor(0)[1];
