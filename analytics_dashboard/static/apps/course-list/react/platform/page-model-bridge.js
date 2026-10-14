@@ -10,9 +10,14 @@ const METRIC_KEYS = {
   masters_enrollment: 'mastersEnrollment',
 };
 
+const isObject = value => typeof value === 'object' && value !== null;
+// Missing (undefined or null) is fine; anything else that isn't an object is malformed.
+const isMalformed = value => value !== undefined && value !== null && !isObject(value);
+
 export function toSummaryPayload(summary, summaryText) {
-  const values = summary || {};
-  const texts = summaryText || {};
+  // The in operator throws on strings and numbers, so only objects are read.
+  const values = isObject(summary) ? summary : {};
+  const texts = isObject(summaryText) ? summaryText : {};
   const metrics = {};
   const text = {};
   Object.keys(METRIC_KEYS).forEach((serverKey) => {
@@ -34,10 +39,10 @@ export function toSummaryPayload(summary, summaryText) {
 export default function connectPageModelToStore(courseModel, store) {
   const events = 'change:summary change:summary_text';
   const sync = () => {
-    const { accepted, rejectedKeys } = acceptValidSummary(
-      toSummaryPayload(courseModel.get('summary'), courseModel.get('summary_text')),
-    );
-    if (rejectedKeys.length) {
+    const summary = courseModel.get('summary');
+    const summaryText = courseModel.get('summary_text');
+    const { accepted, rejectedKeys } = acceptValidSummary(toSummaryPayload(summary, summaryText));
+    if (rejectedKeys.length || isMalformed(summary) || isMalformed(summaryText)) {
       reportWidgetFailure({ widget: 'summary', failureType: 'invalid_update', recovery: 'kept_last_value' });
     }
     store.dispatch(summaryLoaded(accepted));

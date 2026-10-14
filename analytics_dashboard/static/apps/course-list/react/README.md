@@ -24,7 +24,8 @@ Libraries, pinned exactly in `package.json`: `react` and `react-dom` 18.3.1, `@r
 
 **React 17 compatibility.** Apart from `createRoot` in `mount-react.jsx`, use only React APIs that also exist in
 React 17. Don't use `useId`, `useTransition`, `useDeferredValue` or `useSyncExternalStore`. This keeps a
-downgrade to React 17 possible without component changes.
+downgrade to React 17 possible without component changes. A downgrade would change `mount-react.jsx` and the
+specs, which import `act` from `react` (React 18.3 or later) and `createRoot` from `react-dom/client`.
 
 **Browsers.** React 18 doesn't support Internet Explorer 11. With the flag on, IE11 isn't supported on this
 page.
@@ -140,6 +141,8 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
   the code yet).
 - Mount one widget per element.
 - Always keep the server-rendered or Backbone version in the element. It is the fallback.
+- The function `mountReact` returns unmounts the widget and leaves the element empty. It exists for tests. In
+  production code, don't call it: the fallback restores the server HTML when a widget fails.
 
 ### Seeing which parts are React
 

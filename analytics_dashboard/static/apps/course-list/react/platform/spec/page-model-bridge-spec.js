@@ -81,6 +81,26 @@ describe('connectPageModelToStore', () => {
     expect(context['insights.react.recovery']).toBe('kept_last_value');
   });
 
+  it('keeps the previous value and reports when the summary is not an object', () => {
+    connectPageModelToStore(courseModel, store);
+
+    expect(() => {
+      courseModel.set('summary', 'not an object');
+      courseModel.set('summary_text', 42);
+    }).not.toThrow();
+
+    expect(selectTotalEnrollment(store.getState())).toBe(3378149);
+    expect(selectSummaryText(store.getState(), 'totalEnrollment')).toEqual(summaryText.total_enrollment);
+    expect(rum.addError).toHaveBeenCalledTimes(1);
+    expect(rum.addError.calls.argsFor(0)[1]['insights.react.failure_type']).toBe('invalid_update');
+  });
+
+  it('does not throw or report when the page has no summary at all', () => {
+    expect(() => connectPageModelToStore(new CourseModel({}), store)).not.toThrow();
+
+    expect(rum.addError).not.toHaveBeenCalled();
+  });
+
   it('stops updating the store once disconnected', () => {
     const disconnect = connectPageModelToStore(courseModel, store);
     disconnect();
