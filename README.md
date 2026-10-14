@@ -44,12 +44,12 @@
 | analytics\_dashboard/courses/urls.py                                       |       23 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/courses/utils.py                                      |       42 |        0 |        6 |        0 |    100% |           |
 | analytics\_dashboard/courses/views/\_\_init\_\_.py                         |      394 |       42 |       92 |       17 |     86% |58, 60-\>64, 65, 97-98, 163-\>174, 170-172, 178-217, 251, 266, 323-326, 481-\>485, 592, 624-\>636, 695, 708-\>764, 730, 779-\>811, 804, 815-\>826, 826-\>834, 857 |
-| analytics\_dashboard/courses/views/course\_summaries.py                    |       63 |        0 |       12 |        1 |     99% |   64-\>69 |
+| analytics\_dashboard/courses/views/course\_summaries.py                    |       71 |        0 |       14 |        0 |    100% |           |
 | analytics\_dashboard/courses/views/csv.py                                  |       73 |        4 |        0 |        0 |     95% |109-110, 117-118 |
 | analytics\_dashboard/courses/views/engagement.py                           |      101 |        0 |        2 |        0 |    100% |           |
 | analytics\_dashboard/courses/views/enrollment.py                           |      136 |        0 |        2 |        0 |    100% |           |
 | analytics\_dashboard/courses/views/performance.py                          |      217 |        4 |       24 |        4 |     97% |67-\>79, 257, 445, 483-484 |
-| analytics\_dashboard/courses/waffle.py                                     |        4 |        0 |        0 |        0 |    100% |           |
+| analytics\_dashboard/courses/waffle.py                                     |        8 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/formats/\_\_init\_\_.py                               |        0 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/formats/en/\_\_init\_\_.py                            |        0 |        0 |        0 |        0 |    100% |           |
 | analytics\_dashboard/formats/en/formats.py                                 |        2 |        2 |        0 |        0 |      0% |       1-2 |
@@ -72,7 +72,7 @@
 | common/tests/\_\_init\_\_.py                                               |        0 |        0 |        0 |        0 |    100% |           |
 | common/tests/course\_fixtures.py                                           |       68 |        1 |        4 |        0 |     99% |        20 |
 | common/tests/factories.py                                                  |       73 |        0 |        6 |        0 |    100% |           |
-| **TOTAL**                                                                  | **3829** |  **260** |  **770** |   **87** | **92%** |           |
+| **TOTAL**                                                                  | **3841** |  **260** |  **772** |   **86** | **92%** |           |
 
 
 ## Setup coverage badge
