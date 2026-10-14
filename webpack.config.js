@@ -3,8 +3,7 @@
 const Merge = require('webpack-merge');
 const path = require('path');
 const commonConfig = require('./webpack.common.config.js');
-const { paragonImportsPlugin, transpiledPackagesRule } = require('./webpack/paragon/babel');
-const { PARAGON_CSS_PATTERN } = require('./webpack/paragon/css');
+const { PARAGON_CSS_PATTERN, paragonImportsPlugin, transpiledPackagesRule } = require('./webpack/paragon');
 
 const djangoDevServer = process.env.DJANGO_DEV_SERVER || 'http://localhost:8110';
 

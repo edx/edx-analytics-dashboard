@@ -1,11 +1,9 @@
 import PropTypes from 'prop-types';
-import { useIntl } from 'react-intl';
 import {
   Card, Icon, IconButton, OverlayTrigger, Tooltip,
 } from '@openedx/paragon';
 import { InfoOutline } from '@openedx/paragon/icons';
 
-import messages from 'course-list/react/components/messages';
 import { formatSummaryNumber } from 'course-list/react/platform/format';
 
 /**
@@ -16,7 +14,6 @@ import { formatSummaryNumber } from 'course-list/react/platform/format';
 export default function SummaryCard({
   value, label, tooltip, tooltipId, onTooltipShown,
 }) {
-  const intl = useIntl();
   const { full, display } = formatSummaryNumber(value);
 
   return (
@@ -36,7 +33,7 @@ export default function SummaryCard({
             <IconButton
               src={InfoOutline}
               iconAs={Icon}
-              alt={intl.formatMessage(messages.helpLabel, { label })}
+              alt={`${label} help`}
               size="sm"
             />
           </OverlayTrigger>

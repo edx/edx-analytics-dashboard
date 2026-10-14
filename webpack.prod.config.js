@@ -15,8 +15,7 @@ const extractParagonCSS = new ExtractTextPlugin('[name]-[contenthash].css');
 // Redux Toolkit use it to bundle their production builds.
 process.env.NODE_ENV = 'production';
 const commonConfig = require('./webpack.common.config.js');
-const { paragonImportsPlugin, transpiledPackagesRule } = require('./webpack/paragon/babel');
-const { PARAGON_CSS_PATTERN } = require('./webpack/paragon/css');
+const { PARAGON_CSS_PATTERN, paragonImportsPlugin, transpiledPackagesRule } = require('./webpack/paragon');
 
 module.exports = Merge.smart(commonConfig, {
   module: {

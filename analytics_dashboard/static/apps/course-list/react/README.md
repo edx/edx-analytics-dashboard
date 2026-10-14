@@ -44,7 +44,6 @@ analytics_dashboard/static/apps/
 │   ├── react-debug.js             widget markers and the ?react_debug=1 outline (imports nothing)
 │   ├── paragon/                   what Paragon needs on an Insights page (section 17)
 │   │   ├── ParagonProvider.jsx    react-intl provider (English) and the .paragon-styles scope
-│   │   ├── portal-roots.js        creates the elements Paragon renders modals and toasts into
 │   │   ├── paragon-styles.js      webpack entry for Paragon's CSS
 │   │   ├── insights-theme.css     Paragon theme variables set to Insights' look
 │   │   └── breakpoints.js         replaces an SCSS file Paragon imports for its breakpoints
@@ -127,15 +126,14 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
 
 Insights isn't internationalized, so React widgets show English.
 
-- **New text in a component:** put it in a `messages.js` next to the component with `defineMessages` from
-  `react-intl` (English `defaultMessage`, a `description` for translators), and show it with
-  `useIntl().formatMessage`. This is the MFE convention, so the component copies over unchanged.
-  `components/messages.js` is an example. Nothing extracts or translates these messages today.
+- **Text in a component** is a plain English string. Nothing extracts or translates it. When the course list
+  moves to the MFE, wrap its strings in `react-intl` messages there.
 - **Strings the legacy widget already shows from a Django template:** pass them from the view in the page data,
   with the same message IDs, so both versions show identical text while the flag exists. `summary_text` in
   `CourseIndex.get_context_data` does this for the card labels and tooltips.
-- `ParagonProvider` fixes the `react-intl` language to English. Paragon's own built-in text ("Close", ...) is
-  English too.
+- Paragon requires `react-intl` (many of its components use it for their built-in text, such as "Close" or
+  "Search"), so `ParagonProvider` supplies it, fixed to English. That is a technical requirement of Paragon, not
+  internationalization of Insights.
 
 ## 7. Number formatting
 
@@ -343,8 +341,8 @@ Rules:
 
 1. Add a mount point behind the flag in the Django template, or a Marionette region.
 2. Add a slice, selectors, validation and the bridge mapping.
-3. Add a presentational component (Paragon, with English `messages.js` for new text) and a connected widget. The
-   widget throws when it has no valid data.
+3. Add a presentational component (Paragon, with plain English text) and a connected widget. The widget throws
+   when it has no valid data.
 4. Handle number formatting and tracking through the `platform/` adapters.
 5. Don't write CSS; use Paragon components, utility classes and the theme (section 3).
 6. Mount it in `react/index.js` with `wrapper: ParagonProvider`.
@@ -372,10 +370,11 @@ The bridge already maps all five summary numbers into the store.
 The course list is expected to move to a micro-frontend (MFE) later.
 
 - **Unchanged:** `react/state/`, including validation, and other pure helpers.
-- **Unchanged, because they are written like MFE code:** `react/components/` and `react/widgets/` (Paragon,
-  `react-intl` messages). Only their imports of `react/platform/` adapters are replaced.
+- **Unchanged, because they are written like MFE code:** `react/components/` and `react/widgets/` (Paragon).
+  Only their imports of `react/platform/` adapters are replaced, and their text is wrapped in `react-intl`
+  messages.
 - **Not carried over:** `react/platform/` (page-model bridge, formatting, tracking), `components/react/` (mounting,
-  error boundary, RUM adapter, `ParagonProvider`, portal roots, debug markers), `insights-theme.css`,
+  error boundary, RUM adapter, `ParagonProvider`, debug markers), `insights-theme.css`,
   `react-loader.js`, the waffle flag, the Django mount points, `webpack/paragon/`, and the Karma tests. In the MFE,
   frontend-platform provides the providers, and its theme and monitoring apply.
 
@@ -388,7 +387,7 @@ widget.
 
 | Problem | What the build does |
 |---|---|
-| Paragon and 10 of its dependencies ship ES2015+ code, which UglifyJS rejects | Transpiles exactly those packages (`webpack/paragon/transpiled-packages.js`) |
+| Paragon and 10 of its dependencies ship ES2015+ code, which UglifyJS rejects | Transpiles exactly those packages (the list in `webpack/paragon/index.js`) |
 | Paragon's JavaScript imports an SCSS file for its breakpoints | Replaces it with `components/react/paragon/breakpoints.js` |
 | Webpack 3 ignores `sideEffects: false`, so one import bundles all 2,319 icons and every component | A Babel plugin rewrites `import { Card } from '@openedx/paragon'` and icon imports into per-file imports. Source code keeps the MFE style |
 | Paragon's Bootstrap 4 CSS would restyle the Bootstrap 3 page | Scopes it under `.paragon-styles` (`webpack/paragon/scope-paragon-css.js`). **The build fails if a rule would apply outside the scope.** Only the `:root` variable rules stay global |
@@ -397,8 +396,13 @@ widget.
 | Browsers ignore Paragon's `@media (--pgn-...)` custom media queries | Resolves them from Paragon's own definitions |
 
 At run time: `ParagonProvider` wraps each Paragon widget in `react-intl`'s provider (English) and an element with
-the class `paragon-styles`; `ensureParagonRoots` creates the elements Paragon renders modals, toasts and sheets
-into, with the same class; and the template links the `paragon-styles` CSS file only when the flag is on.
+the class `paragon-styles`, and the template links the `paragon-styles` CSS file only when the flag is on.
+
+**Before you use a Paragon modal, toast or sheet:** Paragon draws these into elements it creates at the end of
+`<body>` (`paragon-portal-root`, `toast-root`, `sheet-root`), which are outside `.paragon-styles`, so they would be
+unstyled. Create those three elements once, before the first one is shown, each with the class `paragon-styles`
+(for example `document.createElement('div')`, set its `id`, add the class, append it to `document.body`).
+Paragon reuses an element that already exists. Tooltips, popovers and dropdown menus need none of this.
 
 Cost: about 175 KB of gzipped JavaScript in the React chunk and 78 KB of gzipped CSS, downloaded only on the
 course list with the flag on.
@@ -406,9 +410,9 @@ course list with the flag on.
 ## 18. Upgrading Paragon
 
 1. Change the exact version in `package.json`, then `npm install`.
-2. `npm run build`. If it fails with "from UglifyJs" or "Module parse failed", run
-   `node scripts/find-non-es5-modules.js`, add the packages it lists to `webpack/paragon/transpiled-packages.js`,
-   and build again.
+2. `npm run build`. If it fails with "from UglifyJs" or "Module parse failed", the error names a file in
+   `node_modules`. Add that package (not only Paragon itself) to the list in `webpack/paragon/index.js`, and build
+   again. Repeat until the build passes; each upgrade usually needs zero to two additions.
 3. If the build reports selectors that would apply outside `.paragon-styles`, or a global `:root` rule with
    declarations other than `--*` custom properties, extend `webpack/paragon/scope-paragon-css.js` and add a case
    to `webpack/paragon/check-paragon-build.js`. If `npm run check:paragon` reports new `@keyframes` names

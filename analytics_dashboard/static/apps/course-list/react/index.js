@@ -1,6 +1,5 @@
 import mountReact from 'components/react/mount-react';
 import ParagonProvider from 'components/react/paragon/ParagonProvider';
-import ensureParagonRoots from 'components/react/paragon/portal-roots';
 import createCourseListStore from 'course-list/react/state/store';
 import connectPageModelToStore from 'course-list/react/platform/page-model-bridge';
 import createTooltipTracker from 'course-list/react/platform/tracking';
@@ -16,7 +15,6 @@ import SummaryMetricWidget from 'course-list/react/widgets/SummaryMetricWidget';
 export default function startReactWidgets({ courseModel, trackingModel }) {
   const store = createCourseListStore();
   connectPageModelToStore(courseModel, store);
-  ensureParagonRoots();
   const onTooltipShown = createTooltipTracker(trackingModel);
 
   // Array.prototype.forEach: NodeList.forEach isn't available in every browser Insights runs tests in.

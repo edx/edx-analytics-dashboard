@@ -8,9 +8,8 @@ const path = require('path');
 const babel = require('@babel/core');
 const postcss = require('postcss');
 
-const { PARAGON_CSS_PATTERN } = require('./css');
+const { PARAGON_CSS_PATTERN, TRANSPILED_PACKAGES_PATTERN } = require('./index');
 const { scopeParagonCss, verifyScoped } = require('./scope-paragon-css');
-const { TRANSPILED_PACKAGES_PATTERN } = require('./transpiled-packages');
 
 const checks = [];
 const check = (name, fn) => checks.push({ name, fn });

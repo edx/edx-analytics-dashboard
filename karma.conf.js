@@ -3,7 +3,7 @@
 
 const path = require('path');
 const webpack = require('webpack');
-const { paragonImportsPlugin, transpiledPackagesRule } = require('./webpack/paragon/babel');
+const { paragonImportsPlugin, transpiledPackagesRule } = require('./webpack/paragon');
 
 module.exports = function (config) {
   'use strict';

@@ -4,7 +4,6 @@ import Backbone from 'backbone';
 
 import CourseModel from 'models/course-model';
 import { resetMonitoringForTests } from 'components/react/monitoring';
-import { ROOT_IDS } from 'components/react/paragon/portal-roots';
 import ignoreExpectedErrors from 'components/react/spec/ignore-expected-errors';
 import startReactWidgets from 'course-list/react/index';
 
@@ -71,14 +70,6 @@ describe('startReactWidgets', () => {
       tooltip.parentNode.removeChild(tooltip);
     });
   };
-  const removeRoots = () => {
-    ROOT_IDS.forEach((id) => {
-      const root = document.getElementById(id);
-      if (root) {
-        root.parentNode.removeChild(root);
-      }
-    });
-  };
 
   beforeEach(() => {
     restoreOnError = ignoreExpectedErrors(['Summary metric data is not available.']);
@@ -98,7 +89,6 @@ describe('startReactWidgets', () => {
   afterEach(() => {
     window.DD_RUM = originalRum;
     restoreOnError();
-    removeRoots();
     removeParagonTooltips();
   });
 
@@ -121,14 +111,6 @@ describe('startReactWidgets', () => {
     expect(wrapper.hasAttribute('data-react-fallback')).toBe(false);
     expect(rum.addError).not.toHaveBeenCalled();
     expect(rum.addAction).not.toHaveBeenCalled();
-  });
-
-  it('creates Paragon\'s portal roots in the body', () => {
-    start(new CourseModel({ summary: summary(first.value), summary_text: summaryText }));
-
-    ROOT_IDS.forEach((id) => {
-      expect(document.getElementById(id).classList.contains('paragon-styles')).toBe(true);
-    });
   });
 
   it('updates the card when the page model gets a new valid value', () => {

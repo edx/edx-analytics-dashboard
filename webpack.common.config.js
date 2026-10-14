@@ -4,7 +4,7 @@ const path = require('path');
 const webpack = require('webpack');
 const BundleTracker = require('webpack-bundle-tracker');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-const { PARAGON_CSS_PATTERN, PARAGON_CSS_LOADER } = require('./webpack/paragon/css');
+const { PARAGON_CSS_PATTERN, PARAGON_CSS_LOADER } = require('./webpack/paragon');
 
 module.exports = {
   context: __dirname,
