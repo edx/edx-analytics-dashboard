@@ -2,8 +2,8 @@ import createCourseListStore from 'course-list/react/state/store';
 import summaryReducer, {
   acceptValidSummary,
   initialState,
+  selectSummaryMetric,
   selectSummaryText,
-  selectTotalEnrollment,
   summaryLoaded,
 } from 'course-list/react/state/summary-slice';
 
@@ -18,7 +18,7 @@ describe('summary slice', () => {
   it('returns undefined from the selectors before anything is loaded', () => {
     const state = createCourseListStore().getState();
 
-    expect(selectTotalEnrollment(state)).toBeUndefined();
+    expect(selectSummaryMetric(state, 'totalEnrollment')).toBeUndefined();
     expect(selectSummaryText(state, 'totalEnrollment')).toBeUndefined();
   });
 
@@ -29,7 +29,7 @@ describe('summary slice', () => {
     const state = store.getState();
 
     expect(state.summary.metrics).toEqual({ totalEnrollment: 20, currentEnrollment: 5 });
-    expect(selectTotalEnrollment(state)).toBe(20);
+    expect(selectSummaryMetric(state, 'totalEnrollment')).toBe(20);
     expect(selectSummaryText(state, 'totalEnrollment')).toEqual(text);
   });
 

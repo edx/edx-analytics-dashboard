@@ -159,7 +159,11 @@ class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, T
                 'tooltip': TOTAL_ENROLLMENT_CARD['tooltip'],
             },
         })
-        self.assertContains(response, 'data-stat-type="total_enrollment" data-react-widget="total-enrollment">')
+        self.assertContains(
+            response,
+            'data-stat-type="total_enrollment" data-react-widget="total-enrollment" '
+            'data-react-summary-metric="totalEnrollment">',
+        )
         self.assertContains(response, 'paragon-styles')
         # The server-rendered card stays inside the mount point as the fallback.
         self.assertInHTML(

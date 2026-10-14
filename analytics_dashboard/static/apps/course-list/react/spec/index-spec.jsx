@@ -1,8 +1,10 @@
 import { act } from 'react';
 import $ from 'jquery';
+import Backbone from 'backbone';
 
 import CourseModel from 'models/course-model';
 import { resetMonitoringForTests } from 'components/react/monitoring';
+import { ROOT_IDS } from 'components/react/paragon/portal-roots';
 import ignoreExpectedErrors from 'components/react/spec/ignore-expected-errors';
 import startReactWidgets from 'course-list/react/index';
 
@@ -50,20 +52,36 @@ describe('startReactWidgets', () => {
   let rum;
   let restoreOnError;
   let wrapper;
+  let trackingModel;
 
   const setServerPage = (cardHtml) => {
     setFixtures(
-      `<div class="${WRAPPER_CLASS}" data-stat-type="total_enrollment" data-react-widget="total-enrollment">`
-      + `${cardHtml}</div>`,
+      `<div class="${WRAPPER_CLASS}" data-stat-type="total_enrollment" data-react-widget="total-enrollment"`
+      + ` data-react-summary-metric="totalEnrollment">${cardHtml}</div>`,
     );
     wrapper = document.querySelector('[data-react-widget="total-enrollment"]');
     // On the page, load/init-tooltips.js activates the server-rendered tooltips before React mounts.
     $(wrapper).find('.has-tooltip').tooltip();
   };
-  const number = () => wrapper.querySelector('.summary-point-number');
+  const number = () => wrapper.querySelector('.h2');
+  const start = courseModel => act(() => startReactWidgets({ courseModel, trackingModel }));
+  // A shown Paragon tooltip stays in the body when its card isn't unmounted.
+  const removeParagonTooltips = () => {
+    Array.prototype.forEach.call(document.querySelectorAll('.tooltip[class*="bs-tooltip-"]'), (tooltip) => {
+      tooltip.parentNode.removeChild(tooltip);
+    });
+  };
+  const removeRoots = () => {
+    ROOT_IDS.forEach((id) => {
+      const root = document.getElementById(id);
+      if (root) {
+        root.parentNode.removeChild(root);
+      }
+    });
+  };
 
   beforeEach(() => {
-    restoreOnError = ignoreExpectedErrors(['Total enrollment data is not available.']);
+    restoreOnError = ignoreExpectedErrors(['Summary metric data is not available.']);
     resetMonitoringForTests();
     originalRum = window.DD_RUM;
     rum = {
@@ -73,41 +91,49 @@ describe('startReactWidgets', () => {
     window.DD_RUM = rum;
     // React and the monitoring adapter log caught errors to the console in development builds.
     spyOn(console, 'error');
+    trackingModel = new Backbone.Model();
     setServerPage(serverCard(first));
   });
 
   afterEach(() => {
     window.DD_RUM = originalRum;
     restoreOnError();
+    removeRoots();
+    removeParagonTooltips();
   });
 
-  it('replaces the server-rendered card with the React card inside the same wrapper', () => {
+  it('replaces the server-rendered card with the Paragon card inside the same wrapper', () => {
     const courseModel = new CourseModel({ summary: summary(first.value), summary_text: summaryText });
-    const serverText = wrapper.textContent;
-    const serverNumber = number();
+    const serverNumber = wrapper.querySelector('.summary-point-number');
 
-    act(() => {
-      startReactWidgets({ courseModel });
-    });
+    start(courseModel);
 
     expect(wrapper.className).toBe(WRAPPER_CLASS);
     expect(wrapper.getAttribute('data-stat-type')).toBe('total_enrollment');
     expect(wrapper.children.length).toBe(1);
-    expect(number()).not.toBe(serverNumber);
-    expect(wrapper.textContent).toBe(serverText);
+    expect(wrapper.querySelector('.summary-point')).toBeNull();
+    expect(wrapper.contains(serverNumber)).toBe(false);
+    expect(wrapper.querySelector('.paragon-styles .pgn__card')).not.toBeNull();
+    expect(number().textContent).toBe(first.display);
     expect(number().getAttribute('title')).toBe(first.title);
-    expect($(wrapper).find('.has-tooltip').data('bs.tooltip')).toBeDefined();
+    expect(wrapper.querySelector('.h4').textContent).toBe(card.label);
     expect(wrapper.getAttribute('data-react-rendered')).toBe('total-enrollment');
     expect(wrapper.hasAttribute('data-react-fallback')).toBe(false);
     expect(rum.addError).not.toHaveBeenCalled();
     expect(rum.addAction).not.toHaveBeenCalled();
   });
 
+  it('creates Paragon\'s portal roots in the body', () => {
+    start(new CourseModel({ summary: summary(first.value), summary_text: summaryText }));
+
+    ROOT_IDS.forEach((id) => {
+      expect(document.getElementById(id).classList.contains('paragon-styles')).toBe(true);
+    });
+  });
+
   it('updates the card when the page model gets a new valid value', () => {
     const courseModel = new CourseModel({ summary: summary(first.value), summary_text: summaryText });
-    act(() => {
-      startReactWidgets({ courseModel });
-    });
+    start(courseModel);
 
     act(() => {
       courseModel.set('summary', summary(second.value));
@@ -120,9 +146,7 @@ describe('startReactWidgets', () => {
 
   it('keeps the latest valid value when the page model gets an invalid one', () => {
     const courseModel = new CourseModel({ summary: summary(first.value), summary_text: summaryText });
-    act(() => {
-      startReactWidgets({ courseModel });
-    });
+    start(courseModel);
     act(() => {
       courseModel.set('summary', summary(second.value));
     });
@@ -136,13 +160,30 @@ describe('startReactWidgets', () => {
     expect(rum.addError.calls.argsFor(0)[1]['insights.react.failure_type']).toBe('invalid_update');
   });
 
+  it('sends the tooltip analytics event once, when the help tooltip is shown', () => {
+    const events = [];
+    trackingModel.on('segment:track', (...args) => events.push(args));
+    start(new CourseModel({ summary: summary(first.value), summary_text: summaryText }));
+    const show = () => {
+      const event = document.createEvent('Event');
+      event.initEvent('mouseover', true, true);
+      act(() => {
+        wrapper.querySelector('button').dispatchEvent(event);
+      });
+    };
+
+    show();
+    show();
+
+    expect(events).toEqual([
+      ['edx.bi.tooltip.displayed', { title: card.label, category: 'summary', type: 'tooltip' }],
+    ]);
+  });
+
   it('leaves the server-rendered card in place when the page has no summary data', (done) => {
-    const courseModel = new CourseModel({});
     const serverHtml = wrapper.innerHTML;
 
-    act(() => {
-      startReactWidgets({ courseModel });
-    });
+    start(new CourseModel({}));
 
     afterRestore(() => {
       expect(wrapper.innerHTML).toBe(serverHtml);
@@ -152,16 +193,19 @@ describe('startReactWidgets', () => {
     }, done);
   });
 
-  it('does nothing when the page has no Total Enrollment card', () => {
+  it('only mounts the cards the page marks', () => {
     setFixtures('<div class="course-list-app-container"></div>');
-    const courseModel = new CourseModel({ summary: summary(first.value), summary_text: summaryText });
     let store;
 
     act(() => {
-      store = startReactWidgets({ courseModel });
+      store = startReactWidgets({
+        courseModel: new CourseModel({ summary: summary(first.value), summary_text: summaryText }),
+        trackingModel,
+      });
     });
 
     expect(store.getState().summary.metrics.totalEnrollment).toBe(first.value);
+    expect(document.querySelector('.pgn__card')).toBeNull();
     expect(rum.addError).not.toHaveBeenCalled();
   });
 });

@@ -1,41 +1,50 @@
-import { useRef } from 'react';
 import PropTypes from 'prop-types';
+import { useIntl } from 'react-intl';
+import {
+  Card, Icon, IconButton, OverlayTrigger, Tooltip,
+} from '@openedx/paragon';
+import { InfoOutline } from '@openedx/paragon/icons';
 
+import messages from 'course-list/react/components/messages';
 import { formatSummaryNumber } from 'course-list/react/platform/format';
-import useBootstrapTooltip from 'course-list/react/platform/use-bootstrap-tooltip';
 
 /**
- * React version of templates/summary_point.html (value, label and tooltip). It renders the same markup,
- * classes and attributes, so the existing .summary-point styles (sass/_base.scss) and tooltip tracking
- * apply unchanged.
+ * A summary card of the course list: a big number, its label, and a help icon that shows a tooltip.
+ * Built with Paragon, like the micro-frontends. The number is formatted like the legacy card
+ * (templates/summary_point.html): thousands separators, and cut to 13 characters with the full number in the title.
  */
-export default function SummaryCard({ value, label, tooltip }) {
-  const tooltipRef = useRef(null);
-  useBootstrapTooltip(tooltipRef, tooltip);
+export default function SummaryCard({
+  value, label, tooltip, tooltipId, onTooltipShown,
+}) {
+  const intl = useIntl();
   const { full, display } = formatSummaryNumber(value);
 
   return (
-    <div className="summary-point text-center">
-      <div className="summary-point-wrapper">
-        <div className="summary-point-number" title={full}>{display}</div>
-        <div className="summary-point-label">{label}</div>
-        <div className="summary-point-help">
-          <span className="sr-only">{tooltip}</span>
-          <span
-            ref={tooltipRef}
-            data-toggle="tooltip"
-            data-placement="top"
-            title={tooltip}
-            data-track-event="edx.bi.tooltip.displayed"
-            data-track-title={label}
-            data-track-category="summary"
-            data-track-type="tooltip"
-            className="ico ico-tooltip fa fa-info-circle has-tooltip"
-            aria-hidden="true"
-          />
+    <Card className="w-100">
+      {/* Card.Section sets its own text alignment, so the centring goes on it, not on the card. */}
+      <Card.Section className="position-relative text-center py-3">
+        <div className="position-absolute" style={{ top: 0, right: 0 }}>
+          <OverlayTrigger
+            placement="top"
+            onToggle={(shown) => {
+              if (shown) {
+                onTooltipShown(label);
+              }
+            }}
+            overlay={<Tooltip id={tooltipId}>{tooltip}</Tooltip>}
+          >
+            <IconButton
+              src={InfoOutline}
+              iconAs={Icon}
+              alt={intl.formatMessage(messages.helpLabel, { label })}
+              size="sm"
+            />
+          </OverlayTrigger>
         </div>
-      </div>
-    </div>
+        <div className="h2 font-weight-normal mb-1" title={full}>{display}</div>
+        <div className="h4 font-weight-normal mb-0">{label}</div>
+      </Card.Section>
+    </Card>
   );
 }
 
@@ -43,4 +52,8 @@ SummaryCard.propTypes = {
   value: PropTypes.number.isRequired,
   label: PropTypes.string.isRequired,
   tooltip: PropTypes.string.isRequired,
+  // Must be unique on the page: it links the tooltip to its icon for screen readers.
+  tooltipId: PropTypes.string.isRequired,
+  // Called with the label when the tooltip is shown, for analytics.
+  onTooltipShown: PropTypes.func.isRequired,
 };

@@ -29,3 +29,13 @@
   --pgn-color-link-inline-base: #2991C3;
   --pgn-color-link-inline-hover-base: #0075B4;
 }
+
+/*
+ * Insights' Bootstrap 3 CSS gives headings, and the .h1-.h6 classes, a top margin (10px or 20px) that Bootstrap 4
+ * and Paragon don't have. Its rules aren't scoped, so they reach headings inside Paragon widgets for the
+ * properties Paragon doesn't set. This rule is scoped like the rest of the file, so it only applies inside
+ * Paragon widgets. Add more rules like it here when another Bootstrap 3 rule leaks in.
+ */
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  margin-top: 0;
+}
