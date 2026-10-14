@@ -25,9 +25,13 @@ import { enableReactDebugIfRequested, markFallback, markRendered } from 'compone
  * @param {Object} [options.store] - Redux store; when given, the component is wrapped in <Provider>.
  * @param {Object} [options.props] - Props passed to the component.
  * @param {string} [options.name] - Widget name for monitoring; defaults to the element's data-react-widget.
+ * @param {Function} [options.wrapper] - Component that wraps the widget, inside the Redux <Provider>. Paragon
+ *   widgets pass ParagonProvider (components/react/paragon/ParagonProvider).
  * @returns {Function} Call to unmount the component. The element gets its original server-rendered HTML back.
  */
-export default function mountReact(element, Component, { store, props = {}, name } = {}) {
+export default function mountReact(element, Component, {
+  store, props = {}, name, wrapper: Wrapper,
+} = {}) {
   if (!element) {
     throw new Error(`mountReact: no element to render ${Component.name || 'the component'} into.`);
   }
@@ -66,9 +70,10 @@ export default function mountReact(element, Component, { store, props = {}, name
   };
 
   const tree = <Component {...props} />;
+  const wrapped = Wrapper ? <Wrapper>{tree}</Wrapper> : tree;
   root.render(
     <WidgetErrorBoundary container={element} onFallback={restore} onRendered={onRendered}>
-      {store ? <Provider store={store}>{tree}</Provider> : tree}
+      {store ? <Provider store={store}>{wrapped}</Provider> : wrapped}
     </WidgetErrorBoundary>,
   );
 

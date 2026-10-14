@@ -78,6 +78,7 @@
     "eslint-plugin-jsx-a11y": "^6.5.1",
     "fast-sass-loader": "2.0.1",
     "gulp": "4.0.2",
+    "intl": "1.2.5",
     "jasmine": "2.1.1",
     "jasmine-core": "2.99.1",
     "jscs": "1.13.1",

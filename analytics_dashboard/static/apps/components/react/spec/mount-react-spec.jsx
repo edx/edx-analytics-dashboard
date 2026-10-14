@@ -47,6 +47,24 @@ describe('mountReact', () => {
     act(() => unmount());
   });
 
+  it('wraps the component in the wrapper option, inside the Redux Provider', () => {
+    function Wrapper({ children }) {
+      const value = useSelector(state => state.value);
+      return <div className="wrapper" data-value={value}>{children}</div>;
+    }
+    Wrapper.propTypes = { children: PropTypes.node.isRequired };
+    const store = configureStore({ reducer: (state = { value: 'From the store' }) => state });
+    let unmount;
+    act(() => {
+      unmount = mountReact(element, Greeting, { store, wrapper: Wrapper, props: { name: 'Insights' } });
+    });
+
+    const wrapper = element.querySelector('.wrapper');
+    expect(wrapper.getAttribute('data-value')).toBe('From the store');
+    expect(wrapper.querySelector('.greeting').textContent).toBe('Hello Insights');
+    act(() => unmount());
+  });
+
   it('returns a function that unmounts the component', () => {
     let unmount;
     act(() => {
