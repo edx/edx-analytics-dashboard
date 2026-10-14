@@ -119,6 +119,11 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
   Never use `toLocaleString`.
 - For summary cards, use `formatSummaryNumber`. It mirrors the template: `default_if_none:0`, the full
   `intcomma` value in the `title`, and `truncatechars:13` for the visible text.
+- **English only.** The match with the template is exact in English, and the shared fixture and tests check
+  English. Django's `intcomma` and Globalize can differ in other languages (digits, separators, length), so
+  the number can look different when React replaces the server card. This is a known limitation while the
+  flag is staff-only. If it matters, send the server-formatted `title` and `display` in the page data and
+  render those.
 
 ## 8. Tooltips and tracking
 
@@ -141,8 +146,9 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
   the code yet).
 - Mount one widget per element.
 - Always keep the server-rendered or Backbone version in the element. It is the fallback.
-- The function `mountReact` returns unmounts the widget and leaves the element empty. It exists for tests. In
-  production code, don't call it: the fallback restores the server HTML when a widget fails.
+- The function `mountReact` returns unmounts the widget and puts the original server-rendered HTML back into
+  the element, with its tooltips re-activated. A failing widget does the same by itself (see "Fallback
+  behavior"), so production code rarely needs to call it.
 
 ### Seeing which parts are React
 

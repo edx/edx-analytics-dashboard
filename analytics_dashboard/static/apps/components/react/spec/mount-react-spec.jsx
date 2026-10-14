@@ -54,7 +54,7 @@ describe('mountReact', () => {
     });
     act(() => unmount());
 
-    expect(element.innerHTML).toBe('');
+    expect(element.innerHTML).toBe('<p>Server-rendered content</p>');
   });
 
   it('marks the element with the widget name after a successful render, and unmarks it on unmount', () => {

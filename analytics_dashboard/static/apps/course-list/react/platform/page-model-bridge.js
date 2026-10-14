@@ -43,7 +43,14 @@ export default function connectPageModelToStore(courseModel, store) {
     const summaryText = courseModel.get('summary_text');
     const { accepted, rejectedKeys } = acceptValidSummary(toSummaryPayload(summary, summaryText));
     if (rejectedKeys.length || isMalformed(summary) || isMalformed(summaryText)) {
-      reportWidgetFailure({ widget: 'summary', failureType: 'invalid_update', recovery: 'kept_last_value' });
+      // Nothing was kept when no valid value had been accepted yet: the server-rendered card stays.
+      const { metrics, text } = store.getState().summary;
+      const hadValidValue = Object.keys(metrics).length > 0 || Object.keys(text).length > 0;
+      reportWidgetFailure({
+        widget: 'summary',
+        failureType: 'invalid_update',
+        recovery: hadValidValue ? 'kept_last_value' : 'server_html',
+      });
     }
     store.dispatch(summaryLoaded(accepted));
   };

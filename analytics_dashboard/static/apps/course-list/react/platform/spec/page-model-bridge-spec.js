@@ -95,6 +95,14 @@ describe('connectPageModelToStore', () => {
     expect(rum.addError.calls.argsFor(0)[1]['insights.react.failure_type']).toBe('invalid_update');
   });
 
+  it('reports server_html as the recovery when no valid value was ever accepted', () => {
+    connectPageModelToStore(new CourseModel({ summary: summary('3,378,149'), summary_text: summaryText }), store);
+
+    expect(selectTotalEnrollment(store.getState())).toBeUndefined();
+    expect(rum.addError).toHaveBeenCalledTimes(1);
+    expect(rum.addError.calls.argsFor(0)[1]['insights.react.recovery']).toBe('server_html');
+  });
+
   it('does not throw or report when the page has no summary at all', () => {
     expect(() => connectPageModelToStore(new CourseModel({}), store)).not.toThrow();
 

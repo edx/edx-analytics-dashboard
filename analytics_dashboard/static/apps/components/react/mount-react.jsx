@@ -25,7 +25,7 @@ import { enableReactDebugIfRequested, markFallback, markRendered } from 'compone
  * @param {Object} [options.store] - Redux store; when given, the component is wrapped in <Provider>.
  * @param {Object} [options.props] - Props passed to the component.
  * @param {string} [options.name] - Widget name for monitoring; defaults to the element's data-react-widget.
- * @returns {Function} Call to unmount the component.
+ * @returns {Function} Call to unmount the component. The element gets its original server-rendered HTML back.
  */
 export default function mountReact(element, Component, { store, props = {}, name } = {}) {
   if (!element) {
@@ -77,6 +77,12 @@ export default function mountReact(element, Component, { store, props = {}, name
       mounted = false;
       root.unmount();
       element.removeAttribute('data-react-rendered');
+      // The server-rendered version is always the fallback, so give it back, with its tooltips.
+      // eslint-disable-next-line no-param-reassign
+      element.innerHTML = serverHtml;
+      if ($.fn.tooltip) {
+        $(element).find('.has-tooltip').tooltip();
+      }
     }
   };
 }
