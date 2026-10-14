@@ -4,6 +4,7 @@ const Merge = require('webpack-merge');
 const path = require('path');
 const commonConfig = require('./webpack.common.config.js');
 const { paragonImportsPlugin, transpiledPackagesRule } = require('./webpack/paragon/babel');
+const { PARAGON_CSS_PATTERN } = require('./webpack/paragon/css');
 
 const djangoDevServer = process.env.DJANGO_DEV_SERVER || 'http://localhost:8110';
 
@@ -73,8 +74,14 @@ module.exports = Merge.smart(commonConfig, {
         exclude: /node_modules/,
       },
       // Not all of our dependencies use Sass. We need an additional rule for requiring or including CSS files.
+      // Paragon's CSS is scoped under .paragon-styles by paragon-css-loader.
+      {
+        test: PARAGON_CSS_PATTERN,
+        use: ['style-loader', 'css-loader', 'paragon-css-loader'],
+      },
       {
         test: /\.css$/,
+        exclude: PARAGON_CSS_PATTERN,
         use: ['style-loader', 'css-loader', 'resolve-url-loader'],
         include: [path.join(__dirname, 'analytics_dashboard/static'), path.join(__dirname, 'node_modules')],
       },

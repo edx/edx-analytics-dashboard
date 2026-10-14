@@ -1,0 +1,31 @@
+/*
+ * The Insights look for Paragon components. Paragon's components take their colours, font and corners from
+ * --pgn-* theme variables, so setting these few variables to Insights' values makes every Paragon component look
+ * like the rest of the page and the UX mockup. No component CSS is needed. Values come from
+ * analytics_dashboard/static/sass/_config-variables.scss and %ui-box in _base.scss.
+ * This file is not used in the MFE, where the MFE's own theme applies.
+ */
+:root {
+  --pgn-typography-font-family-sans-serif: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --pgn-size-border-radius-base: 3px; /* %ui-box border-radius */
+  --pgn-color-card-border-base: #D4D2CF; /* $gray-l2, the %ui-box border */
+
+  /* $palette-primary-base (edX blue). */
+  --pgn-color-primary-base: #0075B4;
+  /* Tints and shades of the primary colour. Paragon hard-codes its own navy for these, so each one is set. They
+     use Paragon's own ratios of white or black to the primary colour, applied to the edX blue. */
+  --pgn-color-primary-100: #F0F7FB;
+  --pgn-color-primary-200: #C7E1EF;
+  --pgn-color-primary-300: #7DB9D9;
+  --pgn-color-primary-400: #4098C7;
+  --pgn-color-primary-600: #0069A2;
+  --pgn-color-primary-700: #005C8E;
+  --pgn-color-primary-800: #005887;
+  --pgn-color-primary-900: #005380;
+
+  /* $link-color and $link-hover-color. */
+  --pgn-color-link-base: #2991C3;
+  --pgn-color-link-hover: #0075B4;
+  --pgn-color-link-inline-base: #2991C3;
+  --pgn-color-link-inline-hover-base: #0075B4;
+}

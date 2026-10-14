@@ -69,10 +69,19 @@
     {% for css_file in common_css %}
         <link rel="stylesheet" href="{{ css_file.publicPath }}" type="text/css">
     {% endfor %}
+    {# Paragon's styles, scoped under .paragon-styles. Loaded only when the React widgets are enabled. #}
+    {% if enable_react_course_list %}
+        {% get_files 'paragon-styles' 'css' as paragon_css %}
+        {% for css_file in paragon_css %}
+            <link rel="stylesheet" href="{{ css_file.publicPath }}" type="text/css">
+        {% endfor %}
+    {% endif %}
 {% endblock stylesheets %}
 
 {% block javascript %}
   {{ block.super }}
+  {# In development, this bundle injects Paragon's styles; in production its CSS is linked above. #}
+  {% if enable_react_course_list %}{% render_bundle 'paragon-styles' 'js' %}{% endif %}
   {% render_bundle 'course-list-main' %}
 {% endblock javascript %}
 
