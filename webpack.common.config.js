@@ -100,6 +100,11 @@ module.exports = {
     new BundleTracker({
       filename: './webpack-stats.json',
     }),
+    // Paragon's JavaScript imports an SCSS file only to read the grid breakpoints; use a JavaScript file instead.
+    new webpack.NormalModuleReplacementPlugin(
+      /_exports\.module\.scss$/,
+      path.resolve(__dirname, 'analytics_dashboard/static/apps/components/react/paragon/breakpoints.js'),
+    ),
     // We reference jquery as a global variable a lot. This plugin inlines a reference to the module in place of the
     // free variable.
     new webpack.ProvidePlugin({

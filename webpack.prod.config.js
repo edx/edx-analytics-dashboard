@@ -12,11 +12,14 @@ const extractSCSS = new ExtractTextPlugin('styles-scss.css');
 // Redux Toolkit use it to bundle their production builds.
 process.env.NODE_ENV = 'production';
 const commonConfig = require('./webpack.common.config.js');
+const { paragonImportsPlugin, transpiledPackagesRule } = require('./webpack/paragon/babel');
 
 module.exports = Merge.smart(commonConfig, {
   module: {
     // Specify file-by-file rules to Webpack. Some file-types need a particular kind of loader.
     rules: [
+      // Paragon (@openedx/paragon) and its ES2015+ dependencies are transpiled to ES5, which UglifyJS requires.
+      transpiledPackagesRule(),
       // The babel-loader transforms newer ES2015 syntax to older ES5 for legacy browsers, and JSX for React.
       // The 'transform-runtime' plugin tells babel to require the runtime instead of inlining it (saves bundle
       // size).
@@ -34,7 +37,11 @@ module.exports = Merge.smart(commonConfig, {
               }],
               ['@babel/preset-react', { runtime: 'automatic' }],
             ],
-            plugins: ['@babel/plugin-transform-runtime', '@babel/plugin-syntax-dynamic-import'],
+            plugins: [
+              '@babel/plugin-transform-runtime',
+              '@babel/plugin-syntax-dynamic-import',
+              paragonImportsPlugin(true),
+            ],
           },
         },
       },

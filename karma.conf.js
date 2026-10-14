@@ -3,6 +3,7 @@
 
 const path = require('path');
 const webpack = require('webpack');
+const { paragonImportsPlugin, transpiledPackagesRule } = require('./webpack/paragon/babel');
 
 module.exports = function (config) {
   'use strict';
@@ -94,6 +95,8 @@ module.exports = function (config) {
 
       module: {
         rules: [
+          // Paragon (@openedx/paragon) and its ES2015+ dependencies are transpiled to ES5.
+          transpiledPackagesRule(),
           {
             test: /\.underscore$/,
             use: 'raw-loader',
@@ -125,6 +128,7 @@ module.exports = function (config) {
                 ],
                 plugins: [
                   '@babel/plugin-syntax-dynamic-import',
+                  paragonImportsPlugin(true),
                   ['istanbul', {
                     exclude: [
                       '**/*spec.js',
@@ -164,6 +168,11 @@ module.exports = function (config) {
       },
 
       plugins: [
+        // Paragon's JavaScript imports an SCSS file only to read the grid breakpoints; use a JavaScript file instead.
+        new webpack.NormalModuleReplacementPlugin(
+          /_exports\.module\.scss$/,
+          path.resolve(__dirname, 'analytics_dashboard/static/apps/components/react/paragon/breakpoints.js'),
+        ),
         new webpack.ProvidePlugin({
           $: 'jquery',
           jQuery: 'jquery',
