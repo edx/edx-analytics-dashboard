@@ -25,5 +25,22 @@
         "func-names": 0,
         "import/no-extraneous-dependencies": [2, {"devDependencies": true}],
         "import/no-dynamic-require": 0
-    }
+    },
+    "overrides": [
+        {
+            // Components and widgets of the course list React code are written like micro-frontend code, so they
+            // can be copied into the MFE. Everything Insights-specific lives in react/platform/ instead.
+            "files": [
+                "analytics_dashboard/static/apps/course-list/react/components/**/*.{js,jsx}",
+                "analytics_dashboard/static/apps/course-list/react/widgets/**/*.{js,jsx}"
+            ],
+            "excludedFiles": "**/spec/**",
+            "rules": {
+                "no-restricted-imports": ["error", {
+                    "patterns": ["jquery", "backbone*", "underscore", "utils/*", "components/react/*"]
+                }],
+                "no-restricted-globals": ["error", "gettext", "ngettext", "$", "jQuery"]
+            }
+        }
+    ]
 }
