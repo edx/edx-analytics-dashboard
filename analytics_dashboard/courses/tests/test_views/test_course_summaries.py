@@ -141,11 +141,13 @@ class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, T
         for key in ('enable_react_course_list', 'summary', 'summary_text'):
             self.assertNotIn(key, course_data)
         self.assertContains(response, 'data-stat-type="total_enrollment">')
-        self.assertNotContains(response, 'data-react-widget')
+        self.assertContains(response, 'course-list-app-container')
+        self.assertNotContains(response, 'course-list-react-root')
+        self.assertNotContains(response, 'paragon-styles')
 
     @override_flag('enable_react_course_list', active=True)
     def test_react_flag_on(self):
-        """ With the flag on, the page data carries the summary and the card is marked as the React mount point. """
+        """ With the flag on, the page has only the React mount point; none of the legacy UI is rendered. """
         response = self.get_course_index()
         self.assertTrue(response.context['enable_react_course_list'])
         course_data = json.loads(response.context['page_data'])['course']
@@ -157,13 +159,16 @@ class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, T
                 'tooltip': TOTAL_ENROLLMENT_CARD['tooltip'],
             },
         })
-        self.assertContains(response, 'data-stat-type="total_enrollment" data-react-widget="total-enrollment">')
-        # The server-rendered card stays inside the mount point as the fallback.
-        self.assertInHTML(
-            f'<div class="summary-point-label">{TOTAL_ENROLLMENT_CARD["label"]}</div>',
-            response.content.decode('utf-8'),
-            count=1,
-        )
+        # The React page's mount point holds the loading spinner.
+        self.assertContains(response, 'id="course-list-react-root"')
+        self.assertContains(response, 'loading-container')
+        # Neither the legacy summary cards nor the Backbone course list container are rendered.
+        self.assertNotContains(response, 'summary-point')
+        self.assertNotContains(response, 'data-stat-type')
+        self.assertNotContains(response, 'course-list-app-container')
+        # Paragon's styles are linked, and the server-rendered "last updated" message is still there.
+        self.assertContains(response, 'paragon-styles')
+        self.assertContains(response, 'class="data-update-message"')
 
     @data(*TOTAL_ENROLLMENT_CARD['cases'])
     def test_total_enrollment_card_flag_off(self, case):
@@ -173,9 +178,8 @@ class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, T
 
     @override_flag('enable_react_course_list', active=True)
     @data(*TOTAL_ENROLLMENT_CARD['cases'])
-    def test_total_enrollment_card_flag_on(self, case):
-        """ With the flag on, the fallback card is unchanged and the page data carries the same value. """
+    def test_total_enrollment_value_in_page_data_flag_on(self, case):
+        """ With the flag on, the page data carries the Total Enrollment value for the React page. """
         response = self.get_course_index(self.summary_with_total_enrollment(case['value']))
-        self.assert_total_enrollment_card(response, case)
         course_data = json.loads(response.context['page_data'])['course']
         self.assertEqual(course_data['summary']['total_enrollment'], case['value'])

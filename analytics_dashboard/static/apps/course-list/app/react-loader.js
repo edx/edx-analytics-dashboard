@@ -1,49 +1,55 @@
-import { reportFallbackActivated, reportWidgetFailure } from 'components/react/monitoring';
-import { markFallback } from 'components/react/widget-markers';
+import { reportWidgetFailure } from 'components/react/monitoring';
+
+const ROOT_ID = 'course-list-react-root';
+// Plain DOM, because React isn't available when this is needed. Bootstrap 3's alert classes are on every page.
+const LOAD_ERROR_HTML = '<div class="alert alert-danger" role="alert">'
+  + 'Something went wrong loading this page. <a href="">Reload the page</a>.</div>';
 
 /**
- * Loads the course list's React widgets when the enable_react_course_list waffle flag is on.
+ * Loads the React course list page when the enable_react_course_list waffle flag is on.
  *
  * The flag is evaluated on the server (CourseIndex.get_context_data) and reaches the browser in the page
- * data (initModelData.course → courseModel). When it is off, the React chunk is never requested.
- * If loading or starting fails, the server-rendered markup stays exactly as it is.
+ * data (initModelData.course → courseModel). When it is on, the template renders only #course-list-react-root
+ * (a spinner) and the Backbone course list is not started (course-list-main.js). When it is off, the React
+ * chunk is never requested.
+ * If loading or starting fails, the spinner is replaced by an error message and the failure is reported.
+ * There is no fallback to the legacy page: the legacy UI isn't rendered when the flag is on.
  *
- * Must not import React, Redux or anything under course-list/react/ statically. monitoring.js and
- * widget-markers.js import nothing, so they're allowed.
+ * Must not import React, Redux or anything under course-list/react/ statically. monitoring.js imports nothing,
+ * so it's allowed.
  *
  * @param {Backbone.Model} courseModel - The page model built from initModelData.course.
- * @param {Function} [importWidgets] - Loads the React chunk; replaced in tests.
- * @returns {Promise<boolean>} Resolves to true when the React widgets were started.
+ * @param {Function} [importPage] - Loads the React chunk; replaced in tests.
+ * @returns {Promise<boolean>} Resolves to true when the React page was started.
  */
-export default function loadReactWidgets(
+export default function loadReactPage(
   courseModel,
-  importWidgets = () => import('apps/course-list/react/index'),
+  importPage = () => import('apps/course-list/react/index'),
 ) {
   if (!courseModel.get('enable_react_course_list')) {
     return Promise.resolve(false);
   }
 
-  const keepServerMarkup = (failureType, error) => {
-    // Marks every React mount point as showing the server HTML.
-    Array.prototype.forEach.call(document.querySelectorAll('[data-react-widget]'), (element) => {
-      markFallback(element);
-    });
+  const showLoadError = (failureType, error) => {
+    const root = document.getElementById(ROOT_ID);
+    if (root) {
+      root.innerHTML = LOAD_ERROR_HTML;
+    }
     reportWidgetFailure({
-      widget: 'course-list', failureType, recovery: 'server_html', error,
+      widget: 'course-list', failureType, recovery: 'error_state', error,
     });
-    reportFallbackActivated({ widget: 'course-list', fallback: 'server_html', failureType });
     return false;
   };
 
-  return importWidgets().then(
-    ({ default: startReactWidgets }) => {
+  return importPage().then(
+    ({ default: startReactPage }) => {
       try {
-        startReactWidgets({ courseModel });
+        startReactPage({ courseModel });
         return true;
       } catch (error) {
-        return keepServerMarkup('start_error', error);
+        return showLoadError('start_error', error);
       }
     },
-    error => keepServerMarkup('chunk_load', error),
+    error => showLoadError('chunk_load', error),
   );
 }
