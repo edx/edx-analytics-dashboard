@@ -40,7 +40,8 @@ describe('page model bridge', () => {
     const { courses } = store.getState();
     expect(courses.status).toBe('ready');
     expect(courses.rows.length).toBe(4);
-    expect(courses.rows[0].course_id).toBe('course-v1:Edx+Algebra+2024');
+    expect(courses.rows[0].verified_enrollment).toBe(40);
+    expect(courses.rows[0].program_ids).toEqual(['program-a', 'program-b']);
     expect(courses.programs).toEqual(fixture.programs);
     expect(rum.addError).not.toHaveBeenCalled();
   });
@@ -106,5 +107,49 @@ describe('page model bridge', () => {
     courseModel.set('course_list_json', fixture.rows);
 
     expect(store.getState().courses.rows.length).toBe(1);
+  });
+
+  describe('summary text', () => {
+    const text = { total_enrollment: { label: 'Total Enrollment', tooltip: 'Help text.' } };
+
+    it('copies the text of the summary cards', () => {
+      connect({ course_list_json: fixture.rows, summary_text: text });
+
+      expect(store.getState().summary.text).toEqual(text);
+    });
+
+    it('copies it when the course data is unavailable too', () => {
+      connect({ summary_text: text });
+
+      expect(store.getState().summary.text).toEqual(text);
+      expect(store.getState().courses.status).toBe('unavailable');
+    });
+
+    [
+      ['missing', {}],
+      ['not an object', { summary_text: 'oops' }],
+      ['a list', { summary_text: [text] }],
+    ].forEach(([description, attributes]) => {
+      it(`leaves the cards without text when it is ${description}`, () => {
+        connect({ course_list_json: fixture.rows, ...attributes });
+
+        expect(store.getState().summary.text).toEqual({});
+      });
+    });
+
+    it('does not read the summary numbers of the server', () => {
+      connect({ course_list_json: fixture.rows, summary: { total_enrollment: 5 }, summary_text: text });
+
+      expect(store.getState().summary).toEqual({ text });
+    });
+
+    it('updates the text when the page model changes', () => {
+      const courseModel = new CourseModel({ course_list_json: fixture.rows });
+      connectPageModelToStore(courseModel, store);
+
+      courseModel.set('summary_text', text);
+
+      expect(store.getState().summary.text).toEqual(text);
+    });
   });
 });

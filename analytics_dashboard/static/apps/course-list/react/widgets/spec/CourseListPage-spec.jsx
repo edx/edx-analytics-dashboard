@@ -8,9 +8,11 @@ import {
   coursesFailed, coursesLoaded, coursesUnavailable,
 } from 'course-list/react/state/courses-slice';
 import createCourseListStore from 'course-list/react/state/store';
+import { summaryTextLoaded } from 'course-list/react/state/summary-slice';
 import CourseListPage from 'course-list/react/widgets/CourseListPage';
 
 describe('CourseListPage', () => {
+  const TEXT = { total_enrollment: { label: 'Total Enrollment', tooltip: 'Help text.' } };
   let element;
   let root;
   let store;
@@ -37,7 +39,7 @@ describe('CourseListPage', () => {
   };
 
   beforeEach(() => {
-    restoreOnError = ignoreExpectedErrors(['Course data is not valid.']);
+    restoreOnError = ignoreExpectedErrors(['Course data is not valid.', 'Summary text is not available.']);
     // React logs errors that an error boundary caught to the console in development builds.
     spyOn(console, 'error');
     onSectionError = jasmine.createSpy('onSectionError');
@@ -45,6 +47,7 @@ describe('CourseListPage', () => {
     element = document.getElementById('course-list-page-root');
     root = createRoot(element);
     store = createCourseListStore();
+    store.dispatch(summaryTextLoaded(TEXT));
   });
 
   afterEach(() => {
@@ -64,15 +67,34 @@ describe('CourseListPage', () => {
     expect(document.getElementById('courses-heading').textContent).toBe('Courses');
   });
 
-  it('has a placeholder for the summary, the controls and the results once the data is ready', () => {
+  it('has the summary card, and a placeholder for the controls and for the results, once the data is ready', () => {
     dispatch(coursesLoaded({ rows: [], programs: [] }));
     render();
 
-    expect(placeholders().length).toBe(3);
-    expect(placeholders()[0]).toContain('Summary cards');
-    expect(placeholders()[1]).toContain('filters');
-    expect(placeholders()[2]).toContain('table');
+    expect(element.querySelectorAll('.pgn__card').length).toBe(1);
+    expect(placeholders().length).toBe(2);
+    expect(placeholders()[0]).toContain('filters');
+    expect(placeholders()[1]).toContain('table');
     expect(onSectionError).not.toHaveBeenCalled();
+  });
+
+  it('shows the total of the course rows in the summary card', () => {
+    dispatch(coursesLoaded({ rows: [{ course_id: 'a', cumulative_count: 40 }, { course_id: 'b', cumulative_count: 2 }], programs: [] }));
+    render();
+
+    expect(element.querySelector('.insights-summary-number').textContent).toBe('42');
+  });
+
+  it('shows the error state only in the summary when the server sent no text for the cards', () => {
+    dispatch(summaryTextLoaded({}));
+    dispatch(coursesLoaded({ rows: [], programs: [] }));
+    render();
+
+    expect(element.querySelectorAll('.alert-error').length).toBe(1);
+    expect(element.querySelector('.pgn__card')).toBeNull();
+    expect(placeholders().length).toBe(2);
+    expect(onSectionError).toHaveBeenCalledTimes(1);
+    expect(onSectionError.calls.argsFor(0)[0]).toBe('course-list-summary');
   });
 
   it('shows the loading state in the results while the data is loading', () => {
@@ -90,16 +112,17 @@ describe('CourseListPage', () => {
     expect(element.textContent).toContain('check back regularly for up-to-date metrics.');
   });
 
-  it('shows the error state only in the section that fails, reports it, and keeps the other sections', () => {
+  it('shows the error state in the sections that need the course data when it is malformed, and keeps the rest', () => {
     dispatch(coursesFailed());
     render();
 
-    expect(element.querySelectorAll('.alert-error').length).toBe(1);
+    expect(element.querySelectorAll('.alert-error').length).toBe(2);
     expect(element.querySelector('.alert-error .alert-title').textContent).toBe('We are unable to load this section.');
     expect(element.querySelectorAll('h2').length).toBe(2);
-    expect(placeholders().length).toBe(2);
-    expect(onSectionError).toHaveBeenCalledTimes(1);
-    expect(onSectionError.calls.argsFor(0)[0]).toBe('course-list-results');
+    expect(element.querySelector('.pgn__card')).toBeNull();
+    expect(placeholders().length).toBe(1);
+    expect(onSectionError.calls.allArgs().map(args => args[0]))
+      .toEqual(['course-list-summary', 'course-list-results']);
   });
 
   it('works without onSectionError', () => {
@@ -108,6 +131,6 @@ describe('CourseListPage', () => {
       root.render(<Provider store={store}><ParagonProvider><CourseListPage /></ParagonProvider></Provider>);
     });
 
-    expect(element.querySelectorAll('.alert-error').length).toBe(1);
+    expect(element.querySelectorAll('.alert-error').length).toBe(2);
   });
 });

@@ -10,7 +10,7 @@ const reactPageEnabled = Boolean((initModelData.course || {}).enable_react_cours
 if (reactPageEnabled) {
   // The React page replaces the whole Backbone course list (see react-loader.js).
   import('load/init-page').then((page) => {
-    loadReactPage(page.models.courseModel);
+    loadReactPage(page.models.courseModel, { trackingModel: page.models.trackingModel });
   }).catch(error => showLoadError('start_error', error));
 } else {
   Promise.all([
