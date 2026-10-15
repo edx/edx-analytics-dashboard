@@ -66,5 +66,9 @@ export function createResultsTracker(trackingModel) {
     // The legacy table's sort and page events (components/generic-list/list/views/table.js, paging-footer.js).
     sorted: (key, dir) => track('edx.bi.course_list.sorted', { category: `${key}_${dir}` }),
     paged: page => track('edx.bi.course_list.paged', { category: page - 1 }),
+    // New with the Columns menu (no legacy event): which column was shown or hidden.
+    columnsChanged: (id, shown) => track('edx.bi.course_list.columns_changed', {
+      category: `${id}_${shown ? 'shown' : 'hidden'}`,
+    }),
   };
 }

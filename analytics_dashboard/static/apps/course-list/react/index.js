@@ -49,6 +49,7 @@ export default function startReactPage({ courseModel, trackingModel }) {
         onCourseOpen: trackResults.courseOpened,
         onSort: trackResults.sorted,
         onPage: trackResults.paged,
+        onColumnsChange: trackResults.columnsChanged,
       },
     },
   });

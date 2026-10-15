@@ -91,6 +91,15 @@ export function createSelectors({
       .filter(column => column.hasData || showPendingColumns),
   );
 
+  // The columns the table shows: Course Name, and the available columns ticked in the Columns menu (until the user
+  // changes them, the ones the registry shows by default).
+  const selectVisibleColumns = createSelector(
+    [selectAvailableColumns, state => state.view.visibleColumns],
+    (available, visible) => available.filter(column => column.alwaysVisible || (
+      visible ? visible.indexOf(column.id) !== -1 : column.defaultVisible !== false
+    )),
+  );
+
   return {
     selectFilteredRows,
     selectSummaryMetrics,
@@ -100,6 +109,7 @@ export function createSelectors({
     selectCurrentPage,
     selectPageRows,
     selectAvailableColumns,
+    selectVisibleColumns,
   };
 }
 
@@ -112,6 +122,7 @@ export const {
   selectCurrentPage,
   selectPageRows,
   selectAvailableColumns,
+  selectVisibleColumns,
 } = createSelectors({
   filters: filterRegistry,
   metrics: metricRegistry,

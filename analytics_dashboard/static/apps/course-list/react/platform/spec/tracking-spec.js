@@ -94,7 +94,7 @@ describe('createResultsTracker', () => {
     }]]);
   });
 
-  it('sends the legacy sort and page events, the page as a 0-based index', () => {
+  it('sends the legacy sort and page events (the page as a 0-based index), and the columns event', () => {
     const trackingModel = new Backbone.Model();
     const events = [];
     trackingModel.on('segment:track', (...args) => events.push(args));
@@ -102,10 +102,14 @@ describe('createResultsTracker', () => {
 
     track.sorted('count', 'desc');
     track.paged(3);
+    track.columnsChanged('start_date', false);
+    track.columnsChanged('total_engagements', true);
 
     expect(events).toEqual([
       ['edx.bi.course_list.sorted', { category: 'count_desc' }],
       ['edx.bi.course_list.paged', { category: 2 }],
+      ['edx.bi.course_list.columns_changed', { category: 'start_date_hidden' }],
+      ['edx.bi.course_list.columns_changed', { category: 'total_engagements_shown' }],
     ]);
   });
 

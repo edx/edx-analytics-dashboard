@@ -1,7 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
+import { ViewColumn } from '@openedx/paragon/icons';
 
+import CheckboxDropdown from 'course-list/react/components/controls/CheckboxDropdown';
 import DownloadCsvButton from 'course-list/react/components/controls/DownloadCsvButton';
 import CourseTable from 'course-list/react/components/results/CourseTable';
 import ResultCount from 'course-list/react/components/results/ResultCount';
@@ -11,8 +13,9 @@ import LoadingState from 'course-list/react/components/status/LoadingState';
 import { selectStatus } from 'course-list/react/state/courses-slice';
 import { pageChanged, selectQuery, sortChanged } from 'course-list/react/state/query-slice';
 import {
-  selectAvailableColumns, selectCurrentPage, selectPageCount, selectPageRows, selectResultCount,
+  selectAvailableColumns, selectCurrentPage, selectPageCount, selectPageRows, selectResultCount, selectVisibleColumns,
 } from 'course-list/react/state/selectors';
+import { columnsChanged } from 'course-list/react/state/view-slice';
 
 // The same messages as the legacy course list (course-list/list/views/results.js).
 const NO_DATA_MESSAGE = 'No course data is currently available for your course.';
@@ -21,13 +24,14 @@ const NO_DATA_DETAIL = 'No courses are enrolled, or course activity data has not
 const NO_MATCH_MESSAGE = 'No courses matched your criteria.';
 
 /**
- * The results: a toolbar row (the count, and Download CSV when the server sent its URL), then the course table and its
- * pager, or a message when the search and filters match nothing. The table shows the columns of the columns registry
- * that exist for this page (the waffle switches decide some of them). Sorting and paging are stored in the query; the
+ * The results: a toolbar row (the count; the Columns menu; Download CSV when the server sent its URL), then the course
+ * table and its pager, or a message when the search and filters match nothing. The columns of the columns registry
+ * that exist for this page (the waffle switches decide some of them) are listed in the Columns menu, except Course
+ * Name, which is always shown. Sorting and paging are stored in the query, the chosen columns in the view; the
  * callbacks are for analytics.
  */
 export default function ResultsSection({
-  downloadUrl, onDownload, passingUsersEnabled, filtersEnabled, onCourseOpen, onSort, onPage,
+  downloadUrl, onDownload, passingUsersEnabled, filtersEnabled, onCourseOpen, onSort, onPage, onColumnsChange,
 }) {
   const dispatch = useDispatch();
   const switches = useMemo(() => ({ passingUsersEnabled, filtersEnabled }), [passingUsersEnabled, filtersEnabled]);
@@ -35,9 +39,12 @@ export default function ResultsSection({
   const count = useSelector(selectResultCount);
   const rows = useSelector(selectPageRows);
   const available = useSelector(state => selectAvailableColumns(state, switches));
-  // The columns shown until the user changes them (the Columns menu comes next): Total Engagements and Engagement
-  // Rate start hidden, as in the prototype.
-  const columns = useMemo(() => available.filter(column => column.defaultVisible !== false), [available]);
+  const columns = useSelector(state => selectVisibleColumns(state, switches));
+  const columnOptions = useMemo(
+    () => available.filter(column => !column.alwaysVisible).map(column => ({ value: column.id, label: column.label })),
+    [available],
+  );
+  const shownIds = useMemo(() => columns.filter(column => !column.alwaysVisible).map(column => column.id), [columns]);
   const { search, filters, sort } = useSelector(selectQuery);
   const page = useSelector(selectCurrentPage);
   const pageCount = useSelector(selectPageCount);
@@ -49,6 +56,14 @@ export default function ResultsSection({
     dispatch(pageChanged(target));
     onPage(target);
   }, [dispatch, onPage]);
+  const changeColumns = (ids) => {
+    // One box changes at a time: report which column was shown or hidden.
+    const shown = ids.filter(id => shownIds.indexOf(id) === -1);
+    const hidden = shownIds.filter(id => ids.indexOf(id) === -1);
+    dispatch(columnsChanged(ids));
+    shown.forEach(id => onColumnsChange(id, true));
+    hidden.forEach(id => onColumnsChange(id, false));
+  };
 
   if (status === 'loading') {
     return <LoadingState />;
@@ -71,6 +86,15 @@ export default function ResultsSection({
       <div className="insights-results-toolbar">
         <ResultCount count={count} />
         <div className="insights-results-actions">
+          <CheckboxDropdown
+            id="columns"
+            label="Columns"
+            icon={ViewColumn}
+            showCount={false}
+            options={columnOptions}
+            selected={shownIds}
+            onChange={changeColumns}
+          />
           {downloadUrl && <DownloadCsvButton url={downloadUrl} onClick={onDownload} />}
         </div>
       </div>
@@ -101,6 +125,8 @@ ResultsSection.propTypes = {
   // Called with (column id, 'asc' | 'desc') after a sort, and with the 1-based page after a page change.
   onSort: PropTypes.func,
   onPage: PropTypes.func,
+  // Called with (column id, true when shown / false when hidden) after a change in the Columns menu.
+  onColumnsChange: PropTypes.func,
 };
 
 ResultsSection.defaultProps = {
@@ -111,4 +137,5 @@ ResultsSection.defaultProps = {
   onCourseOpen: () => {},
   onSort: () => {},
   onPage: () => {},
+  onColumnsChange: () => {},
 };

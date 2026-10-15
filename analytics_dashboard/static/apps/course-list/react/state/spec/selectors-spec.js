@@ -9,7 +9,9 @@ describe('selectors', () => {
   const filters = [{ id: 'color', matches: (row, selected) => selected.indexOf(row.color) !== -1 }];
   // A columns registry for the spec: the real one is checked in registries/spec/columns-spec.js.
   const columns = [
-    { id: 'catalog_course_title', label: 'Course Name', cell: 'courseName' },
+    {
+      id: 'catalog_course_title', label: 'Course Name', cell: 'courseName', alwaysVisible: true,
+    },
     { id: 'start_date', label: 'Start Date', cell: 'date' },
     { id: 'count', label: 'Current Enrollment', cell: 'number' },
     {
@@ -18,13 +20,17 @@ describe('selectors', () => {
     {
       id: 'b2b_count', label: 'B2B Enrollment', cell: 'number', pending: true,
     },
+    {
+      id: 'total_engagements', label: 'Total Engagements', cell: 'number', pending: true, defaultVisible: false,
+    },
   ];
   const selectors = createSelectors({
     filters, metrics, columns, showPendingColumns: true,
   });
   const { selectFilteredRows, selectSummaryMetrics } = selectors;
-  const stateWith = (rows, query = {}) => ({
+  const stateWith = (rows, query = {}, visibleColumns = null) => ({
     courses: { rows, programs: [], status: 'ready' },
+    view: { visibleColumns },
     query: {
       search: '', filters: {}, sort: { key: 'catalog_course_title', dir: 'asc' }, page: 1, ...query,
     },
@@ -172,6 +178,7 @@ describe('selectors', () => {
     it('has every column, a pending column without data marked as such', () => {
       expect(ids(stateWith([{ course_id: 'a' }]))).toEqual([
         'catalog_course_title:true', 'start_date:true', 'count:true', 'passing_users:true', 'b2b_count:false',
+        'total_engagements:false',
       ]);
     });
 
@@ -191,6 +198,21 @@ describe('selectors', () => {
 
       expect(ids(stateWith([{ course_id: 'a' }]), undefined, released)).not.toContain('b2b_count:false');
       expect(ids(stateWith([{ course_id: 'a', b2b_count: 3 }]), undefined, released)).toContain('b2b_count:true');
+    });
+  });
+
+  describe('selectVisibleColumns', () => {
+    const SWITCHES = { passingUsersEnabled: true, filtersEnabled: true };
+    const ids = visible => selectors.selectVisibleColumns(stateWith([{ course_id: 'a' }], {}, visible), SWITCHES)
+      .map(column => column.id);
+
+    it('shows the columns that start visible until the user changes them', () => {
+      expect(ids(null)).toEqual(['catalog_course_title', 'start_date', 'count', 'passing_users', 'b2b_count']);
+    });
+
+    it('shows Course Name and the ticked columns, in registry order, ignoring unknown ones', () => {
+      expect(ids(['total_engagements', 'count', 'unknown'])).toEqual(['catalog_course_title', 'count', 'total_engagements']);
+      expect(ids([])).toEqual(['catalog_course_title']);
     });
   });
 });

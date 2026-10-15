@@ -47,6 +47,7 @@ describe('ResultsSection', () => {
       onCourseOpen: jasmine.createSpy('onCourseOpen'),
       onSort: jasmine.createSpy('onSort'),
       onPage: jasmine.createSpy('onPage'),
+      onColumnsChange: jasmine.createSpy('onColumnsChange'),
     };
     setFixtures('<div id="results-root"></div>');
     element = document.getElementById('results-root');
@@ -173,6 +174,46 @@ describe('ResultsSection', () => {
 
       expect(store.getState().query.page).toBe(1);
       expect(titles()[0]).toBe('Course 000');
+    });
+  });
+
+  describe('the Columns menu', () => {
+    const toggle = () => element.querySelector('#columns-toggle');
+    const boxes = () => element.querySelectorAll('.insights-checkbox-menu input[type="checkbox"]');
+    // The text of a checkbox's Paragon wrapper (PhantomJS has no Element.closest).
+    const labelOf = (input) => {
+      let node = input;
+      while (node && !/(^| )pgn__form-checkbox( |$)/.test(node.className)) {
+        node = node.parentNode;
+      }
+      return node ? node.textContent.trim() : '';
+    };
+    const box = label => Array.prototype.find.call(boxes(), input => labelOf(input) === label);
+    const open = () => act(() => toggle().click());
+
+    it('lists every column but Course Name, the engagement ones unticked, without a count on the button', () => {
+      render();
+      open();
+
+      expect(toggle().textContent.trim()).toBe('Columns');
+      expect(boxes().length).toBe(15);
+      expect(box('Course Name')).toBeUndefined();
+      expect(box('Total Engagements').checked).toBe(false);
+      expect(box('Start Date').checked).toBe(true);
+    });
+
+    it('hides and shows columns without changing the rows or the count, and reports each change', () => {
+      render();
+      open();
+      act(() => box('Start Date').click());
+      act(() => box('Total Engagements').click());
+
+      expect(headers()).not.toContain('Start Date');
+      expect(headers()).toContain('Total Engagements');
+      expect(headers()[0]).toBe('Course Name, sorted ascending');
+      expect(element.querySelectorAll('tbody tr').length).toBe(4);
+      expect(element.querySelector('.insights-result-count').textContent).toBe('Course runs: 4');
+      expect(props.onColumnsChange.calls.allArgs()).toEqual([['start_date', false], ['total_engagements', true]]);
     });
   });
 });
