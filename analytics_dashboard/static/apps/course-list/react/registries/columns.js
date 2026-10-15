@@ -40,6 +40,10 @@ export default [
   {
     id: 'passing_users', label: 'Passing Learners', cell: 'number', enabled: page => page.passingUsersEnabled,
   },
+  // The program titles come from programs_json, which the server only sends with the filters switch on.
+  {
+    id: 'program', label: 'Program', cell: 'text', enabled: page => page.filtersEnabled,
+  },
   // Sales and funding data comes with the data work for LP-1175, LP-1176 and LP-1187.
   {
     id: 'sales_model', label: 'Sales Model', cell: 'text', pending: true,

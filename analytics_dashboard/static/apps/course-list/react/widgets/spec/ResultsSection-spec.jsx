@@ -75,17 +75,30 @@ describe('ResultsSection', () => {
 
     expect(headers()).toEqual([
       'Course Name, sorted ascending', 'Start Date', 'End Date', 'Total Enrollment', 'Current Enrollment', 'Change Last Week',
-      'Verified Enrollment', 'Passing Learners', 'Sales Model', 'Funding Model', 'B2B Enrollment',
+      'Verified Enrollment', 'Passing Learners', 'Program', 'Sales Model', 'Funding Model', 'B2B Enrollment',
       'B2C Enrollment', 'Subscription Enrollment', 'À la Carte Enrollment',
     ]);
   });
 
-  it('leaves out Passing Learners when the enable_course_passing switch is off, and the link without a URL', () => {
+  it('shows the program titles of each course run', () => {
+    render();
+    const programIndex = headers().indexOf('Program');
+    const programs = Array.prototype.map.call(
+      element.querySelectorAll('tbody tr'),
+      tr => tr.children[programIndex].textContent,
+    );
+
+    expect(programs).toEqual(['Program A, Program B', 'Program A', '--', '--']);
+  });
+
+  it('leaves out the columns whose switch is off, and the link without a URL', () => {
     props.passingUsersEnabled = false;
+    props.filtersEnabled = false;
     props.downloadUrl = '';
     render();
 
     expect(headers()).not.toContain('Passing Learners');
+    expect(headers()).not.toContain('Program');
     expect(downloadLink()).toBeNull();
   });
 
@@ -196,7 +209,7 @@ describe('ResultsSection', () => {
       open();
 
       expect(toggle().textContent.trim()).toBe('Columns');
-      expect(boxes().length).toBe(15);
+      expect(boxes().length).toBe(16);
       expect(box('Course Name')).toBeUndefined();
       expect(box('Total Engagements').checked).toBe(false);
       expect(box('Start Date').checked).toBe(true);

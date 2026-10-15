@@ -54,12 +54,17 @@ DateCell.propTypes = { value: PropTypes.string };
 DateCell.defaultProps = { value: null };
 
 function ValueCell({ value, column }) {
-  return isEmpty(value) ? <Missing /> : column.format(value);
+  if (isEmpty(value)) {
+    return <Missing />;
+  }
+  const text = column.format(value);
+  // Text can be long (program titles): the full text is also a tooltip.
+  return column.cellType === 'text' ? <span title={text}>{text}</span> : text;
 }
 
 ValueCell.propTypes = {
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  column: PropTypes.shape({ format: PropTypes.func }).isRequired,
+  column: PropTypes.shape({ format: PropTypes.func, cellType: PropTypes.string }).isRequired,
 };
 
 ValueCell.defaultProps = { value: null };
@@ -129,7 +134,9 @@ function toTableColumn(column, onCourseOpen) {
   if (column.cell === 'date') {
     return { ...tableColumn, Cell: DateCell };
   }
-  return { ...tableColumn, Cell: ValueCell, format: FORMATS[column.cell] || String };
+  return {
+    ...tableColumn, Cell: ValueCell, format: FORMATS[column.cell] || String, cellType: column.cell,
+  };
 }
 
 // react-table options: the caller sorts the rows, so the table must not reset or remove the sort by itself.

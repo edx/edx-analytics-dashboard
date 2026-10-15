@@ -23,7 +23,7 @@ describe('columns registry', () => {
   it('has the columns of the prototype, in its order', () => {
     expect(columns.map(entry => entry.label)).toEqual([
       'Course Name', 'Start Date', 'End Date', 'Total Enrollment', 'Current Enrollment', 'Total Engagements',
-      'Engagement Rate', 'Change Last Week', 'Verified Enrollment', 'Passing Learners', 'Sales Model',
+      'Engagement Rate', 'Change Last Week', 'Verified Enrollment', 'Passing Learners', 'Program', 'Sales Model',
       'Funding Model', 'B2B Enrollment', 'B2C Enrollment', 'Subscription Enrollment', 'À la Carte Enrollment',
     ]);
   });
@@ -37,9 +37,11 @@ describe('columns registry', () => {
       .toEqual(['total_engagements', 'engagement_rate']);
   });
 
-  it('shows Passing Learners only when the enable_course_passing switch is on', () => {
+  it('shows Passing Learners only with the enable_course_passing switch, and Program only with the filters', () => {
     expect(byId('passing_users').enabled({ passingUsersEnabled: true })).toBe(true);
     expect(byId('passing_users').enabled({ passingUsersEnabled: false })).toBe(false);
+    expect(byId('program').enabled({ filtersEnabled: true })).toBe(true);
+    expect(byId('program').enabled({ filtersEnabled: false })).toBe(false);
   });
 
   it('shows pending columns during development; set SHOW_PENDING_COLUMNS to false before the release', () => {

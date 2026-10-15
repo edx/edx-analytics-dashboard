@@ -15,14 +15,14 @@ All of this code runs only then. The flag is off by default.
   code fails to load, the spinner is replaced by an error message; if one section fails, that section shows an
   error state and the others keep working (section 10). Turning the flag off is the rollback.
 
-The page is a skeleton whose sections are filled in one by one (the results section is still a placeholder):
+The page's widgets and what each draws:
 
 | Widget | Draws |
 |---|---|
 | `CourseListPage` | The two sections and their headings: *Performance summary* and *Courses* |
 | `SummarySection` | The summary cards: one for each entry of `registries/metrics.js` (the Total Enrollment card so far). **The sample of a card, a registry entry and the data path behind them** (section 15) |
-| `ControlsSection` | The filter bar: search box, one dropdown per entry of `registries/filters.js`, Download CSV. The Columns menu is not built yet |
-| `ResultsSection` | The result count, table and pagination (placeholder; it already shows the loading and "no course data" states) |
+| `ControlsSection` | The filter bar: search box and one dropdown per entry of `registries/filters.js` |
+| `ResultsSection` | A toolbar row (the course run count, the Columns menu, Download CSV), then the course table (Paragon `DataTable`, one column per entry of `registries/columns.js`) and its pager; or the loading, "no course data" and "no match" states. **The sample of a table column** (section 15) |
 
 Libraries, pinned exactly in `package.json`: `react` and `react-dom` 18.3.1, `@reduxjs/toolkit` 1.9.7,
 `react-redux` 7.2.9, `prop-types` 15.8.1, `@openedx/paragon` 23.4.5 and `react-intl` 6.8.9. These are the
@@ -63,7 +63,7 @@ analytics_dashboard/static/apps/
         ├── state/                 store, slices, selectors and data validation
         ├── components/            presentational components: props in, markup out
         ├── widgets/               components connected to Redux with useSelector
-        ├── registries/            configuration: one entry per summary card (metrics.js) and per filter (filters.js); columns follow
+        ├── registries/            configuration: one entry per summary card (metrics.js), filter (filters.js) and table column (columns.js)
         ├── platform/              Insights-only adapters: page-model bridge, row normalization, formatting, tracking
         └── spec/fixtures/         JSON fixtures shared by the Python and JavaScript tests
 
@@ -388,8 +388,8 @@ No new component is needed: `SummarySection` draws one `SummaryCard` for each re
 ### Adding a filter (Availability is the sample)
 
 The search text and the selected values of each filter are in the Redux `query` slice. `selectFilteredRows`
-(`state/selectors.js`) applies them to the course rows, and the summary cards and, later, the table read the filtered
-rows. Values of one filter are alternatives (OR); filters narrow each other (AND). The search matches any word of the
+(`state/selectors.js`) applies them to the course rows, and the summary cards, the count and the table read the
+filtered rows. Values of one filter are alternatives (OR); filters narrow each other (AND). The search matches any word of the
 text, ignoring case, in the course title or course ID.
 
 To add a filter, for example Pacing, add one entry to `registries/filters.js`: `id`, `label`, `options` (`value`
@@ -401,6 +401,31 @@ a fixed list. The dropdowns are only shown when the server enabled the filters (
 The filter bar sends the legacy analytics events (`platform/tracking.js`, `createControlsTracker`). The Download CSV
 link goes to the server's `course_list_download_url` and always downloads the full list: making the CSV follow the
 filters and columns is a server change.
+
+### Adding a column (the table's columns are the sample)
+
+The table is Paragon `DataTable` in manual mode (`components/results/CourseTable.jsx`), the way the MFEs use it: the
+selectors filter, sort and page the rows (`selectSortedRows`, `selectPageRows`), and the table only draws the current
+page and reports header clicks. The sort and the page are in the `query` slice, the ticked columns in the `view`
+slice. A new search, filter or sort returns to page 1.
+
+To add a column, add one entry to `registries/columns.js`: `id` (the row field), `label` and `cell` (`'date'`,
+`'number'`, `'percent'` or `'text'`; number columns sort descending on the first click), and when needed
+`enabled(page)` for a waffle switch, `defaultVisible: false` to start unticked, or `pending: true` (below). If the
+field isn't in `course_list_json` as is, add it in `platform/course-rows.js` with a case in `course-rows-spec.js`, as
+the Program column does. The table, the Columns menu and the sorting pick the entry up; add its label to the order
+check in `registries/spec/columns-spec.js`.
+
+**Columns waiting for data.** A `pending` column whose field the server doesn't send yet shows "--" ("Data not
+available yet") and can't be sorted; as soon as a row has the field, it shows the values, with no code change. Its
+field must stay absent when there is no data: don't add it to the numbers `course-rows.js` turns into 0. **Before the
+release**, set `SHOW_PENDING_COLUMNS` in `registries/columns.js` to `false`, or check that every pending column has
+data, so users never see a column of "--".
+
+The table sends the legacy events for sorting (`edx.bi.course_list.sorted`), paging (`edx.bi.course_list.paged`) and
+the course link (`edx.bi.ui.menu.navigated`), and `edx.bi.course_list.columns_changed` for the Columns menu
+(`createResultsTracker` in `platform/tracking.js`). The sticky header and the fixed Course Name column are CSS, in the
+"course table" rules of `insights-theme.css`.
 
 ## 16. What moves to an MFE
 
