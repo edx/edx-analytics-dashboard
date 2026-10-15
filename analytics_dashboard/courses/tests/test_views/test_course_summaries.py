@@ -142,8 +142,6 @@ class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, T
             self.assertNotIn(key, course_data)
         self.assertContains(response, 'data-stat-type="total_enrollment">')
         self.assertNotContains(response, 'data-react-widget')
-        # Paragon's styles and script are only linked when the React widgets are enabled.
-        self.assertNotContains(response, 'paragon-styles')
 
     @override_flag('enable_react_course_list', active=True)
     def test_react_flag_on(self):
@@ -159,12 +157,7 @@ class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, T
                 'tooltip': TOTAL_ENROLLMENT_CARD['tooltip'],
             },
         })
-        self.assertContains(
-            response,
-            'data-stat-type="total_enrollment" data-react-widget="total-enrollment" '
-            'data-react-summary-metric="totalEnrollment">',
-        )
-        self.assertContains(response, 'paragon-styles')
+        self.assertContains(response, 'data-stat-type="total_enrollment" data-react-widget="total-enrollment">')
         # The server-rendered card stays inside the mount point as the fallback.
         self.assertInHTML(
             f'<div class="summary-point-label">{TOTAL_ENROLLMENT_CARD["label"]}</div>',

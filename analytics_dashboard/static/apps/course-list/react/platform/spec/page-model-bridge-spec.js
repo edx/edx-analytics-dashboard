@@ -2,7 +2,7 @@ import CourseModel from 'models/course-model';
 import { resetMonitoringForTests } from 'components/react/monitoring';
 import createCourseListStore from 'course-list/react/state/store';
 import connectPageModelToStore, { toSummaryPayload } from 'course-list/react/platform/page-model-bridge';
-import { selectSummaryMetric, selectSummaryText } from 'course-list/react/state/summary-slice';
+import { selectSummaryText, selectTotalEnrollment } from 'course-list/react/state/summary-slice';
 
 describe('connectPageModelToStore', () => {
   const summaryText = {
@@ -55,7 +55,7 @@ describe('connectPageModelToStore', () => {
   it('loads the page model into the store when connected', () => {
     connectPageModelToStore(courseModel, store);
 
-    expect(selectSummaryMetric(store.getState(), 'totalEnrollment')).toBe(3378149);
+    expect(selectTotalEnrollment(store.getState())).toBe(3378149);
     expect(selectSummaryText(store.getState(), 'totalEnrollment')).toEqual(summaryText.total_enrollment);
     expect(rum.addError).not.toHaveBeenCalled();
   });
@@ -64,7 +64,7 @@ describe('connectPageModelToStore', () => {
     connectPageModelToStore(courseModel, store);
     courseModel.set('summary', summary(3378150));
 
-    expect(selectSummaryMetric(store.getState(), 'totalEnrollment')).toBe(3378150);
+    expect(selectTotalEnrollment(store.getState())).toBe(3378150);
     expect(rum.addError).not.toHaveBeenCalled();
   });
 
@@ -73,7 +73,7 @@ describe('connectPageModelToStore', () => {
     courseModel.set('summary', summary('3,378,149'));
     courseModel.set('summary', summary(NaN));
 
-    expect(selectSummaryMetric(store.getState(), 'totalEnrollment')).toBe(3378149);
+    expect(selectTotalEnrollment(store.getState())).toBe(3378149);
     expect(rum.addError).toHaveBeenCalledTimes(1);
     const context = rum.addError.calls.argsFor(0)[1];
     expect(context['insights.react.widget']).toBe('summary');
@@ -89,7 +89,7 @@ describe('connectPageModelToStore', () => {
       courseModel.set('summary_text', 42);
     }).not.toThrow();
 
-    expect(selectSummaryMetric(store.getState(), 'totalEnrollment')).toBe(3378149);
+    expect(selectTotalEnrollment(store.getState())).toBe(3378149);
     expect(selectSummaryText(store.getState(), 'totalEnrollment')).toEqual(summaryText.total_enrollment);
     expect(rum.addError).toHaveBeenCalledTimes(1);
     expect(rum.addError.calls.argsFor(0)[1]['insights.react.failure_type']).toBe('invalid_update');
@@ -98,7 +98,7 @@ describe('connectPageModelToStore', () => {
   it('reports server_html as the recovery when no valid value was ever accepted', () => {
     connectPageModelToStore(new CourseModel({ summary: summary('3,378,149'), summary_text: summaryText }), store);
 
-    expect(selectSummaryMetric(store.getState(), 'totalEnrollment')).toBeUndefined();
+    expect(selectTotalEnrollment(store.getState())).toBeUndefined();
     expect(rum.addError).toHaveBeenCalledTimes(1);
     expect(rum.addError.calls.argsFor(0)[1]['insights.react.recovery']).toBe('server_html');
   });
@@ -114,6 +114,6 @@ describe('connectPageModelToStore', () => {
     disconnect();
     courseModel.set('summary', summary(1));
 
-    expect(selectSummaryMetric(store.getState(), 'totalEnrollment')).toBe(3378149);
+    expect(selectTotalEnrollment(store.getState())).toBe(3378149);
   });
 });

@@ -19,5 +19,5 @@ Promise.all([
   app.start();
 
   // Loads the React widgets only when the enable_react_course_list waffle flag is on (see react-loader.js).
-  loadReactWidgets(modelData, { trackingModel: page.models.trackingModel });
+  loadReactWidgets(modelData);
 });

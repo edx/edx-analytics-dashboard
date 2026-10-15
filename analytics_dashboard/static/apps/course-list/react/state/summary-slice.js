@@ -48,7 +48,7 @@ const summarySlice = createSlice({
 
 export const { summaryLoaded } = summarySlice.actions;
 
-export const selectSummaryMetric = (state, metric) => state.summary.metrics[metric];
+export const selectTotalEnrollment = state => state.summary.metrics.totalEnrollment;
 export const selectSummaryText = (state, key) => state.summary.text[key];
 
 export default summarySlice.reducer;

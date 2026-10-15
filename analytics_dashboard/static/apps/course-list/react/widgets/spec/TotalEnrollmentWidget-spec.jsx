@@ -4,15 +4,14 @@ import { Provider } from 'react-redux';
 
 import mountReact from 'components/react/mount-react';
 import { resetMonitoringForTests } from 'components/react/monitoring';
-import ParagonProvider from 'components/react/paragon/ParagonProvider';
 import ignoreExpectedErrors from 'components/react/spec/ignore-expected-errors';
 import createCourseListStore from 'course-list/react/state/store';
 import { summaryLoaded } from 'course-list/react/state/summary-slice';
-import SummaryMetricWidget from 'course-list/react/widgets/SummaryMetricWidget';
+import TotalEnrollmentWidget from 'course-list/react/widgets/TotalEnrollmentWidget';
 
 const card = require('course-list/react/spec/fixtures/total-enrollment-card.json');
 
-const NO_DATA_MESSAGE = 'Summary metric data is not available.';
+const NO_DATA_MESSAGE = 'Total enrollment data is not available.';
 const SERVER_CARD = '<div class="summary-point text-center"><div class="summary-point-wrapper">'
   + '<div class="summary-point-number" title="1,234">1,234</div>'
   + '<div class="summary-point-label">Total Enrollment</div>'
@@ -29,36 +28,28 @@ const afterRestore = (assertions, done) => {
     .catch(done.fail);
 };
 
-describe('SummaryMetricWidget', () => {
+describe('TotalEnrollmentWidget', () => {
   const text = { label: card.label, tooltip: card.tooltip };
   let element;
   let store;
-  let onTooltipShown;
 
-  const loadValue = (metric, value, metricText = text) => {
-    store.dispatch(summaryLoaded({ metrics: { [metric]: value }, text: { [metric]: metricText } }));
+  const loadValue = (value) => {
+    store.dispatch(summaryLoaded({ metrics: { totalEnrollment: value }, text: { totalEnrollment: text } }));
   };
-  const number = () => element.querySelector('.h2');
+  const number = () => element.querySelector('.summary-point-number');
 
   beforeEach(() => {
-    setFixtures(`<div id="summary-metric" data-react-widget="summary-metric">${SERVER_CARD}</div>`);
-    element = document.getElementById('summary-metric');
+    setFixtures(`<div id="total-enrollment" data-react-widget="total-enrollment">${SERVER_CARD}</div>`);
+    element = document.getElementById('total-enrollment');
     store = createCourseListStore();
-    onTooltipShown = jasmine.createSpy('onTooltipShown');
   });
 
   describe('with loaded data', () => {
     let root;
 
-    const renderWidget = (metric = 'totalEnrollment') => {
+    const renderWidget = () => {
       act(() => {
-        root.render(
-          <Provider store={store}>
-            <ParagonProvider>
-              <SummaryMetricWidget metric={metric} onTooltipShown={onTooltipShown} />
-            </ParagonProvider>
-          </Provider>,
-        );
+        root.render(<Provider store={store}><TotalEnrollmentWidget /></Provider>);
       });
     };
 
@@ -72,30 +63,23 @@ describe('SummaryMetricWidget', () => {
 
     card.cases.forEach(({ value, title, display }) => {
       it(`renders the value ${value} from the store`, () => {
-        loadValue('totalEnrollment', value);
+        loadValue(value);
         renderWidget();
 
         expect(number().getAttribute('title')).toBe(title);
         expect(number().textContent).toBe(display);
-        expect(element.querySelector('.h4').textContent).toBe(card.label);
+        expect(element.querySelector('.summary-point-label').textContent).toBe(card.label);
+        expect(element.querySelector('.summary-point-help .sr-only').textContent).toBe(card.tooltip);
       });
-    });
-
-    it('renders any metric, with its own text', () => {
-      loadValue('currentEnrollment', 1500, { label: 'Current Enrollment', tooltip: 'Current help.' });
-      renderWidget('currentEnrollment');
-
-      expect(number().textContent).toBe('1,500');
-      expect(element.querySelector('.h4').textContent).toBe('Current Enrollment');
     });
 
     it('updates the number in place when the store changes', () => {
       const [first, second] = card.cases;
-      loadValue('totalEnrollment', first.value);
+      loadValue(first.value);
       renderWidget();
       const numberNode = number();
 
-      act(() => loadValue('totalEnrollment', second.value));
+      act(() => loadValue(second.value));
 
       expect(number()).toBe(numberNode);
       expect(numberNode.textContent).toBe(second.display);
@@ -126,26 +110,18 @@ describe('SummaryMetricWidget', () => {
       restoreOnError();
     });
 
-    const mountWidget = () => {
-      act(() => {
-        mountReact(element, SummaryMetricWidget, {
-          store,
-          wrapper: ParagonProvider,
-          props: { metric: 'totalEnrollment', onTooltipShown },
-        });
-      });
-    };
-
     it('throws, so mountReact keeps the server-rendered card', (done) => {
       const serverHtml = element.innerHTML;
 
-      mountWidget();
+      act(() => {
+        mountReact(element, TotalEnrollmentWidget, { store });
+      });
 
       afterRestore(() => {
         expect(element.innerHTML).toBe(serverHtml);
         expect(element.textContent).not.toContain(NO_DATA_MESSAGE);
         expect(rum.addError.calls.argsFor(0)[1]['insights.react.failure_type']).toBe('render_error');
-        expect(rum.addError.calls.argsFor(0)[1]['insights.react.widget']).toBe('summary-metric');
+        expect(rum.addError.calls.argsFor(0)[1]['insights.react.widget']).toBe('total-enrollment');
       }, done);
     });
 
@@ -153,7 +129,9 @@ describe('SummaryMetricWidget', () => {
       const serverHtml = element.innerHTML;
       store.dispatch(summaryLoaded({ metrics: { totalEnrollment: 10 }, text: {} }));
 
-      mountWidget();
+      act(() => {
+        mountReact(element, TotalEnrollmentWidget, { store });
+      });
 
       afterRestore(() => {
         expect(element.innerHTML).toBe(serverHtml);

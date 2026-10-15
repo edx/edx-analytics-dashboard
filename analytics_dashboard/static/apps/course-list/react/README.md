@@ -16,7 +16,7 @@ Current widgets:
 
 | Widget | Mount element | Replaces |
 |---|---|---|
-| `SummaryMetricWidget` (one widget for every summary card) | `div[data-react-summary-metric]` in `courses/templates/courses/index.html`. Only Total Enrollment is marked so far | The card rendered by `templates/summary_point.html` |
+| `TotalEnrollmentWidget` | `div[data-stat-type="total_enrollment"]` in `courses/templates/courses/index.html` | The Total Enrollment card rendered by `templates/summary_point.html` |
 
 Libraries, pinned exactly in `package.json`: `react` and `react-dom` 18.3.1, `@reduxjs/toolkit` 1.9.7,
 `react-redux` 7.2.9, `prop-types` 15.8.1, `@openedx/paragon` 23.4.5 and `react-intl` 6.8.9. These are the
@@ -57,7 +57,7 @@ analytics_dashboard/static/apps/
         ├── state/                 store, slices, selectors and data validation
         ├── components/            presentational components: props in, markup out
         ├── widgets/               components connected to Redux with useSelector
-        ├── platform/              Insights-only adapters: page-model bridge, formatting, tracking
+        ├── platform/              Insights-only adapters: page-model bridge, formatting, Bootstrap tooltip
         └── spec/fixtures/         JSON fixtures shared by the Python and JavaScript tests
 
 webpack/paragon/                   build helpers for Paragon (section 17); not application code
@@ -86,11 +86,10 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
 - **Use Paragon components and utility classes** (`d-flex`, `text-center`, `py-3`, `h2`, ...). Don't write CSS
   for them. Paragon takes its colours, font and corners from `--pgn-*` theme variables, and
   `components/react/paragon/insights-theme.css` sets those to Insights' values (Open Sans, the edX blue
-  `#0075B4`, the card border and corner radius). Change the look there, in one place. The same file has the rules that make the summary card, and its help
-  icon, look like the legacy cards (scale, border, font sizes, icon colour).
+  `#0075B4`, the card border and corner radius). Change the look there, in one place.
 - **Paragon's CSS is scoped.** The build applies it only inside the `.paragon-styles` element that
-  `ParagonProvider` renders, so it can't affect the rest of the page (section 17). The page links it only when
-  the flag is on.
+  `ParagonProvider` renders, so it can't affect the rest of the page (section 17). A page gets it by linking the
+  `paragon-styles` bundle; no page does yet.
 - **If an Insights Bootstrap 3 rule leaks into a Paragon widget** (for example the top margin Insights gives
   headings), add a rule to `insights-theme.css`. It is scoped like the rest of the file, so it only applies inside
   Paragon widgets. Check the widget in a browser at 375 and 1440 px.
@@ -108,7 +107,7 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
 5. Derive arrays and objects with `createSelector`, so components only re-render when their inputs change.
 6. Give list items stable keys, for example `course_id`.
 
-`SummaryMetricWidget.jsx`, `SummaryCard.jsx` and `state/summary-slice.js` follow this pattern.
+`TotalEnrollmentWidget.jsx`, `SummaryCard.jsx` and `state/summary-slice.js` follow this pattern.
 
 ## 5. Getting data into Redux
 
@@ -131,7 +130,7 @@ Insights isn't internationalized, so React widgets show English.
   moves to the MFE, wrap its strings in `react-intl` messages there.
 - **Strings the legacy widget already shows from a Django template:** pass them from the view in the page data,
   with the same message IDs, so both versions show identical text while the flag exists. `summary_text` in
-  `CourseIndex.get_context_data` does this for the card labels and tooltips.
+  `CourseIndex.get_context_data` does this for the Total Enrollment label and tooltip.
 - Paragon requires `react-intl` (many of its components use it for their built-in text, such as "Close" or
   "Search"), so `ParagonProvider` supplies it, fixed to English. That is a technical requirement of Paragon, not
   internationalization of Insights.
@@ -150,33 +149,31 @@ Insights isn't internationalized, so React widgets show English.
 
 ## 8. Tooltips and tracking
 
-- Use Paragon's `OverlayTrigger` and `Tooltip`, with an `IconButton` as the trigger (see `SummaryCard.jsx`).
-  Give each tooltip an `id` that is unique on the page. Don't use Bootstrap 3's jQuery `.tooltip()` in widgets.
+- **Legacy-look widgets** (the Total Enrollment card today): activate every `has-tooltip` element with
+  `useBootstrapTooltip(ref, title)` from `react/platform/use-bootstrap-tooltip.js`. `load/init-tooltips.js` runs
+  once at page load and never sees React-rendered elements.
+- Never import Bootstrap again. `application-main.js` loads it on every page.
+- Keep the same `data-track-*` attributes as the legacy markup. `TrackingView` listens for `shown.bs.tooltip`
+  on the whole document, so the tooltip events are still recorded.
+- Bootstrap moves the `title` attribute into `data-original-title` when it activates a tooltip. Tests should
+  check `data-original-title`.
+- **Paragon widgets:** use Paragon's `OverlayTrigger` and `Tooltip`, with an `IconButton` as the trigger. Give each
+  tooltip an `id` that is unique on the page. Don't use Bootstrap 3's jQuery `.tooltip()` in them.
 - Paragon's tooltips are drawn into `<body>`, outside the widget. The build adds rules that style them only when
   they are Bootstrap 4 tooltips (`bs-tooltip-*`), so Insights' own jQuery tooltips are unaffected (section 17).
-- **Analytics.** Legacy tooltips are tracked by `js/views/tracking-view.js`, which listens for Bootstrap's
-  `shown.bs.tooltip`. Paragon's tooltips don't fire it. Pass `onTooltipShown` to the widget; it is created by
-  `platform/tracking.js` (`createTooltipTracker`) and triggers the same `segment:track` event,
-  `edx.bi.tooltip.displayed`, with the same properties as the legacy cards, once per card.
+- **Analytics for Paragon tooltips.** `TrackingView` listens for Bootstrap's `shown.bs.tooltip`, which Paragon's
+  tooltips don't fire. A Paragon widget must send the same `segment:track` event itself, through the tracking
+  model (`trackingModel.trigger('segment:track', 'edx.bi.tooltip.displayed', { title, category, type })`), with
+  the same properties as the legacy markup's `data-track-*` attributes.
 - Legacy markup restored by the fallback still gets its jQuery tooltips back (see `mountReact`).
 
 ## 9. Mounting
 
 - **Elements rendered by Django:** in the template, add `data-react-widget="<name>"` to the existing element
   only when the flag is on (`{% if enable_react_course_list %}`). Then mount from `react/index.js` with
-  `mountReact(element, Widget, { store, wrapper: ParagonProvider })`. React manages only that element's
-  children. Its classes and attributes stay unchanged, apart from the markers below. `wrapper` is required for
-  Paragon widgets: it supplies `react-intl` and the `.paragon-styles` scope.
-- **Summary cards** are mounted by `startReactWidgets` on every element with `data-react-summary-metric="<key>"`
-  (`totalEnrollment`, `currentEnrollment`, `enrollmentChange7Days`, `verifiedEnrollment`, `mastersEnrollment`).
-  See section 15 for adding a card.
-- **Widgets inside the Backbone app:** mount into a Marionette region through a region adapter (planned, not in
-  the code yet).
-- Mount one widget per element.
-- Always keep the server-rendered or Backbone version in the element. It is the fallback.
-- The function `mountReact` returns unmounts the widget and puts the original server-rendered HTML back into
-  the element, with its tooltips re-activated. A failing widget does the same by itself (see "Fallback
-  behavior"), so production code rarely needs to call it.
+  `mountReact(element, Widget, { store })`. React manages only that element's children. Its classes and
+  attributes stay unchanged, apart from the markers below. Paragon widgets also pass
+  `wrapper: ParagonProvider`, which supplies `react-intl` and the `.paragon-styles` scope.
 
 ### Seeing which parts are React
 
@@ -203,7 +200,7 @@ Every widget must keep these rules:
 - React replaces the server markup only by rendering successfully.
 - If a widget can't render correct output, for example because no valid data has been loaded, it **throws**
   an `Error` with a fixed message that contains no data. `mountReact` then restores the server HTML.
-  `SummaryMetricWidget` does this.
+  `TotalEnrollmentWidget` does this.
 - After the first successful render, the bridge must reject invalid data, so the last valid value stays.
 - A render crash restores the last successful output. The restore writes the HTML straight back into the
   mount element, with no wrapper, and re-activates its tooltips.
@@ -254,10 +251,6 @@ Rules:
   - list flags: `python manage.py waffle_flag --list`
 - **Stage and production:** Django admin, Waffle → Flags. A Flag can be turned on for staff, specific users or
   a percentage of users first.
-- **Build before you turn the flag on.** With the flag on, `courses/index.html` links the `paragon-styles` bundle,
-  so `webpack-stats.json` must contain it. If the static files were built before this code was pulled (or not
-  built at all), the course list page fails with a webpack-loader "bundle not found" error until you run
-  `make static` (or `npm run build`) and restart. With the flag off, the page doesn't need that bundle.
 
 ## 13. Preserving the legacy fallback
 
@@ -343,20 +336,6 @@ Rules:
 8. Run the bundle check (section 13), and look at the widget in a browser with the flag on and off.
 9. Update this README if you introduce a new pattern.
 
-### Adding the next summary card (for example Current Enrollment)
-
-No new JavaScript file is needed:
-
-1. In `courses/templates/courses/index.html`, add `data-react-widget="current-enrollment"
-   data-react-summary-metric="currentEnrollment"` to the card's column, inside `{% if enable_react_course_list %}`,
-   as the Total Enrollment column does.
-2. In `CourseIndex.get_context_data` (`courses/views/course_summaries.py`), add `current_enrollment` to
-   `summary_text` with the same `_()` label and tooltip the template uses.
-3. Add tests: the Python view test (flag on and off) and a case in `react/spec/index-spec.jsx`.
-4. Look at it in a browser with the flag on.
-
-The bridge already maps all five summary numbers into the store.
-
 ## 16. What moves to an MFE
 
 The course list is expected to move to a micro-frontend (MFE) later.
@@ -388,7 +367,7 @@ widget.
 | Browsers ignore Paragon's `@media (--pgn-...)` custom media queries | Resolves them from Paragon's own definitions |
 
 At run time: `ParagonProvider` wraps each Paragon widget in `react-intl`'s provider (English) and an element with
-the class `paragon-styles`, and the template links the `paragon-styles` CSS file only when the flag is on.
+the class `paragon-styles`, and a page must link the `paragon-styles` CSS file (and, in development, its JS bundle) to get the styles.
 
 **Before you use a Paragon modal, toast or sheet:** Paragon draws these into elements it creates at the end of
 `<body>` (`paragon-portal-root`, `toast-root`, `sheet-root`), which are outside `.paragon-styles`, so they would be
@@ -396,8 +375,8 @@ unstyled. Create those three elements once, before the first one is shown, each 
 (for example `document.createElement('div')`, set its `id`, add the class, append it to `document.body`).
 Paragon reuses an element that already exists. Tooltips, popovers and dropdown menus need none of this.
 
-Cost: about 175 KB of gzipped JavaScript in the React chunk and 78 KB of gzipped CSS, downloaded only on the
-course list with the flag on.
+Cost, measured with the first Paragon card: about 175 KB of gzipped JavaScript in the React chunk and 78 KB of
+gzipped CSS, downloaded only by a page that uses Paragon widgets.
 
 ## 18. Upgrading Paragon
 
@@ -413,4 +392,4 @@ course list with the flag on.
 4. Run `npm run check:paragon` and `npm test`. Check that the breakpoints in `breakpoints.js` still match
    Paragon's `styles/scss/core/_exports.module.scss`, and that the `--pgn-*` variables in `insights-theme.css`
    still exist.
-5. Look at the card in a browser, with the flag on and off, including its tooltip.
+5. Look at a Paragon widget in a browser, with the flag on and off, including its tooltip.

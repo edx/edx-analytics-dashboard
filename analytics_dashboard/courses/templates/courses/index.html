@@ -21,7 +21,7 @@
     {% if summary %}
         <div class="section-content" role="region">
             <div class="row">
-                <div class="col col-12 sm-col-12 md-col-3" data-stat-type="total_enrollment"{% if enable_react_course_list %} data-react-widget="total-enrollment" data-react-summary-metric="totalEnrollment"{% endif %}>
+                <div class="col col-12 sm-col-12 md-col-3" data-stat-type="total_enrollment"{% if enable_react_course_list %} data-react-widget="total-enrollment"{% endif %}>
                     {# Translators: This is a label to identify the maximum number of learners ever in all of the instructor's courses. #}
                     {% trans "Total Enrollment" as label %}
                     {% trans "Total enrollments across all of your courses." as tooltip %}
@@ -69,19 +69,10 @@
     {% for css_file in common_css %}
         <link rel="stylesheet" href="{{ css_file.publicPath }}" type="text/css">
     {% endfor %}
-    {# Paragon's styles, scoped under .paragon-styles. Loaded only when the React widgets are enabled. #}
-    {% if enable_react_course_list %}
-        {% get_files 'paragon-styles' 'css' as paragon_css %}
-        {% for css_file in paragon_css %}
-            <link rel="stylesheet" href="{{ css_file.publicPath }}" type="text/css">
-        {% endfor %}
-    {% endif %}
 {% endblock stylesheets %}
 
 {% block javascript %}
   {{ block.super }}
-  {# In development, this bundle injects Paragon's styles; in production its CSS is linked above. #}
-  {% if enable_react_course_list %}{% render_bundle 'paragon-styles' 'js' %}{% endif %}
   {% render_bundle 'course-list-main' %}
 {% endblock javascript %}
 

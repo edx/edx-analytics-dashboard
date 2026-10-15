@@ -38,7 +38,7 @@ describe('loadReactWidgets', () => {
     it(`does not load the React code when the flag is ${description}`, (done) => {
       const importWidgets = jasmine.createSpy('importWidgets');
 
-      loadReactWidgets(new CourseModel(attributes), { importWidgets }).then((started) => {
+      loadReactWidgets(new CourseModel(attributes), importWidgets).then((started) => {
         expect(started).toBe(false);
         expect(importWidgets).not.toHaveBeenCalled();
         expect(page.querySelector('[data-react-fallback]')).toBeNull();
@@ -51,13 +51,11 @@ describe('loadReactWidgets', () => {
 
   it('starts the React widgets with the page model when the flag is on', (done) => {
     const courseModel = flagOn();
-    const trackingModel = new CourseModel();
     const startReactWidgets = jasmine.createSpy('startReactWidgets');
-    const importWidgets = () => Promise.resolve({ default: startReactWidgets });
 
-    loadReactWidgets(courseModel, { trackingModel, importWidgets }).then((started) => {
+    loadReactWidgets(courseModel, () => Promise.resolve({ default: startReactWidgets })).then((started) => {
       expect(started).toBe(true);
-      expect(startReactWidgets).toHaveBeenCalledWith({ courseModel, trackingModel });
+      expect(startReactWidgets).toHaveBeenCalledWith({ courseModel });
       expect(rum.addError).not.toHaveBeenCalled();
       expect(rum.addAction).not.toHaveBeenCalled();
       done();
@@ -84,7 +82,7 @@ describe('loadReactWidgets', () => {
       const widget = page.querySelector('[data-react-widget]');
       const serverMarkup = widget.innerHTML;
 
-      loadReactWidgets(flagOn(), { importWidgets }).then((started) => {
+      loadReactWidgets(flagOn(), importWidgets).then((started) => {
         expect(started).toBe(false);
         expect(widget.innerHTML).toBe(serverMarkup);
         // Marked, to see it in DevTools.

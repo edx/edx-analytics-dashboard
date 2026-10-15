@@ -12,15 +12,13 @@ import { markFallback } from 'components/react/widget-markers';
  * widget-markers.js import nothing, so they're allowed.
  *
  * @param {Backbone.Model} courseModel - The page model built from initModelData.course.
- * @param {Object} [options]
- * @param {Backbone.Model} [options.trackingModel] - Sends analytics events; passed to the React widgets.
- * @param {Function} [options.importWidgets] - Loads the React chunk; replaced in tests.
+ * @param {Function} [importWidgets] - Loads the React chunk; replaced in tests.
  * @returns {Promise<boolean>} Resolves to true when the React widgets were started.
  */
-export default function loadReactWidgets(courseModel, {
-  trackingModel,
+export default function loadReactWidgets(
+  courseModel,
   importWidgets = () => import('apps/course-list/react/index'),
-} = {}) {
+) {
   if (!courseModel.get('enable_react_course_list')) {
     return Promise.resolve(false);
   }
@@ -40,7 +38,7 @@ export default function loadReactWidgets(courseModel, {
   return importWidgets().then(
     ({ default: startReactWidgets }) => {
       try {
-        startReactWidgets({ courseModel, trackingModel });
+        startReactWidgets({ courseModel });
         return true;
       } catch (error) {
         return keepServerMarkup('start_error', error);
