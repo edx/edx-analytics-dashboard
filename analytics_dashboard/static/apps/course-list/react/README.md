@@ -94,8 +94,8 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
   `components/react/paragon/insights-theme.css` sets those to Insights' values (Open Sans, the edX blue
   `#0075B4`, the card border and corner radius). Change the look there, in one place.
 - **Paragon's CSS is scoped.** The build applies it only inside the `.paragon-styles` element that
-  `ParagonProvider` renders, so it can't affect the rest of the page (section 17). A page gets it by linking the
-  `paragon-styles` bundle; no page does yet.
+  `ParagonProvider` renders, so it can't affect the rest of the page (section 17). The course list page links the
+  `paragon-styles` bundle when the flag is on (`courses/index.html`).
 - **If an Insights Bootstrap 3 rule leaks into a Paragon widget** (for example the top margin Insights gives
   headings), add a rule to `insights-theme.css`. It is scoped like the rest of the file, so it only applies inside
   Paragon widgets. Check the widget in a browser at 375 and 1440 px.
@@ -145,8 +145,8 @@ Insights isn't internationalized, so React widgets show English.
 
 - Use `formatCount` from `react/platform/format.js`, which uses Globalize like the rest of the course list.
   Never use `toLocaleString`.
-- For summary cards, use `formatSummaryNumber`. It mirrors the template: `default_if_none:0`, the full
-  `intcomma` value in the `title`, and `truncatechars:13` for the visible text.
+- For summary cards (not built yet), use `formatSummaryNumber`. It mirrors the legacy template: `default_if_none:0`,
+  the full `intcomma` value in the `title`, and `truncatechars:13` for the visible text.
 - **English only.** The match with the template is exact in English, and the shared fixture and tests check
   English. Django's `intcomma` and Globalize can differ in other languages (digits, separators, length), so
   the number can look different when React replaces the server card. This is a known limitation while the
@@ -171,7 +171,6 @@ Insights isn't internationalized, so React widgets show English.
   tooltips don't fire. A Paragon widget must send the same `segment:track` event itself, through the tracking
   model (`trackingModel.trigger('segment:track', 'edx.bi.tooltip.displayed', { title, category, type })`), with
   the same properties as the legacy markup's `data-track-*` attributes.
-- Legacy markup restored by the fallback still gets its jQuery tooltips back (see `mountReact`).
 
 ## 9. Mounting
 
@@ -181,8 +180,8 @@ Insights isn't internationalized, so React widgets show English.
   only that element's children. `wrapper: ParagonProvider` supplies `react-intl` and the `.paragon-styles`
   scope.
 - Every section of the page is wrapped in a `SectionBoundary` (see section 10).
-- The function `mountReact` returns unmounts the page and puts the original HTML (the spinner) back into the
-  element.
+- `mountReact` returns a function that unmounts the page, but `startReactPage` doesn't keep it: the page lives as
+  long as the document.
 
 ### Seeing which parts are React
 
@@ -203,8 +202,9 @@ these rules:
 |---|---|
 | Flag off | The legacy page; no React code is loaded |
 | The React chunk or the page model fails to load, or `startReactPage` throws | The spinner is replaced by Insights' error alert, "We are unable to load this page." (`react-loader.js`, `showLoadError`) |
-| The server sent no course data | The legacy "No course data is currently available for your course." message in the results |
+| The server sent no course data (no list, or an empty one) | The legacy "No course data is currently available for your course." message in the results |
 | The course data is malformed | The results section shows the error state |
+| The page layout throws while rendering | The error alert replaces the page (the layout has its own `SectionBoundary`) |
 | A section throws while rendering | That section shows the same error alert (`ErrorState`: "We are unable to load this section."); the other sections keep working |
 | Some rows have no `course_id` | Those rows are dropped and the rest is shown |
 
@@ -222,6 +222,8 @@ Failures are reported to the existing Datadog RUM integration (`window.DD_RUM`),
 - `reportWidgetFailure({ widget, failureType, recovery, error })` sends an error with a fixed message.
 - `reportFallbackActivated({ widget, fallback, failureType })` sends the `insights_react_fallback_activated`
   action.
+- `recovery` is what the user sees instead: `server_html`, `last_rendered`, `kept_last_value`, `error_state` (an
+  error alert) or `dropped_invalid_rows` (some rows were dropped).
 
 The adapter does nothing when RUM isn't loaded and never throws. Each widget and failure type is reported at
 most once per page load. Nothing is sent when everything works.
@@ -385,7 +387,7 @@ unstyled. Create those three elements once, before the first one is shown, each 
 (for example `document.createElement('div')`, set its `id`, add the class, append it to `document.body`).
 Paragon reuses an element that already exists. Tooltips, popovers and dropdown menus need none of this.
 
-Cost, measured with the first Paragon card: about 175 KB of gzipped JavaScript in the React chunk and 78 KB of
+Cost, measured earlier with the first Paragon card (not measured again on the current code): about 175 KB of gzipped JavaScript in the React chunk and 78 KB of
 gzipped CSS, downloaded only by a page that uses Paragon widgets.
 
 ## 18. Upgrading Paragon

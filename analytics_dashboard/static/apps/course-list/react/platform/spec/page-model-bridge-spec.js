@@ -52,16 +52,10 @@ describe('page model bridge', () => {
     expect(store.getState().courses.programs).toEqual([]);
   });
 
-  it('loads an empty course list as ready', () => {
-    connect({ course_list_json: [] });
-
-    expect(store.getState().courses.status).toBe('ready');
-    expect(store.getState().courses.rows).toEqual([]);
-  });
-
   [
     ['missing', {}],
     ['null', { course_list_json: null }],
+    ['empty (the server sends [] when there is no course data)', { course_list_json: [] }],
   ].forEach(([description, attributes]) => {
     it(`marks the data unavailable, without reporting an error, when the course list is ${description}`, () => {
       connect(attributes);
@@ -73,7 +67,7 @@ describe('page model bridge', () => {
 
   [
     ['not a list', { course_list_json: 'oops' }],
-    ['programs that are not a list', { course_list_json: [], programs_json: 'oops' }],
+    ['programs that are not a list', { course_list_json: [fixture.rows[0]], programs_json: 'oops' }],
   ].forEach(([description, attributes]) => {
     it(`marks the data as an error and reports it once for ${description}`, () => {
       connect(attributes);

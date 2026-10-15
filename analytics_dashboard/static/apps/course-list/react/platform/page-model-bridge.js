@@ -12,8 +12,8 @@ const reportInvalidData = recovery => reportWidgetFailure({
 /**
  * One-way sync from the page model (initModelData.course, see load/init-models.js) to the Redux store:
  * course_list_json (the course runs) and programs_json (only sent when course filters are enabled).
- *  - course_list_json missing: the server couldn't load the course data, so the status is 'unavailable'
- *    (the legacy page shows its "no course data" message then);
+ *  - course_list_json missing or an empty list (the server sends [] when there is no course data): the status is
+ *    'unavailable' (the legacy page shows its "no course data" message then);
  *  - malformed data: the status is 'error' and the failure is reported;
  *  - rows without a course_id are dropped and reported.
  * Returns a function that stops the syncing.
@@ -23,7 +23,7 @@ export default function connectPageModelToStore(courseModel, store) {
   const sync = () => {
     const rawRows = courseModel.get('course_list_json');
     const rawPrograms = courseModel.get('programs_json');
-    if (isMissing(rawRows)) {
+    if (isMissing(rawRows) || (Array.isArray(rawRows) && rawRows.length === 0)) {
       store.dispatch(coursesUnavailable());
       return;
     }

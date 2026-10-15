@@ -6,12 +6,9 @@ import ControlsSection from 'course-list/react/widgets/ControlsSection';
 import ResultsSection from 'course-list/react/widgets/ResultsSection';
 import SummarySection from 'course-list/react/widgets/SummarySection';
 
-/**
- * The course list page: the Performance summary and the Courses sections. Each section is wrapped in its own
- * boundary, so one that fails shows an error state while the others keep working. onSectionError(name, error)
- * is where the failure is reported.
- */
-export default function CourseListPage({ onSectionError }) {
+// The layout: the Performance summary and the Courses sections. Each section is wrapped in its own boundary, so
+// one that fails shows an error state while the others keep working.
+function PageLayout({ onSectionError }) {
   const guard = (name, section) => (
     <SectionBoundary name={name} fallback={ErrorState} onError={onSectionError}>{section}</SectionBoundary>
   );
@@ -28,6 +25,26 @@ export default function CourseListPage({ onSectionError }) {
         {guard('course-list-results', <ResultsSection />)}
       </section>
     </>
+  );
+}
+
+PageLayout.propTypes = {
+  onSectionError: PropTypes.func,
+};
+
+PageLayout.defaultProps = {
+  onSectionError: () => {},
+};
+
+/**
+ * The course list page. The layout is wrapped in a boundary too, so a failure of the layout itself shows the error
+ * state instead of leaving the spinner on screen. onSectionError(name, error) is where failures are reported.
+ */
+export default function CourseListPage({ onSectionError }) {
+  return (
+    <SectionBoundary name="course-list" fallback={ErrorState} onError={onSectionError}>
+      <PageLayout onSectionError={onSectionError} />
+    </SectionBoundary>
   );
 }
 

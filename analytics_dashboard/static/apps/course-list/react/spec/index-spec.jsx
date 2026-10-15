@@ -11,7 +11,11 @@ describe('startReactPage', () => {
   let rum;
   let root;
 
-  const start = courseModel => act(() => startReactPage({ courseModel }));
+  const start = (courseModel) => {
+    act(() => {
+      startReactPage({ courseModel });
+    });
+  };
 
   beforeEach(() => {
     resetMonitoringForTests();
@@ -65,11 +69,16 @@ describe('startReactPage', () => {
     expect(root.querySelector('.insights-placeholder')).not.toBeNull();
   });
 
-  it('shows the "no course data" message when the server sent no course data', () => {
-    start(new CourseModel({}));
+  [
+    ['no course list', {}],
+    ['an empty course list', { course_list_json: [] }],
+  ].forEach(([description, attributes]) => {
+    it(`shows the "no course data" message for ${description}`, () => {
+      start(new CourseModel(attributes));
 
-    expect(root.querySelector('.insights-empty-state-message').textContent)
-      .toBe('No course data is currently available for your course.');
+      expect(root.querySelector('.insights-empty-state-message').textContent)
+        .toBe('No course data is currently available for your course.');
+    });
   });
 
   it('throws when the page has no mount point', () => {
