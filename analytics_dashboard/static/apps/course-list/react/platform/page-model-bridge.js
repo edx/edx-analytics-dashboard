@@ -1,58 +1,44 @@
 import { reportWidgetFailure } from 'components/react/monitoring';
-import { acceptValidSummary, summaryLoaded } from 'course-list/react/state/summary-slice';
+import {
+  acceptValidRows, coursesFailed, coursesLoaded, coursesUnavailable,
+} from 'course-list/react/state/courses-slice';
+import { normalizeCourseRows } from 'course-list/react/platform/course-rows';
 
-// Server keys (CourseSummariesPresenter.get_course_summary_metrics) → store keys.
-const METRIC_KEYS = {
-  total_enrollment: 'totalEnrollment',
-  current_enrollment: 'currentEnrollment',
-  enrollment_change_7_days: 'enrollmentChange7Days',
-  verified_enrollment: 'verifiedEnrollment',
-  masters_enrollment: 'mastersEnrollment',
-};
+const isMissing = value => value === undefined || value === null;
 
-const isObject = value => typeof value === 'object' && value !== null;
-// Missing (undefined or null) is fine; anything else that isn't an object is malformed.
-const isMalformed = value => value !== undefined && value !== null && !isObject(value);
-
-export function toSummaryPayload(summary, summaryText) {
-  // The in operator throws on strings and numbers, so only objects are read.
-  const values = isObject(summary) ? summary : {};
-  const texts = isObject(summaryText) ? summaryText : {};
-  const metrics = {};
-  const text = {};
-  Object.keys(METRIC_KEYS).forEach((serverKey) => {
-    if (serverKey in values) {
-      metrics[METRIC_KEYS[serverKey]] = values[serverKey];
-    }
-    if (serverKey in texts) {
-      text[METRIC_KEYS[serverKey]] = texts[serverKey];
-    }
-  });
-  return { metrics, text };
-}
+const reportInvalidData = recovery => reportWidgetFailure({
+  widget: 'course-list', failureType: 'invalid_update', recovery,
+});
 
 /**
- * One-way sync from the page model (initModelData.course, see load/init-models.js) to the Redux store.
- * Invalid values are dropped and reported, so the store keeps the last valid ones.
+ * One-way sync from the page model (initModelData.course, see load/init-models.js) to the Redux store:
+ * course_list_json (the course runs) and programs_json (only sent when course filters are enabled).
+ *  - course_list_json missing: the server couldn't load the course data, so the status is 'unavailable'
+ *    (the legacy page shows its "no course data" message then);
+ *  - malformed data: the status is 'error' and the failure is reported;
+ *  - rows without a course_id are dropped and reported.
  * Returns a function that stops the syncing.
  */
 export default function connectPageModelToStore(courseModel, store) {
-  const events = 'change:summary change:summary_text';
+  const events = 'change:course_list_json change:programs_json';
   const sync = () => {
-    const summary = courseModel.get('summary');
-    const summaryText = courseModel.get('summary_text');
-    const { accepted, rejectedKeys } = acceptValidSummary(toSummaryPayload(summary, summaryText));
-    if (rejectedKeys.length || isMalformed(summary) || isMalformed(summaryText)) {
-      // Nothing was kept when no valid value had been accepted yet: the server-rendered card stays.
-      const { metrics, text } = store.getState().summary;
-      const hadValidValue = Object.keys(metrics).length > 0 || Object.keys(text).length > 0;
-      reportWidgetFailure({
-        widget: 'summary',
-        failureType: 'invalid_update',
-        recovery: hadValidValue ? 'kept_last_value' : 'server_html',
-      });
+    const rawRows = courseModel.get('course_list_json');
+    const rawPrograms = courseModel.get('programs_json');
+    if (isMissing(rawRows)) {
+      store.dispatch(coursesUnavailable());
+      return;
     }
-    store.dispatch(summaryLoaded(accepted));
+    if (!Array.isArray(rawRows) || !(isMissing(rawPrograms) || Array.isArray(rawPrograms))) {
+      reportInvalidData('error_state');
+      store.dispatch(coursesFailed());
+      return;
+    }
+    const programs = isMissing(rawPrograms) ? [] : rawPrograms;
+    const { rows, rejectedCount } = acceptValidRows(rawRows);
+    if (rejectedCount) {
+      reportInvalidData('dropped_invalid_rows');
+    }
+    store.dispatch(coursesLoaded({ rows: normalizeCourseRows(rows, programs), programs }));
   };
   courseModel.on(events, sync);
   sync();

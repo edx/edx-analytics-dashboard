@@ -45,7 +45,8 @@ function baseContext(widget) {
  * @param {Object} failure
  * @param {string} failure.widget - Widget or area name, e.g. 'total-enrollment'.
  * @param {string} failure.failureType - One of the MESSAGES keys.
- * @param {string} failure.recovery - What the user sees instead: 'server_html', 'last_rendered' or 'kept_last_value'.
+ * @param {string} failure.recovery - What the user sees instead: 'server_html', 'last_rendered', 'kept_last_value',
+ *   'error_state' (an error message) or 'dropped_invalid_rows'.
  * @param {Error} [failure.error] - Only its class name is sent.
  * @param {string} [failure.libraryVersion] - React version, when React is loaded.
  */

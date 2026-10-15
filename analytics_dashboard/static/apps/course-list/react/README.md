@@ -4,19 +4,27 @@ A guide for adding React widgets to the course list page (`/courses/`).
 
 ## 1. Purpose and status
 
-Parts of the course list page can be rendered with React and Redux Toolkit. All of this code runs only when
-the `enable_react_course_list` waffle flag is on. The flag is off by default.
+The course list page is drawn by React and Redux Toolkit when the `enable_react_course_list` waffle flag is on.
+All of this code runs only then. The flag is off by default.
 
 - **Flag off:** the page is the server-rendered and Backbone page, exactly as before. No React code is
   downloaded.
-- **Flag on:** the server still renders every widget. React replaces a widget only after it has rendered
-  successfully. The server-rendered or Backbone version is always the fallback.
+- **Flag on:** the page is drawn by React and **nothing legacy is rendered or started**. The template renders only
+  `#course-list-react-root` (a spinner) instead of the summary cards and the Backbone course list, and
+  `course-list-main.js` doesn't load the Backbone app. There is **no fallback to the legacy UI**: if the React
+  code fails to load, the spinner is replaced by an error message; if one section fails, that section shows an
+  error state and the others keep working (section 10). Turning the flag off is the rollback.
 
-Current widgets:
+The page is a skeleton whose sections are placeholders that are replaced one by one:
 
-| Widget | Mount element | Replaces |
-|---|---|---|
-| `TotalEnrollmentWidget` | `div[data-stat-type="total_enrollment"]` in `courses/templates/courses/index.html` | The Total Enrollment card rendered by `templates/summary_point.html` |
+| Widget | Draws |
+|---|---|
+| `CourseListPage` | The two sections and their headings: *Performance summary* and *Courses* |
+| `SummarySection` | The summary cards (placeholder) |
+| `ControlsSection` | The filter bar: search, filters, Columns menu, Download CSV (placeholder) |
+| `ResultsSection` | The result count, table and pagination (placeholder; it already shows the loading and "no course data" states) |
+
+The summary cards, the filters and the table columns are configuration: one entry each in `react/registries/`.
 
 Libraries, pinned exactly in `package.json`: `react` and `react-dom` 18.3.1, `@reduxjs/toolkit` 1.9.7,
 `react-redux` 7.2.9, `prop-types` 15.8.1, `@openedx/paragon` 23.4.5 and `react-intl` 6.8.9. These are the
@@ -50,14 +58,15 @@ analytics_dashboard/static/apps/
 │   └── spec/
 └── course-list/
     ├── app/
-    │   ├── course-list-main.js    (legacy) starts the Backbone app, then calls react-loader
+    │   ├── course-list-main.js    (legacy side) starts the Backbone app, or the React page when the flag is on
     │   └── react-loader.js        (legacy side) checks the flag, then import('apps/course-list/react/index')
     └── react/                     everything React for the course list; loaded only when the flag is on
-        ├── index.js               chunk entry point: startReactWidgets
+        ├── index.js               chunk entry point: startReactPage
+        ├── registries/            configuration: the metrics, filters and columns, one entry each
         ├── state/                 store, slices, selectors and data validation
         ├── components/            presentational components: props in, markup out
         ├── widgets/               components connected to Redux with useSelector
-        ├── platform/              Insights-only adapters: page-model bridge, formatting, Bootstrap tooltip
+        ├── platform/              Insights-only adapters: page-model bridge, row normalization, formatting
         └── spec/fixtures/         JSON fixtures shared by the Python and JavaScript tests
 
 webpack/paragon/                   build helpers for Paragon (section 17); not application code
@@ -107,7 +116,7 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
 5. Derive arrays and objects with `createSelector`, so components only re-render when their inputs change.
 6. Give list items stable keys, for example `course_id`.
 
-`TotalEnrollmentWidget.jsx`, `SummaryCard.jsx` and `state/summary-slice.js` follow this pattern.
+`ResultsSection.jsx`, `CourseListPage.jsx` and `state/courses-slice.js` follow this pattern.
 
 ## 5. Getting data into Redux
 
@@ -115,12 +124,13 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
   the page model (`initModelData.course`) into the store, and listens for changes.
 - **The Backbone course list collection:** a one-way collection bridge in `platform/` (planned, not in the code
   yet).
-- Every bridge validates values with a pure function in `react/state/`, like `acceptValidSummary`. It
+- Every bridge validates values with a pure function in `react/state/`, like `acceptValidRows`. It
   dispatches only valid values and reports rejected ones as `invalid_update` (see section 11).
 - React never writes to Backbone directly. Changes go through a commands module in `platform/` that calls the
   collection's methods (planned, not in the code yet).
 - Only one layer writes any piece of state at a time. State is never synced in both directions. Today the
-  page model is the only writer of `summary`.
+  page model is the only writer of the course rows (`courses`), and the page's components are the only
+  writers of the user's choices (`query`, `view`).
 
 ## 6. Translations
 
@@ -149,9 +159,9 @@ Insights isn't internationalized, so React widgets show English.
 
 ## 8. Tooltips and tracking
 
-- **Legacy-look widgets** (the Total Enrollment card today): activate every `has-tooltip` element with
-  `useBootstrapTooltip(ref, title)` from `react/platform/use-bootstrap-tooltip.js`. `load/init-tooltips.js` runs
-  once at page load and never sees React-rendered elements.
+- **Legacy-look widgets** (none now): `load/init-tooltips.js` runs once at page load and never sees
+  React-rendered elements, so activate their `has-tooltip` elements from the widget. (The helper that did this
+  was removed with the foundation card.)
 - Never import Bootstrap again. `application-main.js` loads it on every page.
 - Keep the same `data-track-*` attributes as the legacy markup. `TrackingView` listens for `shown.bs.tooltip`
   on the whole document, so the tooltip events are still recorded.
@@ -169,49 +179,43 @@ Insights isn't internationalized, so React widgets show English.
 
 ## 9. Mounting
 
-- **Elements rendered by Django:** in the template, add `data-react-widget="<name>"` to the existing element
-  only when the flag is on (`{% if enable_react_course_list %}`). Then mount from `react/index.js` with
-  `mountReact(element, Widget, { store })`. React manages only that element's children. Its classes and
-  attributes stay unchanged, apart from the markers below. Paragon widgets also pass
-  `wrapper: ParagonProvider`, which supplies `react-intl` and the `.paragon-styles` scope.
-- **Widgets inside the Backbone app:** mount into a Marionette region through a region adapter (planned, not in
-  the code yet).
-- Mount one widget per element.
-- Always keep the server-rendered or Backbone version in the element. It is the fallback.
-- The function `mountReact` returns unmounts the widget and puts the original server-rendered HTML back into
-  the element, with its tooltips re-activated. A failing widget does the same by itself (see "Fallback
-  behavior"), so production code rarely needs to call it.
+- **The page** has one mount point, `#course-list-react-root`, which the template renders only when the flag is
+  on. `startReactPage` in `react/index.js` mounts `CourseListPage` into it with
+  `mountReact(element, CourseListPage, { store, wrapper: ParagonProvider, name: 'course-list' })`. React manages
+  only that element's children. `wrapper: ParagonProvider` supplies `react-intl` and the `.paragon-styles`
+  scope.
+- Every section of the page is wrapped in a `SectionBoundary` (see section 10).
+- The function `mountReact` returns unmounts the page and puts the original HTML (the spinner) back into the
+  element.
 
 ### Seeing which parts are React
 
 `mountReact` marks every mount element automatically; widgets need no code for this:
 
 - `data-react-rendered="<widget>"` after the first successful render;
-- `data-react-fallback="<widget>"` when the server-rendered HTML is shown instead (render failure, or the React
-  chunk failed to load or start).
+- `data-react-fallback="<widget>"` when `mountReact` restored the original HTML after the whole page failed to
+  render.
 
 The markers are invisible. Check them in DevTools → Elements.
 
-## 10. Fallback behavior
+## 10. Failure behavior
 
-Every widget must keep these rules:
+There is no fallback to the legacy UI (it isn't rendered when the flag is on). Every part of the page must keep
+these rules:
 
 | Situation | What the user sees |
 |---|---|
-| Flag off | The server-rendered widget; no React code is loaded |
-| The React chunk fails to load, or `startReactWidgets` throws | The server-rendered widget, untouched (`react-loader.js`) |
-| The first render fails, including missing data | The server-rendered HTML, restored exactly |
-| A later update carries invalid data | The latest valid value; the bridge rejects the invalid one |
-| A later render fails | The last successful React output, restored exactly; the widget stops updating |
+| Flag off | The legacy page; no React code is loaded |
+| The React chunk fails to load, or `startReactPage` throws | The spinner is replaced by "Something went wrong loading this page." and a reload link (`react-loader.js`) |
+| The server sent no course data | The legacy "No course data is currently available for your course." message in the results |
+| The course data is malformed | The results section shows the error state |
+| A section throws while rendering | That section shows the error state (`ErrorState`, with a Reload page button); the other sections keep working |
+| Some rows have no `course_id` | Those rows are dropped and the rest is shown |
 
-- React replaces the server markup only by rendering successfully.
-- If a widget can't render correct output, for example because no valid data has been loaded, it **throws**
-  an `Error` with a fixed message that contains no data. `mountReact` then restores the server HTML.
-  `TotalEnrollmentWidget` does this.
-- After the first successful render, the bridge must reject invalid data, so the last valid value stays.
-- A render crash restores the last successful output. The restore writes the HTML straight back into the
-  mount element, with no wrapper, and re-activates its tooltips.
-- Never render error text. Never call `console.error` directly; use the monitoring adapter.
+- Each section of `CourseListPage` is wrapped in a `SectionBoundary`. When a section can't render correct output,
+  for example because no valid data has been loaded, it **throws** an `Error` with a fixed message that contains
+  no data (`ResultsSection` does this). The boundary shows `ErrorState`, and `onSectionError` reports it.
+- Never render the text of an error. Never call `console.error` directly; use the monitoring adapter.
 
 ## 11. Monitoring
 
@@ -228,7 +232,7 @@ most once per page load. Nothing is sent when everything works.
 | `failure_type` | Message | When |
 |---|---|---|
 | `chunk_load` | Insights React widgets failed to load | The React chunk couldn't be loaded |
-| `start_error` | Insights React widgets failed to start | `startReactWidgets` threw |
+| `start_error` | Insights React widgets failed to start | `startReactPage` threw |
 | `render_error` | Insights React widget failed to render | The error boundary caught an error |
 | `invalid_update` | Insights React widget received invalid data | A bridge rejected a value |
 
@@ -250,8 +254,8 @@ Rules:
   (`analytics_dashboard/courses/views/course_summaries.py`). The same value goes to the template context and,
   only when the flag is on, to the page data as `enable_react_course_list`. With the flag off, the page data
   is unchanged.
-- Never read waffle in JavaScript. `react-loader.js` only reads `enable_react_course_list` from the page
-  model.
+- Never read waffle in JavaScript. `course-list-main.js` and `react-loader.js` only read
+  `enable_react_course_list` from the page data.
 - **Devstack:**
   - on for everyone: `python manage.py waffle_flag enable_react_course_list --create --everyone`
   - off for everyone: `python manage.py waffle_flag enable_react_course_list --deactivate`
@@ -259,14 +263,14 @@ Rules:
 - **Stage and production:** Django admin, Waffle → Flags. A Flag can be turned on for staff, specific users or
   a percentage of users first.
 
-## 13. Preserving the legacy fallback
+## 13. Keeping the legacy page working
 
-- Don't change legacy templates or Backbone views, except to add mount points behind the flag.
-- With the flag off, the page HTML must stay unchanged. Add a Python view test for the flag-off and flag-on
+- Don't change legacy templates or Backbone views, except to render them only when the flag is off.
+- With the flag off, the page must stay as it was. Keep the Python view tests for the flag-off and flag-on
   output, as `courses/tests/test_views/test_course_summaries.py` does.
 - Never import React, Redux or anything under `course-list/react/` from legacy code. The only exceptions are
-  `react-loader.js`'s dynamic `import()` and its imports of `components/react/monitoring.js` and
-  `components/react/widget-markers.js`, which import nothing.
+  `react-loader.js`'s dynamic `import()` and its import of `components/react/monitoring.js`, which imports
+  nothing.
 - **Bundle check.** Build with a stats report and list each chunk's modules:
 
   ```bash
@@ -305,7 +309,8 @@ Rules:
   `total-enrollment-card.json`. Don't hard-code expected values in specs.
 - Test monitoring by setting `window.DD_RUM` to an object with `addError` and `addAction` spies, and call
   `resetMonitoringForTests()` in `beforeEach`.
-- Test the fallback paths: first-render failure, later render failure and invalid data.
+- Test the failure paths: a section that throws, data that is unavailable or malformed, and the chunk failing to
+  load.
 - **Specs that expect a render error:** React's development build, which Karma uses, sends render errors to
   `window.onerror`, and Jasmine then fails the spec even when the error boundary handled the error. Call
   `ignoreExpectedErrors([message])` from `components/react/spec/ignore-expected-errors.js` in `beforeEach`, and
@@ -331,15 +336,16 @@ Rules:
 
 ## 15. Checklist for a new widget
 
-1. Add a mount point behind the flag in the Django template, or a Marionette region.
+1. Add the widget to the page (`CourseListPage`) in its own `SectionBoundary`, or add an entry to the matching
+   registry.
 2. Add a slice, selectors, validation and the bridge mapping.
 3. Add a presentational component (Paragon, with plain English text) and a connected widget. The widget throws
    when it has no valid data.
 4. Handle number formatting and tracking through the `platform/` adapters.
 5. Don't write CSS; use Paragon components, utility classes and the theme (section 3).
-6. Mount it in `react/index.js` with `wrapper: ParagonProvider`.
-7. Write tests: unit tests, update in place, invalid data keeps the last value, a render failure restores the
-   HTML exactly, flag off and on, axe-core and monitoring.
+6. Add the entry or widget in the section that shows it. The page is mounted once, in `react/index.js`.
+7. Write tests: unit tests, update in place, invalid data keeps the last value, a render failure shows the error
+   state, flag off and on, axe-core and monitoring.
 8. Run the bundle check (section 13), and look at the widget in a browser with the flag on and off.
 9. Update this README if you introduce a new pattern.
 

@@ -47,3 +47,31 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 body {
   background-color: transparent;
 }
+
+/*
+ * The course list page: its sections and their headings, and the placeholders that mark where a developer's
+ * component goes. Heading sizes follow the mockup.
+ */
+.insights-page-section {
+  margin-bottom: 30px;
+}
+
+.insights-section-heading {
+  margin-bottom: 15px;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.insights-placeholder {
+  padding: 24px;
+  border: 2px dashed #D4D2CF; /* $gray-l2 */
+  color: #8B857F; /* $gray */
+  text-align: center;
+}
+
+.insights-loading-state,
+.insights-empty-state,
+.insights-error-state {
+  padding: 24px 0;
+}
