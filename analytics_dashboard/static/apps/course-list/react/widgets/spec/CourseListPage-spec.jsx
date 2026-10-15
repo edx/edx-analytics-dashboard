@@ -94,8 +94,8 @@ describe('CourseListPage', () => {
     dispatch(coursesFailed());
     render();
 
-    expect(element.querySelectorAll('.insights-error-state').length).toBe(1);
-    expect(element.querySelector('.insights-error-state').textContent).toContain('Something went wrong loading this section.');
+    expect(element.querySelectorAll('.alert-error').length).toBe(1);
+    expect(element.querySelector('.alert-error .alert-title').textContent).toBe('We are unable to load this section.');
     expect(element.querySelectorAll('h2').length).toBe(2);
     expect(placeholders().length).toBe(2);
     expect(onSectionError).toHaveBeenCalledTimes(1);
@@ -108,6 +108,6 @@ describe('CourseListPage', () => {
       root.render(<Provider store={store}><ParagonProvider><CourseListPage /></ParagonProvider></Provider>);
     });
 
-    expect(element.querySelectorAll('.insights-error-state').length).toBe(1);
+    expect(element.querySelectorAll('.alert-error').length).toBe(1);
   });
 });

@@ -202,16 +202,17 @@ these rules:
 | Situation | What the user sees |
 |---|---|
 | Flag off | The legacy page; no React code is loaded |
-| The React chunk fails to load, or `startReactPage` throws | The spinner is replaced by "Something went wrong loading this page." and a reload link (`react-loader.js`) |
+| The React chunk or the page model fails to load, or `startReactPage` throws | The spinner is replaced by Insights' error alert, "We are unable to load this page." (`react-loader.js`, `showLoadError`) |
 | The server sent no course data | The legacy "No course data is currently available for your course." message in the results |
 | The course data is malformed | The results section shows the error state |
-| A section throws while rendering | That section shows the error state (`ErrorState`, with a Reload page button); the other sections keep working |
+| A section throws while rendering | That section shows the same error alert (`ErrorState`: "We are unable to load this section."); the other sections keep working |
 | Some rows have no `course_id` | Those rows are dropped and the rest is shown |
 
 - Each section of `CourseListPage` is wrapped in a `SectionBoundary`. When a section can't render correct output,
   for example because no valid data has been loaded, it **throws** an `Error` with a fixed message that contains
   no data (`ResultsSection` does this). The boundary shows `ErrorState`, and `onSectionError` reports it.
-- Never render the text of an error. Never call `console.error` directly; use the monitoring adapter.
+- Errors use Insights' existing error alert (`alert alert-error`, as in `templates/section_error.html`), not a new
+  design. Never render the text of an error. Never call `console.error` directly; use the monitoring adapter.
 
 ## 11. Monitoring
 

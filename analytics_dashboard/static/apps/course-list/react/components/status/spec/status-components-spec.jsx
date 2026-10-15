@@ -50,11 +50,14 @@ describe('status components', () => {
   });
 
   describe('ErrorState', () => {
-    it('is an alert with a message and a reload button', () => {
+    it('is the Insights error alert, with an icon, a title and a line of text', () => {
       render(<ErrorState />);
 
-      expect(element.querySelector('[role="alert"]').textContent).toContain('Something went wrong loading this section.');
-      expect(element.querySelector('button').textContent).toBe('Reload page');
+      const alert = element.querySelector('.alert.alert-error[role="alert"]');
+      expect(alert).not.toBeNull();
+      expect(alert.querySelector('.alert-icon.fa-warning')).not.toBeNull();
+      expect(alert.querySelector('.alert-title').textContent).toBe('We are unable to load this section.');
+      expect(alert.querySelector('.alert-copy-with-title').textContent).toBe('Reload the page to try again.');
     });
   });
 });

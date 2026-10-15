@@ -1,5 +1,5 @@
 import CourseModel from 'models/course-model';
-import loadReactPage from 'course-list/app/react-loader';
+import loadReactPage, { showLoadError } from 'course-list/app/react-loader';
 import { resetMonitoringForTests } from 'components/react/monitoring';
 
 describe('loadReactPage', () => {
@@ -72,12 +72,13 @@ describe('loadReactPage', () => {
       }),
     },
   ].forEach(({ failureType, description, importPage }) => {
-    it(`shows an error message in place of the spinner and reports once when ${description}`, (done) => {
+    it(`shows the error alert in place of the spinner and reports once when ${description}`, (done) => {
       loadReactPage(flagOn(), importPage).then((started) => {
         expect(started).toBe(false);
         expect(root.querySelector('.loading-container')).toBeNull();
-        expect(root.querySelector('.alert-danger').textContent).toContain('Something went wrong loading this page.');
-        expect(root.querySelector('a').textContent).toBe('Reload the page');
+        expect(root.querySelector('.alert.alert-error[role="alert"]')).not.toBeNull();
+        expect(root.querySelector('.alert-title').textContent).toBe('We are unable to load this page.');
+        expect(root.querySelector('.alert-copy-with-title').textContent).toBe('Reload the page to try again.');
 
         expect(rum.addError).toHaveBeenCalledTimes(1);
         const context = rum.addError.calls.argsFor(0)[1];
@@ -87,6 +88,27 @@ describe('loadReactPage', () => {
         expect(rum.addAction).not.toHaveBeenCalled();
         done();
       }).catch(done.fail);
+    });
+  });
+
+  describe('showLoadError', () => {
+    it('replaces the spinner with the error alert and reports the failure once', () => {
+      const result = showLoadError('start_error', new Error('init failed'));
+
+      expect(result).toBe(false);
+      expect(root.querySelector('.loading-container')).toBeNull();
+      expect(root.querySelector('.alert-error .alert-title').textContent).toBe('We are unable to load this page.');
+      expect(rum.addError).toHaveBeenCalledTimes(1);
+      const context = rum.addError.calls.argsFor(0)[1];
+      expect(context['insights.react.failure_type']).toBe('start_error');
+      expect(context['insights.react.recovery']).toBe('error_state');
+    });
+
+    it('still reports the failure when the page has no mount point', () => {
+      setFixtures('<div id="somewhere-else"></div>');
+
+      expect(showLoadError('start_error', new Error('init failed'))).toBe(false);
+      expect(rum.addError).toHaveBeenCalledTimes(1);
     });
   });
 });

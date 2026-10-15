@@ -1,7 +1,7 @@
 /* global initModelData */
 import 'backgrid-paginator/backgrid-paginator.min.css';
 
-import loadReactPage from 'course-list/app/react-loader';
+import loadReactPage, { showLoadError } from 'course-list/app/react-loader';
 
 // initModelData is set by the Django template (see load/init-models.js). It is read here, before the page
 // model exists, so the Backbone app's chunk is only requested when it is going to be used.
@@ -11,7 +11,7 @@ if (reactPageEnabled) {
   // The React page replaces the whole Backbone course list (see react-loader.js).
   import('load/init-page').then((page) => {
     loadReactPage(page.models.courseModel);
-  });
+  }).catch(error => showLoadError('start_error', error));
 } else {
   Promise.all([
     import('load/init-page'),
