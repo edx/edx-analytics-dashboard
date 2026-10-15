@@ -15,7 +15,7 @@ All of this code runs only then. The flag is off by default.
   code fails to load, the spinner is replaced by an error message; if one section fails, that section shows an
   error state and the others keep working (section 10). Turning the flag off is the rollback.
 
-The page is a skeleton whose sections are placeholders that are replaced one by one:
+The page is a skeleton whose sections are filled in one by one (the results section is still a placeholder):
 
 | Widget | Draws |
 |---|---|
