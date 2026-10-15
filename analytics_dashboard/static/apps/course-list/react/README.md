@@ -174,6 +174,13 @@ Insights isn't internationalized, so React widgets show English.
   `mountReact(element, Widget, { store })`. React manages only that element's children. Its classes and
   attributes stay unchanged, apart from the markers below. Paragon widgets also pass
   `wrapper: ParagonProvider`, which supplies `react-intl` and the `.paragon-styles` scope.
+- **Widgets inside the Backbone app:** mount into a Marionette region through a region adapter (planned, not in
+  the code yet).
+- Mount one widget per element.
+- Always keep the server-rendered or Backbone version in the element. It is the fallback.
+- The function `mountReact` returns unmounts the widget and puts the original server-rendered HTML back into
+  the element, with its tooltips re-activated. A failing widget does the same by itself (see "Fallback
+  behavior"), so production code rarely needs to call it.
 
 ### Seeing which parts are React
 
