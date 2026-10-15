@@ -21,7 +21,7 @@ The page is a skeleton whose sections are placeholders that are replaced one by 
 |---|---|
 | `CourseListPage` | The two sections and their headings: *Performance summary* and *Courses* |
 | `SummarySection` | The summary cards: one for each entry of `registries/metrics.js` (the Total Enrollment card so far). **The sample of a card, a registry entry and the data path behind them** (section 15) |
-| `ControlsSection` | The filter bar: search, filters, Columns menu, Download CSV (placeholder) |
+| `ControlsSection` | The filter bar: search box, one dropdown per entry of `registries/filters.js`, Download CSV. The Columns menu is not built yet |
 | `ResultsSection` | The result count, table and pagination (placeholder; it already shows the loading and "no course data" states) |
 
 Libraries, pinned exactly in `package.json`: `react` and `react-dom` 18.3.1, `@reduxjs/toolkit` 1.9.7,
@@ -63,7 +63,7 @@ analytics_dashboard/static/apps/
         ├── state/                 store, slices, selectors and data validation
         ├── components/            presentational components: props in, markup out
         ├── widgets/               components connected to Redux with useSelector
-        ├── registries/            configuration: one entry per summary card (metrics.js); filters and columns follow
+        ├── registries/            configuration: one entry per summary card (metrics.js) and per filter (filters.js); columns follow
         ├── platform/              Insights-only adapters: page-model bridge, row normalization, formatting, tracking
         └── spec/fixtures/         JSON fixtures shared by the Python and JavaScript tests
 
@@ -384,6 +384,23 @@ To add a card, for example Current Enrollment:
 4. Look at the card in a browser, with the flag on, next to the legacy card (it is built to look the same).
 
 No new component is needed: `SummarySection` draws one `SummaryCard` for each registry entry.
+
+### Adding a filter (Availability is the sample)
+
+The search text and the selected values of each filter are in the Redux `query` slice. `selectFilteredRows`
+(`state/selectors.js`) applies them to the course rows, and the summary cards and, later, the table read the filtered
+rows. Values of one filter are alternatives (OR); filters narrow each other (AND). The search matches any word of the
+text, ignoring case, in the course title or course ID.
+
+To add a filter, for example Pacing, add one entry to `registries/filters.js`: `id`, `label`, `options` (`value`
+and `label`) and `matches(row, selectedValues)`. `ControlsSection` draws a `CheckboxDropdown` for it and the
+selectors apply it, so no other code changes. Add a case to `registries/spec/filters-spec.js` with the fixture rows.
+A filter whose options come from the data (Program) needs its options built from `state.courses.programs` instead of
+a fixed list. The dropdowns are only shown when the server enabled the filters (`enable_course_filters`).
+
+The filter bar sends the legacy analytics events (`platform/tracking.js`, `createControlsTracker`). The Download CSV
+link goes to the server's `course_list_download_url` and always downloads the full list: making the CSV follow the
+filters and columns is a server change.
 
 ## 16. What moves to an MFE
 

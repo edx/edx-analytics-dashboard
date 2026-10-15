@@ -19,3 +19,24 @@ export default function createTooltipTracker(trackingModel) {
     });
   };
 }
+
+/**
+ * The analytics of the filter bar, with the names and properties of the legacy course list (search.js, the
+ * filter view and the download link): a search only when there is text, a filter with the selected values.
+ */
+export function createControlsTracker(trackingModel) {
+  const track = (name, category) => {
+    if (trackingModel) {
+      trackingModel.trigger('segment:track', name, { category });
+    }
+  };
+  return {
+    searched: (text) => {
+      if (text) {
+        track('edx.bi.course_list.searched', 'search');
+      }
+    },
+    filtered: values => track('edx.bi.course_list.filtered', values.join(',')),
+    csvDownloaded: () => track('edx.bi.csv.downloaded', 'course_list'),
+  };
+}

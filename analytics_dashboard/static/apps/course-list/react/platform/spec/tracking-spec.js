@@ -1,6 +1,6 @@
 import Backbone from 'backbone';
 
-import createTooltipTracker from 'course-list/react/platform/tracking';
+import createTooltipTracker, { createControlsTracker } from 'course-list/react/platform/tracking';
 
 describe('createTooltipTracker', () => {
   let trackingModel;
@@ -31,5 +31,41 @@ describe('createTooltipTracker', () => {
 
   it('does nothing without a tracking model', () => {
     expect(() => createTooltipTracker(undefined)('Total Enrollment')).not.toThrow();
+  });
+});
+
+describe('createControlsTracker', () => {
+  let trackingModel;
+  let events;
+  let track;
+
+  beforeEach(() => {
+    trackingModel = new Backbone.Model();
+    events = [];
+    trackingModel.on('segment:track', (...args) => events.push(args));
+    track = createControlsTracker(trackingModel);
+  });
+
+  it('sends the legacy search event only when there is text', () => {
+    track.searched('');
+    track.searched('algebra');
+
+    expect(events).toEqual([['edx.bi.course_list.searched', { category: 'search' }]]);
+  });
+
+  it('sends the legacy filter event with the selected values', () => {
+    track.filtered(['Upcoming', 'Current']);
+
+    expect(events).toEqual([['edx.bi.course_list.filtered', { category: 'Upcoming,Current' }]]);
+  });
+
+  it('sends the legacy CSV download event', () => {
+    track.csvDownloaded();
+
+    expect(events).toEqual([['edx.bi.csv.downloaded', { category: 'course_list' }]]);
+  });
+
+  it('does nothing without a tracking model', () => {
+    expect(() => createControlsTracker(undefined).csvDownloaded()).not.toThrow();
   });
 });
