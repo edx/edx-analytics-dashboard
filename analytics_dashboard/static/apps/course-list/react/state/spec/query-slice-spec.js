@@ -1,9 +1,11 @@
 import reducer, { filterChanged, searchChanged } from 'course-list/react/state/query-slice';
 
 describe('query slice', () => {
-  const empty = { search: '', filters: {} };
+  const empty = {
+    search: '', filters: {}, sort: { key: 'catalog_course_title', dir: 'asc' }, page: 1,
+  };
 
-  it('starts with no search and no filters', () => {
+  it('starts with no search and no filters, sorted by course name, on the first page', () => {
     expect(reducer(undefined, { type: 'init' })).toEqual(empty);
   });
 

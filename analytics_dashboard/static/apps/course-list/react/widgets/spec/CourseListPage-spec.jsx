@@ -67,14 +67,14 @@ describe('CourseListPage', () => {
     expect(document.getElementById('courses-heading').textContent).toBe('Courses');
   });
 
-  it('has the summary card, the filter bar and a placeholder for the results, once the data is ready', () => {
+  it('has the summary card, the filter bar and the course table, once the data is ready', () => {
     dispatch(coursesLoaded({ rows: [], programs: [] }));
     render();
 
     expect(element.querySelectorAll('.pgn__card').length).toBe(1);
     expect(element.querySelector('input[type="search"]')).not.toBeNull();
-    expect(placeholders().length).toBe(1);
-    expect(placeholders()[0]).toContain('table');
+    expect(placeholders()).toEqual([]);
+    expect(element.textContent).toContain('Course runs: 0');
     expect(onSectionError).not.toHaveBeenCalled();
   });
 
@@ -92,7 +92,7 @@ describe('CourseListPage', () => {
 
     expect(element.querySelectorAll('.alert-error').length).toBe(1);
     expect(element.querySelector('.pgn__card')).toBeNull();
-    expect(placeholders().length).toBe(1);
+    expect(element.textContent).toContain('Course runs: 0');
     expect(onSectionError).toHaveBeenCalledTimes(1);
     expect(onSectionError.calls.argsFor(0)[0]).toBe('course-list-summary');
   });

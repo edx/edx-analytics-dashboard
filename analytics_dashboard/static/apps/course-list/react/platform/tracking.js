@@ -40,3 +40,27 @@ export function createControlsTracker(trackingModel) {
     csvDownloaded: () => track('edx.bi.csv.downloaded', 'course_list'),
   };
 }
+
+/**
+ * The analytics of the course table, with the names and properties of the legacy table. Opening a course sends the
+ * event that js/views/tracking-view.js builds from the legacy link's data-track-* attributes
+ * (course-list/list/templates/course-id-and-name-cell.underscore).
+ */
+export function createResultsTracker(trackingModel) {
+  const track = (name, properties) => {
+    if (trackingModel) {
+      trackingModel.trigger('segment:track', name, properties);
+    }
+  };
+  return {
+    courseOpened: row => track('edx.bi.ui.menu.navigated', {
+      type: 'click',
+      text: `${row.catalog_course_title} | ${row.course_id}`,
+      url: `/courses/${row.course_id}`,
+      'target-scope': 'course',
+      'target-lens': 'home',
+      'menu-depth': 'insights',
+      'link-name': 'course_row',
+    }),
+  };
+}

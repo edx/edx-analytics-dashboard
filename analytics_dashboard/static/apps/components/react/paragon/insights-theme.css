@@ -70,22 +70,23 @@ body {
   text-align: center;
 }
 
+/* The filter bar: a white box with the search and the filter dropdowns, as in the prototype. */
 .insights-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 4px;
+  padding: 10px 12px;
+  border: 1px solid #D4D2CF; /* $gray-l2 */
+  border-radius: 3px;
+  background-color: #FFFFFF;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
 }
 
 .insights-controls .insights-search-box {
   flex: 1 1 240px;
   max-width: 360px;
-}
-
-/* The Download CSV button goes to the right end of the bar. */
-.insights-controls > a.btn:last-child {
-  margin-left: auto;
 }
 
 .insights-checkbox-menu {
@@ -96,6 +97,95 @@ body {
 /* Insights makes every label bold. */
 .insights-checkbox-menu label {
   font-weight: normal;
+}
+
+/* The row between the filter bar and the table: the count on the left, Columns and Download CSV on the right. */
+.insights-results-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.insights-result-count {
+  font-size: 0.85em;
+  color: #414141;
+}
+
+.insights-results-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/*
+ * The course table (Paragon DataTable), styled like the prototype: 14px text, a white header in weight 600 with a
+ * line under it, rows separated by a 1px line, every other row tinted, numbers right-aligned, the course link blue
+ * with the course ID under it. All values are set here, so the look doesn't depend on Insights' global table styles.
+ */
+/* DataTable's layout is a flex row: without this its main column grows to the table's width and the page scrolls
+   sideways, instead of the table scrolling inside its box. */
+.insights-course-table .pgn__data-table-layout-main {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.insights-course-table .pgn__data-table-container {
+  border: 1px solid #D4D2CF; /* $gray-l2 */
+  border-radius: 3px;
+}
+
+.insights-course-table .pgn__data-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 20px;
+  color: #000000;
+}
+
+.insights-course-table .pgn__data-table thead th {
+  padding: 8px 10px;
+  border: 0;
+  background-color: #FFFFFF;
+  box-shadow: inset 0 -1px 0 #D4D2CF;
+  font-weight: 600;
+  text-align: left;
+  vertical-align: bottom;
+}
+
+.insights-course-table .pgn__data-table tbody td {
+  padding: 8px 10px;
+  border: 0;
+  border-top: 1px solid #DDDDDD;
+  background-color: #FFFFFF;
+  vertical-align: top;
+}
+
+.insights-course-table .pgn__data-table tbody tr:nth-child(odd) td {
+  background-color: #F9F9F9;
+}
+
+.insights-course-table .pgn__data-table .insights-cell-number {
+  text-align: right;
+}
+
+.insights-course-table .insights-course-link {
+  display: block;
+  color: #0075B4;
+}
+
+.insights-course-table .insights-course-title,
+.insights-course-table .insights-course-id {
+  display: block;
+}
+
+.insights-course-table .insights-course-id {
+  color: #414141;
+  white-space: nowrap;
 }
 
 .insights-loading-state,

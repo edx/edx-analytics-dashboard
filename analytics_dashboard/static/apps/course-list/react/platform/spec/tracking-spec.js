@@ -1,6 +1,8 @@
 import Backbone from 'backbone';
 
-import createTooltipTracker, { createControlsTracker } from 'course-list/react/platform/tracking';
+import createTooltipTracker, {
+  createControlsTracker, createResultsTracker,
+} from 'course-list/react/platform/tracking';
 
 describe('createTooltipTracker', () => {
   let trackingModel;
@@ -68,5 +70,31 @@ describe('createControlsTracker', () => {
 
   it('does nothing without a tracking model', () => {
     expect(() => createControlsTracker(undefined).csvDownloaded()).not.toThrow();
+  });
+});
+
+describe('createResultsTracker', () => {
+  it('sends the legacy course link event, with the properties of the legacy link', () => {
+    const trackingModel = new Backbone.Model();
+    const events = [];
+    trackingModel.on('segment:track', (...args) => events.push(args));
+
+    createResultsTracker(trackingModel).courseOpened({
+      course_id: 'course-v1:Edx+Algebra+2024', catalog_course_title: 'Algebra I',
+    });
+
+    expect(events).toEqual([['edx.bi.ui.menu.navigated', {
+      type: 'click',
+      text: 'Algebra I | course-v1:Edx+Algebra+2024',
+      url: '/courses/course-v1:Edx+Algebra+2024',
+      'target-scope': 'course',
+      'target-lens': 'home',
+      'menu-depth': 'insights',
+      'link-name': 'course_row',
+    }]]);
+  });
+
+  it('does nothing without a tracking model', () => {
+    expect(() => createResultsTracker(undefined).courseOpened({ course_id: 'a' })).not.toThrow();
   });
 });

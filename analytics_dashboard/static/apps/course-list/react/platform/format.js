@@ -1,3 +1,5 @@
+import moment from 'moment';
+
 import Utils from 'utils/utils';
 
 /** Formats a whole number for the current language (Globalize), like the rest of the course list. */
@@ -14,4 +16,26 @@ export function formatSummaryNumber(value) {
   const full = formatCount(value === null || value === undefined ? 0 : value);
   const display = full.length > 13 ? `${full.slice(0, 12)}…` : full;
   return { full, display };
+}
+
+/**
+ * Formats a date as the legacy course table does (backgrid-moment-cell: UTC, moment's "L" format in the user's
+ * language). Returns '' for a missing or invalid date; the table shows "--" for it.
+ */
+export function formatDate(value) {
+  if (value === null || value === undefined || value === '') {
+    return '';
+  }
+  const date = moment.utc(value);
+  if (!date.isValid()) {
+    return '';
+  }
+  // locale() without a language is a getter, so it is only called with one (window.language is set on the page).
+  const language = Utils.getMomentLocale();
+  return (language ? date.locale(language) : date).format('L');
+}
+
+/** Formats a fraction (0.25) as a whole percentage ("25%"). */
+export function formatPercent(value) {
+  return `${formatCount(Math.round(value * 100))}%`;
 }

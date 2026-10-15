@@ -1,4 +1,4 @@
-import { createSelectors } from 'course-list/react/state/selectors';
+import { createSelectors, PAGE_SIZE } from 'course-list/react/state/selectors';
 
 describe('selectors', () => {
   // A registry for the spec: the real one is checked in registries/spec/metrics-spec.js.
@@ -7,10 +7,27 @@ describe('selectors', () => {
     { id: 'second', textKey: 'second_text', reduce: rows => rows.reduce((sum, row) => sum + row.count, 0) },
   ];
   const filters = [{ id: 'color', matches: (row, selected) => selected.indexOf(row.color) !== -1 }];
-  const { selectFilteredRows, selectSummaryMetrics } = createSelectors({ filters, metrics });
+  // A columns registry for the spec: the real one is checked in registries/spec/columns-spec.js.
+  const columns = [
+    { id: 'catalog_course_title', label: 'Course Name', cell: 'courseName' },
+    { id: 'start_date', label: 'Start Date', cell: 'date' },
+    { id: 'count', label: 'Current Enrollment', cell: 'number' },
+    {
+      id: 'passing_users', label: 'Passing Learners', cell: 'number', enabled: page => page.passingUsersEnabled,
+    },
+    {
+      id: 'b2b_count', label: 'B2B Enrollment', cell: 'number', pending: true,
+    },
+  ];
+  const selectors = createSelectors({
+    filters, metrics, columns, showPendingColumns: true,
+  });
+  const { selectFilteredRows, selectSummaryMetrics } = selectors;
   const stateWith = (rows, query = {}) => ({
     courses: { rows, programs: [], status: 'ready' },
-    query: { search: '', filters: {}, ...query },
+    query: {
+      search: '', filters: {}, sort: { key: 'catalog_course_title', dir: 'asc' }, page: 1, ...query,
+    },
   });
 
   describe('selectSummaryMetrics', () => {
@@ -82,6 +99,98 @@ describe('selectors', () => {
       const state = stateWith(rows, { filters: { color: ['red'] } });
 
       expect(selectSummaryMetrics(state).map(entry => entry.value)).toEqual([2, 5]);
+    });
+  });
+
+  describe('selectSortedRows', () => {
+    const rows = [
+      {
+        course_id: 'c-3', catalog_course_title: 'biology', start_date: '2024-05-01T00:00:00Z', count: 20,
+      },
+      {
+        course_id: 'c-1', catalog_course_title: 'Algebra', start_date: '', count: 5,
+      },
+      {
+        course_id: 'c-2', catalog_course_title: 'Algebra', start_date: '2023-01-01T00:00:00Z', count: 300,
+      },
+      {
+        course_id: 'c-4', catalog_course_title: 'Chemistry', start_date: '2025-09-01T00:00:00Z', count: 20,
+      },
+    ];
+    const ids = sort => selectors.selectSortedRows(stateWith(rows, { sort })).map(row => row.course_id);
+
+    it('sorts by course name, ignoring case, with equal names in course ID order', () => {
+      expect(ids({ key: 'catalog_course_title', dir: 'asc' })).toEqual(['c-1', 'c-2', 'c-3', 'c-4']);
+      expect(ids({ key: 'catalog_course_title', dir: 'desc' })).toEqual(['c-4', 'c-3', 'c-1', 'c-2']);
+    });
+
+    it('sorts number columns as numbers', () => {
+      expect(ids({ key: 'count', dir: 'desc' })).toEqual(['c-2', 'c-3', 'c-4', 'c-1']);
+      expect(ids({ key: 'count', dir: 'asc' })).toEqual(['c-1', 'c-3', 'c-4', 'c-2']);
+    });
+
+    it('puts empty values last in both directions', () => {
+      expect(ids({ key: 'start_date', dir: 'asc' })).toEqual(['c-2', 'c-3', 'c-4', 'c-1']);
+      expect(ids({ key: 'start_date', dir: 'desc' })).toEqual(['c-4', 'c-3', 'c-2', 'c-1']);
+    });
+
+    it('keeps course ID order for a column no row has', () => {
+      expect(ids({ key: 'b2b_count', dir: 'desc' })).toEqual(['c-1', 'c-2', 'c-3', 'c-4']);
+    });
+  });
+
+  describe('paging and the count', () => {
+    const many = Array.from({ length: PAGE_SIZE + 5 }, (value, index) => ({
+      course_id: `c-${String(index).padStart(3, '0')}`, catalog_course_title: 'Course', color: index < 3 ? 'red' : 'blue',
+    }));
+
+    it('shows 100 course runs per page and counts all of them', () => {
+      const state = stateWith(many);
+
+      expect(PAGE_SIZE).toBe(100);
+      expect(selectors.selectResultCount(state)).toBe(105);
+      expect(selectors.selectPageCount(state)).toBe(2);
+      expect(selectors.selectPageRows(state).length).toBe(100);
+      expect(selectors.selectPageRows(stateWith(many, { page: 2 })).map(row => row.course_id))
+        .toEqual(['c-100', 'c-101', 'c-102', 'c-103', 'c-104']);
+    });
+
+    it('shows the last page for a page past the end, and one page when nothing matches', () => {
+      const filtered = stateWith(many, { page: 2, filters: { color: ['red'] } });
+
+      expect(selectors.selectCurrentPage(filtered)).toBe(1);
+      expect(selectors.selectPageRows(filtered).length).toBe(3);
+      expect(selectors.selectPageCount(stateWith([]))).toBe(1);
+    });
+  });
+
+  describe('selectAvailableColumns', () => {
+    const ids = (state, page = { passingUsersEnabled: true, filtersEnabled: true }, from = selectors) => (
+      from.selectAvailableColumns(state, page).map(column => `${column.id}:${column.hasData}`)
+    );
+
+    it('has every column, a pending column without data marked as such', () => {
+      expect(ids(stateWith([{ course_id: 'a' }]))).toEqual([
+        'catalog_course_title:true', 'start_date:true', 'count:true', 'passing_users:true', 'b2b_count:false',
+      ]);
+    });
+
+    it('leaves out a column whose waffle switch is off', () => {
+      expect(ids(stateWith([]), { passingUsersEnabled: false, filtersEnabled: true }))
+        .not.toContain('passing_users:true');
+    });
+
+    it('shows a pending column with its data as soon as a row has the field, a 0 included', () => {
+      expect(ids(stateWith([{ course_id: 'a' }, { course_id: 'b', b2b_count: 0 }]))).toContain('b2b_count:true');
+    });
+
+    it('leaves out pending columns without data when they are not shown', () => {
+      const released = createSelectors({
+        filters, metrics, columns, showPendingColumns: false,
+      });
+
+      expect(ids(stateWith([{ course_id: 'a' }]), undefined, released)).not.toContain('b2b_count:false');
+      expect(ids(stateWith([{ course_id: 'a', b2b_count: 3 }]), undefined, released)).toContain('b2b_count:true');
     });
   });
 });

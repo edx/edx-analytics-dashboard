@@ -89,7 +89,7 @@ describe('startReactPage', () => {
     });
 
     expect(root.querySelector('.insights-empty-state-message')).toBeNull();
-    expect(root.querySelector('.insights-placeholder')).not.toBeNull();
+    expect(root.querySelectorAll('.insights-course-table tbody tr').length).toBe(4);
     expect(root.querySelector('.insights-summary-number').textContent).toBe('1,300');
   });
 
@@ -123,6 +123,20 @@ describe('startReactPage', () => {
     expect(events).toEqual([
       ['edx.bi.tooltip.displayed', { title: card.label, category: 'summary', type: 'tooltip' }],
     ]);
+  });
+
+  it('puts Download CSV in the results toolbar and sends the legacy course link event', () => {
+    const events = [];
+    trackingModel.on('segment:track', (...args) => events.push(args));
+    start(modelWith({ course_list_json: fixture.rows, course_list_download_url: '/courses/csv/course_list/' }));
+
+    expect(root.querySelector('.insights-results-actions a').getAttribute('href')).toBe('/courses/csv/course_list/');
+    const link = root.querySelector('.insights-course-link');
+    act(() => {
+      link.addEventListener('click', event => event.preventDefault());
+      link.click();
+    });
+    expect(events.map(args => args[0])).toEqual(['edx.bi.ui.menu.navigated']);
   });
 
   it('throws when the page has no mount point', () => {
