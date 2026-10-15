@@ -34,14 +34,13 @@ describe('page model bridge', () => {
     expect(store.getState().courses.status).toBe('loading');
   });
 
-  it('loads the normalized rows and the programs', () => {
+  it('loads the rows and the programs', () => {
     connect({ course_list_json: fixture.rows, programs_json: fixture.programs });
 
     const { courses } = store.getState();
     expect(courses.status).toBe('ready');
     expect(courses.rows.length).toBe(4);
-    expect(courses.rows[0].verified_enrollment).toBe(40);
-    expect(courses.rows[0].program_ids).toEqual(['program-a', 'program-b']);
+    expect(courses.rows[0].course_id).toBe('course-v1:Edx+Algebra+2024');
     expect(courses.programs).toEqual(fixture.programs);
     expect(rum.addError).not.toHaveBeenCalled();
   });

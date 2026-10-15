@@ -24,8 +24,6 @@ The page is a skeleton whose sections are placeholders that are replaced one by 
 | `ControlsSection` | The filter bar: search, filters, Columns menu, Download CSV (placeholder) |
 | `ResultsSection` | The result count, table and pagination (placeholder; it already shows the loading and "no course data" states) |
 
-The summary cards, the filters and the table columns are configuration: one entry each in `react/registries/`.
-
 Libraries, pinned exactly in `package.json`: `react` and `react-dom` 18.3.1, `@reduxjs/toolkit` 1.9.7,
 `react-redux` 7.2.9, `prop-types` 15.8.1, `@openedx/paragon` 23.4.5 and `react-intl` 6.8.9. These are the
 micro-frontend (MFE) versions. JSX uses the automatic runtime, so components don't import `React`.
@@ -62,11 +60,10 @@ analytics_dashboard/static/apps/
     │   └── react-loader.js        (legacy side) checks the flag, then import('apps/course-list/react/index')
     └── react/                     everything React for the course list; loaded only when the flag is on
         ├── index.js               chunk entry point: startReactPage
-        ├── registries/            configuration: the metrics, filters and columns, one entry each
         ├── state/                 store, slices, selectors and data validation
         ├── components/            presentational components: props in, markup out
         ├── widgets/               components connected to Redux with useSelector
-        ├── platform/              Insights-only adapters: page-model bridge, row normalization, formatting
+        ├── platform/              Insights-only adapters: page-model bridge, formatting
         └── spec/fixtures/         JSON fixtures shared by the Python and JavaScript tests
 
 webpack/paragon/                   build helpers for Paragon (section 17); not application code
@@ -129,8 +126,7 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
 - React never writes to Backbone directly. Changes go through a commands module in `platform/` that calls the
   collection's methods (planned, not in the code yet).
 - Only one layer writes any piece of state at a time. State is never synced in both directions. Today the
-  page model is the only writer of the course rows (`courses`), and the page's components are the only
-  writers of the user's choices (`query`, `view`).
+  page model is the only writer of the course rows (`courses`).
 
 ## 6. Translations
 

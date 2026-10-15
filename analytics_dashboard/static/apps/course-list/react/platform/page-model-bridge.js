@@ -2,7 +2,6 @@ import { reportWidgetFailure } from 'components/react/monitoring';
 import {
   acceptValidRows, coursesFailed, coursesLoaded, coursesUnavailable,
 } from 'course-list/react/state/courses-slice';
-import { normalizeCourseRows } from 'course-list/react/platform/course-rows';
 
 const isMissing = value => value === undefined || value === null;
 
@@ -38,7 +37,7 @@ export default function connectPageModelToStore(courseModel, store) {
     if (rejectedCount) {
       reportInvalidData('dropped_invalid_rows');
     }
-    store.dispatch(coursesLoaded({ rows: normalizeCourseRows(rows, programs), programs }));
+    store.dispatch(coursesLoaded({ rows, programs }));
   };
   courseModel.on(events, sync);
   sync();

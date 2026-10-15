@@ -2,7 +2,7 @@ import { useSelector } from 'react-redux';
 
 import EmptyState from 'course-list/react/components/status/EmptyState';
 import LoadingState from 'course-list/react/components/status/LoadingState';
-import { selectStatus } from 'course-list/react/state/selectors';
+import { selectStatus } from 'course-list/react/state/courses-slice';
 
 // The same messages as the legacy course list shows when it has no course data (course-list/list/views/results.js).
 const NO_DATA_MESSAGE = 'No course data is currently available for your course.';

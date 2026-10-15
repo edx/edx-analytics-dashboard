@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-// rows:     the course runs, normalized by platform/course-rows.js
+// rows:     the course runs as the server sent them (only the valid ones)
 // programs: the programs as sent by the server (program_id, program_title, course_ids)
 // status:   'loading' until the page data is read, then 'ready'; 'unavailable' when the server sent no course data;
 //           'error' when the data is malformed.
@@ -32,5 +32,7 @@ const coursesSlice = createSlice({
 });
 
 export const { coursesLoaded, coursesUnavailable, coursesFailed } = coursesSlice.actions;
+
+export const selectStatus = state => state.courses.status;
 
 export default coursesSlice.reducer;

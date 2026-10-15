@@ -1,5 +1,5 @@
 import reducer, {
-  acceptValidRows, coursesFailed, coursesLoaded, coursesUnavailable, initialState,
+  acceptValidRows, coursesFailed, coursesLoaded, coursesUnavailable, initialState, selectStatus,
 } from 'course-list/react/state/courses-slice';
 
 describe('courses slice', () => {
@@ -23,6 +23,10 @@ describe('courses slice', () => {
 
   it('becomes an error, keeping what it has', () => {
     expect(reducer(undefined, coursesFailed()).status).toBe('error');
+  });
+
+  it('selects its status from the store state', () => {
+    expect(selectStatus({ courses: reducer(undefined, coursesUnavailable()) })).toBe('unavailable');
   });
 
   describe('acceptValidRows', () => {
