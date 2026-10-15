@@ -48,6 +48,7 @@ describe('createControlsTracker', () => {
 
   it('sends the legacy search event only when there is text', () => {
     track.searched('');
+    track.searched('   ');
     track.searched('algebra');
 
     expect(events).toEqual([['edx.bi.course_list.searched', { category: 'search' }]]);

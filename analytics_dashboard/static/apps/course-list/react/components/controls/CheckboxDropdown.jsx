@@ -8,8 +8,10 @@ import { Dropdown, Form } from '@openedx/paragon';
 export default function CheckboxDropdown({
   id, label, options, selected, onChange,
 }) {
+  // The new selection is kept in the order of the options, so the analytics value does not depend on the clicks.
   const toggle = (value, checked) => onChange(
-    checked ? selected.concat(value) : selected.filter(item => item !== value),
+    options.map(option => option.value)
+      .filter(item => (item === value ? checked : selected.indexOf(item) !== -1)),
   );
 
   return (

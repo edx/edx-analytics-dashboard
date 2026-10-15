@@ -32,7 +32,7 @@ export function createControlsTracker(trackingModel) {
   };
   return {
     searched: (text) => {
-      if (text) {
+      if (text.trim()) {
         track('edx.bi.course_list.searched', 'search');
       }
     },

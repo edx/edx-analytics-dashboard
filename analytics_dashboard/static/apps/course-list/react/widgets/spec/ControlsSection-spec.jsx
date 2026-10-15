@@ -92,8 +92,8 @@ describe('ControlsSection', () => {
     act(() => toggle().click());
     expect(checkboxes().length).toBe(4);
 
-    act(() => checkboxes()[0].click());
     act(() => checkboxes()[1].click());
+    act(() => checkboxes()[0].click());
 
     expect(store.getState().query.filters).toEqual({ availability: ['Upcoming', 'Current'] });
     expect(props.onFilter.calls.mostRecent().args[0]).toEqual(['Upcoming', 'Current']);
