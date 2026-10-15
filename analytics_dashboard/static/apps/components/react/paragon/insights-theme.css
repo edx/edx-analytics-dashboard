@@ -70,6 +70,34 @@ body {
   text-align: center;
 }
 
+.insights-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.insights-controls .insights-search-box {
+  flex: 1 1 240px;
+  max-width: 360px;
+}
+
+/* The Download CSV button goes to the right end of the bar. */
+.insights-controls > a.btn:last-child {
+  margin-left: auto;
+}
+
+.insights-checkbox-menu {
+  padding: 8px 16px;
+  min-width: 180px;
+}
+
+/* Insights makes every label bold. */
+.insights-checkbox-menu label {
+  font-weight: normal;
+}
+
 .insights-loading-state,
 .insights-empty-state {
   padding: 24px 0;

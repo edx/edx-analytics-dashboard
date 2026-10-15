@@ -3,7 +3,7 @@ import { reportWidgetFailure } from 'components/react/monitoring';
 import ParagonProvider from 'components/react/paragon/ParagonProvider';
 import createCourseListStore from 'course-list/react/state/store';
 import connectPageModelToStore from 'course-list/react/platform/page-model-bridge';
-import createTooltipTracker from 'course-list/react/platform/tracking';
+import createTooltipTracker, { createControlsTracker } from 'course-list/react/platform/tracking';
 import CourseListPage from 'course-list/react/widgets/CourseListPage';
 
 const reportSectionFailure = (name, error) => reportWidgetFailure({
@@ -24,6 +24,7 @@ export default function startReactPage({ courseModel, trackingModel }) {
   }
   const store = createCourseListStore();
   connectPageModelToStore(courseModel, store);
+  const track = createControlsTracker(trackingModel);
   mountReact(element, CourseListPage, {
     store,
     wrapper: ParagonProvider,
@@ -31,6 +32,13 @@ export default function startReactPage({ courseModel, trackingModel }) {
     props: {
       onSectionError: reportSectionFailure,
       onTooltipShown: createTooltipTracker(trackingModel),
+      controls: {
+        filtersEnabled: courseModel.get('enable_course_filters') === true,
+        downloadUrl: courseModel.get('course_list_download_url') || '',
+        onSearch: track.searched,
+        onFilter: track.filtered,
+        onDownload: track.csvDownloaded,
+      },
     },
   });
   return store;

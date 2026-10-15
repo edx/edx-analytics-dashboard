@@ -8,7 +8,7 @@ import SummarySection from 'course-list/react/widgets/SummarySection';
 
 // The layout: the Performance summary and the Courses sections. Each section is wrapped in its own boundary, so
 // one that fails shows an error state while the others keep working.
-function PageLayout({ onSectionError, onTooltipShown }) {
+function PageLayout({ onSectionError, onTooltipShown, controls }) {
   const guard = (name, section) => (
     <SectionBoundary name={name} fallback={ErrorState} onError={onSectionError}>{section}</SectionBoundary>
   );
@@ -21,7 +21,7 @@ function PageLayout({ onSectionError, onTooltipShown }) {
       </section>
       <section className="insights-page-section" aria-labelledby="courses-heading">
         <h2 id="courses-heading" className="insights-section-heading">Courses</h2>
-        {guard('course-list-controls', <ControlsSection />)}
+        {guard('course-list-controls', <ControlsSection {...controls} />)}
         {guard('course-list-results', <ResultsSection />)}
       </section>
     </>
@@ -31,22 +31,25 @@ function PageLayout({ onSectionError, onTooltipShown }) {
 PageLayout.propTypes = {
   onSectionError: PropTypes.func,
   onTooltipShown: PropTypes.func,
+  controls: PropTypes.shape(ControlsSection.propTypes),
 };
 
 PageLayout.defaultProps = {
   onSectionError: () => {},
   onTooltipShown: () => {},
+  controls: {},
 };
 
 /**
  * The course list page. The layout is wrapped in a boundary too, so a failure of the layout itself shows the error
  * state instead of leaving the spinner on screen. onSectionError(name, error) is where failures are reported,
- * and onTooltipShown(label) where the showing of a summary card's tooltip is.
+ * and onTooltipShown(label) where the showing of a summary card's tooltip is. controls are the props of the
+ * ControlsSection.
  */
-export default function CourseListPage({ onSectionError, onTooltipShown }) {
+export default function CourseListPage({ onSectionError, onTooltipShown, controls }) {
   return (
     <SectionBoundary name="course-list" fallback={ErrorState} onError={onSectionError}>
-      <PageLayout onSectionError={onSectionError} onTooltipShown={onTooltipShown} />
+      <PageLayout onSectionError={onSectionError} onTooltipShown={onTooltipShown} controls={controls} />
     </SectionBoundary>
   );
 }
@@ -54,9 +57,11 @@ export default function CourseListPage({ onSectionError, onTooltipShown }) {
 CourseListPage.propTypes = {
   onSectionError: PropTypes.func,
   onTooltipShown: PropTypes.func,
+  controls: PropTypes.shape(ControlsSection.propTypes),
 };
 
 CourseListPage.defaultProps = {
   onSectionError: () => {},
   onTooltipShown: () => {},
+  controls: {},
 };

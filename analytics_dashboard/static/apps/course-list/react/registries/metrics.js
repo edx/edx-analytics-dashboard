@@ -9,7 +9,7 @@
  *            (platform/course-rows.js): a field that is not normalized there, such as enrollment_modes.masters, may be
  *            missing, so read it safely or normalize it. For the whole list the number must equal the server's
  *            CourseSummariesPresenter.get_course_summary_metrics (the fixture's `expected_summary`).
- *            The rows are not filtered yet; when filters are added they narrow the rows first.
+ *            The rows are the ones that match the search and the filters.
  */
 export default [
   {
