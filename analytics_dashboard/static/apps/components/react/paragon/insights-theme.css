@@ -186,6 +186,20 @@ body {
   box-shadow: inset 0 -1px 0 #D4D2CF, 1px 0 0 #CFCDCA;
 }
 
+/* On a phone the fixed Course Name column leaves room for the others. */
+@media (max-width: 575.98px) {
+  .insights-course-table .pgn__data-table thead th:first-child,
+  .insights-course-table .pgn__data-table tbody td:first-child {
+    min-width: 160px;
+    max-width: 200px;
+  }
+}
+
+/* The results get focus after a page change (for keyboard and screen-reader users); no outline on the whole box. */
+.insights-results-table:focus {
+  outline: none;
+}
+
 .insights-course-table .pgn__data-table {
   width: 100%;
   margin: 0;

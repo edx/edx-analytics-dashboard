@@ -17,7 +17,7 @@ export default function TablePagination({ page, pageCount, onPageChange }) {
   };
 
   return (
-    <nav className="insights-table-pagination" aria-label="Course runs pages">
+    <div className="insights-table-pagination">
       <Button variant="tertiary" size="sm" disabled={page === 1} onClick={() => go(1)}>First</Button>
       <Pagination
         paginationLabel="Course runs pagination"
@@ -27,7 +27,7 @@ export default function TablePagination({ page, pageCount, onPageChange }) {
         size="small"
       />
       <Button variant="tertiary" size="sm" disabled={page === pageCount} onClick={() => go(pageCount)}>Last</Button>
-    </nav>
+    </div>
   );
 }
 

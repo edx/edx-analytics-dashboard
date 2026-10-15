@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 import { ViewColumn } from '@openedx/paragon/icons';
@@ -48,12 +48,26 @@ export default function ResultsSection({
   const { search, filters, sort } = useSelector(selectQuery);
   const page = useSelector(selectCurrentPage);
   const pageCount = useSelector(selectPageCount);
+  const table = useRef(null);
+  // The table scrolls inside its own box: a new sort or page starts at its top.
+  const scrollTableToTop = () => {
+    const box = table.current && table.current.querySelector('.pgn__data-table-container');
+    if (box) {
+      box.scrollTop = 0;
+    }
+  };
   const changeSort = useCallback((key, dir) => {
     dispatch(sortChanged({ key, dir }));
+    scrollTableToTop();
     onSort(key, dir);
   }, [dispatch, onSort]);
   const changePage = useCallback((target) => {
     dispatch(pageChanged(target));
+    scrollTableToTop();
+    // As the legacy pager does, move focus to the results (the clicked First or Last button becomes disabled).
+    if (table.current) {
+      table.current.focus();
+    }
     onPage(target);
   }, [dispatch, onPage]);
   const changeColumns = (ids) => {
@@ -100,13 +114,15 @@ export default function ResultsSection({
       </div>
       {count ? (
         <>
-          <CourseTable
-            columns={columns}
-            rows={rows}
-            sort={sort}
-            onSortChange={changeSort}
-            onCourseOpen={onCourseOpen}
-          />
+          <div ref={table} tabIndex={-1} className="insights-results-table" aria-label="Course runs">
+            <CourseTable
+              columns={columns}
+              rows={rows}
+              sort={sort}
+              onSortChange={changeSort}
+              onCourseOpen={onCourseOpen}
+            />
+          </div>
           <TablePagination page={page} pageCount={pageCount} onPageChange={changePage} />
         </>
       ) : <EmptyState message={NO_MATCH_MESSAGE} detail={suggestions} />}

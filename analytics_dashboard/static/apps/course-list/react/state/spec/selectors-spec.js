@@ -101,6 +101,14 @@ describe('selectors', () => {
       expect(titles({ search: 'biology', filters: { color: ['red'] } })).toEqual([]);
     });
 
+    it('keeps the same rows and cards when only the sort or the page changes', () => {
+      const state = stateWith(rows);
+      const sorted = { ...state, query: { ...state.query, sort: { key: 'count', dir: 'desc' }, page: 2 } };
+
+      expect(selectFilteredRows(sorted)).toBe(selectFilteredRows(state));
+      expect(selectSummaryMetrics(sorted)).toBe(selectSummaryMetrics(state));
+    });
+
     it('makes the summary cards follow the search and the filters', () => {
       const state = stateWith(rows, { filters: { color: ['red'] } });
 

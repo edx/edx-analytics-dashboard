@@ -94,7 +94,7 @@ describe('createResultsTracker', () => {
     }]]);
   });
 
-  it('sends the legacy sort and page events (the page as a 0-based index), and the columns event', () => {
+  it('sends the legacy sort and page events (the 1-based page, as legacy), and the columns event', () => {
     const trackingModel = new Backbone.Model();
     const events = [];
     trackingModel.on('segment:track', (...args) => events.push(args));
@@ -107,7 +107,7 @@ describe('createResultsTracker', () => {
 
     expect(events).toEqual([
       ['edx.bi.course_list.sorted', { category: 'count_desc' }],
-      ['edx.bi.course_list.paged', { category: 2 }],
+      ['edx.bi.course_list.paged', { category: 3 }],
       ['edx.bi.course_list.columns_changed', { category: 'start_date_hidden' }],
       ['edx.bi.course_list.columns_changed', { category: 'total_engagements_shown' }],
     ]);

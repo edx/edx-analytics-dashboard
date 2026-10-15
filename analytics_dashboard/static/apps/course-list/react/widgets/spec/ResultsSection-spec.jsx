@@ -167,6 +167,8 @@ describe('ResultsSection', () => {
       expect(store.getState().query.page).toBe(2);
       expect(titles()).toEqual(['Course 100', 'Course 101', 'Course 102', 'Course 103', 'Course 104']);
       expect(props.onPage).toHaveBeenCalledWith(2);
+      // Focus moves to the results, as the legacy pager does.
+      expect(document.activeElement).toBe(element.querySelector('.insights-results-table'));
     });
 
     it('sorts by a header click, starting again at the first page', () => {

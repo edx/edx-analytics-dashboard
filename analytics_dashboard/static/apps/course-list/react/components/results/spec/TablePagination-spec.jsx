@@ -37,7 +37,7 @@ describe('TablePagination', () => {
   it('is hidden when everything fits on one page', () => {
     render(1, 1);
 
-    expect(element.querySelector('nav')).toBeNull();
+    expect(element.querySelector('.insights-table-pagination')).toBeNull();
   });
 
   // Paragon shows the page numbers on wider screens and "Page x of y" on narrow ones (as in the test browser), so the

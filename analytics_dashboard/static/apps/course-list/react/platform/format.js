@@ -19,14 +19,15 @@ export function formatSummaryNumber(value) {
 }
 
 /**
- * Formats a date as the legacy course table does (backgrid-moment-cell: UTC, moment's "L" format in the user's
- * language). Returns '' for a missing or invalid date; the table shows "--" for it.
+ * Formats a date as the legacy course table does (backgrid-moment-cell: parsed with moment's default format, in UTC,
+ * shown in moment's "L" format in the user's language). The Analytics API sends dates like "2017-01-10T182754", which
+ * moment only parses with its default format given. Returns '' for a missing or invalid date; the table shows "--".
  */
 export function formatDate(value) {
   if (value === null || value === undefined || value === '') {
     return '';
   }
-  const date = moment.utc(value);
+  const date = moment.utc(value, moment.defaultFormat);
   if (!date.isValid()) {
     return '';
   }

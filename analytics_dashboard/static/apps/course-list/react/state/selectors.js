@@ -17,13 +17,14 @@ export function createSelectors({
   filters, metrics, columns, showPendingColumns,
 }) {
   const selectRows = state => state.courses.rows;
-  const selectQuery = state => state.query;
+  const selectSearch = state => state.query.search;
+  const selectSelectedFilters = state => state.query.filters;
 
   // The course runs that match the search text and the filters. Searching: a course run matches when any word of the
   // text is part of its title or course ID, ignoring case.
   const selectFilteredRows = createSelector(
-    [selectRows, selectQuery],
-    (rows, { search, filters: selected }) => {
+    [selectRows, selectSearch, selectSelectedFilters],
+    (rows, search, selected) => {
       const words = search.toLowerCase().split(/\s+/).filter(Boolean);
       return rows.filter((row) => {
         const text = `${row.catalog_course_title} ${row.course_id}`.toLowerCase();

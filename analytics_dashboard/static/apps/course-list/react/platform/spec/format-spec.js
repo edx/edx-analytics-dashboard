@@ -21,6 +21,11 @@ describe('summary number formatting', () => {
 });
 
 describe('table formatting', () => {
+  it('formats the dates the Analytics API sends ("2017-01-10T182754"), like the legacy table', () => {
+    expect(formatDate('2017-01-10T182754')).toBe('01/10/2017');
+    expect(formatDate('2017-01-10T000000')).toBe('01/10/2017');
+  });
+
   it('formats dates in UTC with moment\'s "L" format, like the legacy table', () => {
     expect(formatDate('2016-04-13T00:00:00Z')).toBe('04/13/2016');
     expect(formatDate('2016-04-13T23:30:00Z')).toBe('04/13/2016');
