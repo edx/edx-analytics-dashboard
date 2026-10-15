@@ -4,6 +4,7 @@ const path = require('path');
 const webpack = require('webpack');
 const BundleTracker = require('webpack-bundle-tracker');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+const { PARAGON_CSS_PATTERN, PARAGON_CSS_LOADER } = require('./webpack/paragon');
 
 module.exports = {
   context: __dirname,
@@ -29,6 +30,9 @@ module.exports = {
 
     // Entry point for bundling large amount of cldr-data json files separately from other vendor code
     globalization: './analytics_dashboard/static/js/utils/globalization',
+
+    // Styles of the Paragon widgets (course list React code). Loaded by the page only when the flag is on.
+    'paragon-styles': './analytics_dashboard/static/apps/components/react/paragon/paragon-styles',
   },
 
   resolve: {
@@ -56,6 +60,13 @@ module.exports = {
       moment: path.resolve('./node_modules/moment'),
       jquery: path.resolve('./node_modules/jquery'),
       backbone: path.resolve('./node_modules/backbone'),
+    },
+  },
+
+  resolveLoader: {
+    alias: {
+      // Scopes Paragon's CSS under .paragon-styles (webpack/paragon/scope-paragon-css.js).
+      'paragon-css-loader': PARAGON_CSS_LOADER,
     },
   },
 
@@ -100,6 +111,11 @@ module.exports = {
     new BundleTracker({
       filename: './webpack-stats.json',
     }),
+    // Paragon's JavaScript imports an SCSS file only to read the grid breakpoints; use a JavaScript file instead.
+    new webpack.NormalModuleReplacementPlugin(
+      /_exports\.module\.scss$/,
+      path.resolve(__dirname, 'analytics_dashboard/static/apps/components/react/paragon/breakpoints.js'),
+    ),
     // We reference jquery as a global variable a lot. This plugin inlines a reference to the module in place of the
     // free variable.
     new webpack.ProvidePlugin({
@@ -132,6 +148,8 @@ module.exports = {
                     && module.context.indexOf('node_modules') !== -1
                     && module.context.indexOf('cldr') === -1
                     && module.context.indexOf('globalize') === -1
+                    // Paragon's CSS stays in the paragon-styles chunk, so it is extracted as its own file.
+                    && !PARAGON_CSS_PATTERN.test(module.resource || '')
         );
       },
     }),

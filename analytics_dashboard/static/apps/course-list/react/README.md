@@ -19,8 +19,11 @@ Current widgets:
 | `TotalEnrollmentWidget` | `div[data-stat-type="total_enrollment"]` in `courses/templates/courses/index.html` | The Total Enrollment card rendered by `templates/summary_point.html` |
 
 Libraries, pinned exactly in `package.json`: `react` and `react-dom` 18.3.1, `@reduxjs/toolkit` 1.9.7,
-`react-redux` 7.2.9 and `prop-types` 15.8.1. JSX uses the automatic runtime, so components don't import
-`React`.
+`react-redux` 7.2.9, `prop-types` 15.8.1, `@openedx/paragon` 23.4.5 and `react-intl` 6.8.9. These are the
+micro-frontend (MFE) versions. JSX uses the automatic runtime, so components don't import `React`.
+
+**New widgets are built with Paragon**, written exactly like MFE code, so they can be copied into the MFE
+later. Section 17 explains how Paragon is wired into this page, and section 3 how it is styled.
 
 **React 17 compatibility.** Apart from `createRoot` in `mount-react.jsx`, use only React APIs that also exist in
 React 17. Don't use `useId`, `useTransition`, `useDeferredValue` or `useSyncExternalStore`. This keeps a
@@ -38,7 +41,12 @@ analytics_dashboard/static/apps/
 │   ├── mount-react.jsx            mounts a component into an existing element; restores HTML on failure
 │   ├── widget-error-boundary.jsx  catches render errors and reports the last on-screen HTML
 │   ├── monitoring.js              minimal Datadog RUM reporting (imports nothing)
-│   ├── react-debug.js             widget markers and the ?react_debug=1 outline (imports nothing)
+│   ├── widget-markers.js          data-react-rendered / data-react-fallback markers (imports nothing)
+│   ├── paragon/                   what Paragon needs on an Insights page (section 17)
+│   │   ├── ParagonProvider.jsx    react-intl provider (English) and the .paragon-styles scope
+│   │   ├── paragon-styles.js      webpack entry for Paragon's CSS
+│   │   ├── insights-theme.css     Paragon theme variables set to Insights' look
+│   │   └── breakpoints.js         replaces an SCSS file Paragon imports for its breakpoints
 │   └── spec/
 └── course-list/
     ├── app/
@@ -51,6 +59,8 @@ analytics_dashboard/static/apps/
         ├── widgets/               components connected to Redux with useSelector
         ├── platform/              Insights-only adapters: page-model bridge, formatting, Bootstrap tooltip
         └── spec/fixtures/         JSON fixtures shared by the Python and JavaScript tests
+
+webpack/paragon/                   build helpers for Paragon (section 17); not application code
 ```
 
 | Put this… | …here |
@@ -59,26 +69,34 @@ analytics_dashboard/static/apps/
 | Presentational components shared within the course list | `course-list/react/components/` |
 | Redux store, slices, selectors and data validation | `course-list/react/state/` |
 | Adapters to Insights code (page model, Backbone, jQuery, Bootstrap, Globalize, `gettext`) | `course-list/react/platform/` |
-| React infrastructure for all Insights pages (mounting, error boundary, monitoring) | `apps/components/react/` |
+| React infrastructure for all Insights pages (mounting, error boundary, monitoring, the Paragon provider) | `apps/components/react/` |
 
 What each layer may import:
 
 | Layer | May import |
 |---|---|
 | `react/state/` | `@reduxjs/toolkit` and other `react/state/` modules. No Backbone, jQuery, `gettext` or `utils/*` |
-| `react/components/`, `react/widgets/` | `react`, `react-redux`, `prop-types`, `react/state/`, `react/components/`, `react/platform/` |
+| `react/components/`, `react/widgets/` | `react`, `react-redux`, `react-intl`, `prop-types`, `@openedx/paragon`, `react/state/`, `react/components/`, `react/platform/`. **Not** jQuery, Backbone, underscore, `utils/*`, `gettext` or `components/react/*`: ESLint enforces this, so the code stays copyable into the MFE |
 | `react/platform/`, `components/react/`, `app/react-loader.js` | Anything: Backbone models, jQuery, `utils/*`, the global `gettext`, `window.DD_RUM` |
 
 Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`.
 
 ## 3. Styling
 
-- Reuse the existing global classes, so the legacy and React versions look identical while the flag exists.
-  Summary cards use `.summary-point` from `sass/_base.scss`.
-- Put new styles in a Sass partial under `analytics_dashboard/static/sass/components/` and import it from
-  `components/_components.scss`, which `style-application.scss` already imports.
-- Don't import SCSS from React components. The React code is an async chunk, and the production build doesn't
-  extract SCSS imported from async chunks into the CSS files.
+- **Use Paragon components and utility classes** (`d-flex`, `text-center`, `py-3`, `h2`, ...). Don't write CSS
+  for them. Paragon takes its colours, font and corners from `--pgn-*` theme variables, and
+  `components/react/paragon/insights-theme.css` sets those to Insights' values (Open Sans, the edX blue
+  `#0075B4`, the card border and corner radius). Change the look there, in one place.
+- **Paragon's CSS is scoped.** The build applies it only inside the `.paragon-styles` element that
+  `ParagonProvider` renders, so it can't affect the rest of the page (section 17). A page gets it by linking the
+  `paragon-styles` bundle; no page does yet.
+- **If an Insights Bootstrap 3 rule leaks into a Paragon widget** (for example the top margin Insights gives
+  headings), add a rule to `insights-theme.css`. It is scoped like the rest of the file, so it only applies inside
+  Paragon widgets. Check the widget in a browser at 375 and 1440 px.
+- Don't import CSS or SCSS from React components. The React code is an async chunk, and the production build
+  doesn't extract styles imported from async chunks.
+- Legacy-look widgets (not Paragon) reuse the existing global classes, such as `.summary-point` from
+  `sass/_base.scss`.
 
 ## 4. Connecting a widget to Redux
 
@@ -106,12 +124,16 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
 
 ## 6. Translations
 
-- **New React-only strings:** call `gettext` in a `.js` file such as `react/platform/messages.js`, never inside
-  JSX. Add `// Translators:` comments. Then run `make extract_translations` and commit the English `.po`
-  files. `makemessages` reads `.js` files only, so strings in `.jsx` files are never extracted.
+Insights isn't internationalized, so React widgets show English.
+
+- **Text in a component** is a plain English string. Nothing extracts or translates it. When the course list
+  moves to the MFE, wrap its strings in `react-intl` messages there.
 - **Strings the legacy widget already shows from a Django template:** pass them from the view in the page data,
-  with the same message IDs. Both paths are then translated identically while the flag exists. `summary_text`
-  in `CourseIndex.get_context_data` does this for the Total Enrollment label and tooltip.
+  with the same message IDs, so both versions show identical text while the flag exists. `summary_text` in
+  `CourseIndex.get_context_data` does this for the Total Enrollment label and tooltip.
+- Paragon requires `react-intl` (many of its components use it for their built-in text, such as "Close" or
+  "Search"), so `ParagonProvider` supplies it, fixed to English. That is a technical requirement of Paragon, not
+  internationalization of Insights.
 
 ## 7. Number formatting
 
@@ -127,21 +149,31 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
 
 ## 8. Tooltips and tracking
 
-- Activate every `has-tooltip` element with `useBootstrapTooltip(ref, title)` from
-  `react/platform/use-bootstrap-tooltip.js`. `load/init-tooltips.js` runs once at page load and never sees
-  React-rendered elements.
+- **Legacy-look widgets** (the Total Enrollment card today): activate every `has-tooltip` element with
+  `useBootstrapTooltip(ref, title)` from `react/platform/use-bootstrap-tooltip.js`. `load/init-tooltips.js` runs
+  once at page load and never sees React-rendered elements.
 - Never import Bootstrap again. `application-main.js` loads it on every page.
 - Keep the same `data-track-*` attributes as the legacy markup. `TrackingView` listens for `shown.bs.tooltip`
   on the whole document, so the tooltip events are still recorded.
 - Bootstrap moves the `title` attribute into `data-original-title` when it activates a tooltip. Tests should
   check `data-original-title`.
+- **Paragon widgets:** use Paragon's `OverlayTrigger` and `Tooltip`, with an `IconButton` as the trigger. Give each
+  tooltip an `id` that is unique on the page. Don't use Bootstrap 3's jQuery `.tooltip()` in them.
+- Paragon's tooltips are drawn into `<body>`, outside the widget. The build adds rules that style them only when
+  they are Bootstrap 4 tooltips (`bs-tooltip-*`), so Insights' own jQuery tooltips are unaffected (section 17).
+- **Analytics for Paragon tooltips.** `TrackingView` listens for Bootstrap's `shown.bs.tooltip`, which Paragon's
+  tooltips don't fire. A Paragon widget must send the same `segment:track` event itself, through the tracking
+  model (`trackingModel.trigger('segment:track', 'edx.bi.tooltip.displayed', { title, category, type })`), with
+  the same properties as the legacy markup's `data-track-*` attributes.
+- Legacy markup restored by the fallback still gets its jQuery tooltips back (see `mountReact`).
 
 ## 9. Mounting
 
 - **Elements rendered by Django:** in the template, add `data-react-widget="<name>"` to the existing element
   only when the flag is on (`{% if enable_react_course_list %}`). Then mount from `react/index.js` with
   `mountReact(element, Widget, { store })`. React manages only that element's children. Its classes and
-  attributes stay unchanged, apart from the markers below.
+  attributes stay unchanged, apart from the markers below. Paragon widgets also pass
+  `wrapper: ParagonProvider`, which supplies `react-intl` and the `.paragon-styles` scope.
 - **Widgets inside the Backbone app:** mount into a Marionette region through a region adapter (planned, not in
   the code yet).
 - Mount one widget per element.
@@ -159,15 +191,6 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
   chunk failed to load or start).
 
 The markers are invisible. Check them in DevTools → Elements.
-
-**Debug outline.** Open any page once with `?react_debug=1`, for example `/courses/?react_debug=1`. This browser
-remembers the setting in `localStorage`, and from then on:
-
-- React widgets get a blue dashed outline labelled "React: <widget>";
-- widgets showing the fallback get a red dashed outline labelled "Fallback: <widget>".
-
-`?react_debug=0` turns it off. It affects only your browser, never moves anything (it uses `outline`), and
-sends nothing anywhere. `components/react/react-debug.js` implements it.
 
 ## 10. Fallback behavior
 
@@ -243,7 +266,7 @@ Rules:
   output, as `courses/tests/test_views/test_course_summaries.py` does.
 - Never import React, Redux or anything under `course-list/react/` from legacy code. The only exceptions are
   `react-loader.js`'s dynamic `import()` and its imports of `components/react/monitoring.js` and
-  `components/react/react-debug.js`, which import nothing.
+  `components/react/widget-markers.js`, which import nothing.
 - **Bundle check.** Build with a stats report and list each chunk's modules:
 
   ```bash
@@ -290,29 +313,90 @@ Rules:
 - **Fixtures with a server-rendered tooltip:** call `$(element).find('.has-tooltip').tooltip()` before
   mounting, as `load/init-tooltips.js` does on the page. Otherwise exact HTML comparisons of the restored
   markup fail.
+- Render Paragon components inside `ParagonProvider`: they need `react-intl`.
+- **Karma runs in PhantomJS 2.1**, which lacks some browser APIs. `js/test/specs/spec-runner.js` adds, for tests
+  only, the `EventTarget` global (Paragon's `Overlay` references it when it loads) and an `Intl` polyfill with
+  English data (`react-intl` needs `Intl`). PhantomJS has no `MouseEvent` constructor, so create events with
+  `document.createEvent('Event')` and `initEvent(type, true, true)`. If a Paragon component needs another API,
+  add a shim there, or switch Karma to a headless modern browser.
+- Paragon's tooltips are appended to `<body>` and stay there if a spec doesn't unmount. Other specs can leave
+  legacy `.tooltip` elements, so select Paragon's with `.tooltip[class*="bs-tooltip-"]`.
 - Run axe-core on new widgets (`axe.a11yCheck`).
 - Python view tests use `waffle.testutils.override_flag`.
-- Commands: `npm test`, `npm run lint`, `make test_python`, `make quality`, `make validate_translations`.
+- The build helpers have their own checks: `npm run check:paragon`. `make validate_js` (so CI) runs it.
+- Commands: `npm test`, `npm run lint`, `npm run check:paragon`, `make test_python`, `make quality`,
+  `make validate_translations`.
+- The spec "Data Table View should format display of a date" assumes the machine's timezone is UTC. It fails on a
+  machine in another timezone; this is unrelated to the React code.
 
 ## 15. Checklist for a new widget
 
 1. Add a mount point behind the flag in the Django template, or a Marionette region.
 2. Add a slice, selectors, validation and the bridge mapping.
-3. Add a presentational component and a connected widget. The widget throws when it has no valid data.
-4. Handle text and number formatting through the `platform/` adapters.
-5. Reuse the existing CSS classes.
-6. Write tests: unit tests, update in place, invalid data keeps the last value, a render failure restores the
-   HTML exactly, flag off and on, legacy equivalence, axe-core and monitoring.
-7. Run the bundle check (section 13).
-8. Update this README if you introduce a new pattern.
+3. Add a presentational component (Paragon, with plain English text) and a connected widget. The widget throws
+   when it has no valid data.
+4. Handle number formatting and tracking through the `platform/` adapters.
+5. Don't write CSS; use Paragon components, utility classes and the theme (section 3).
+6. Mount it in `react/index.js` with `wrapper: ParagonProvider`.
+7. Write tests: unit tests, update in place, invalid data keeps the last value, a render failure restores the
+   HTML exactly, flag off and on, axe-core and monitoring.
+8. Run the bundle check (section 13), and look at the widget in a browser with the flag on and off.
+9. Update this README if you introduce a new pattern.
 
 ## 16. What moves to an MFE
 
 The course list is expected to move to a micro-frontend (MFE) later.
 
 - **Unchanged:** `react/state/`, including validation, and other pure helpers.
-- **With adapters swapped:** `react/components/` and `react/widgets/`. They would use react-intl instead of
-  `gettext` and Globalize, and Paragon instead of Bootstrap tooltips and the legacy classes.
-- **Not carried over:** `react/platform/`, `components/react/` (mounting, error boundary and the RUM adapter),
-  `react-loader.js`, the waffle flag, the Django mount points, the build configuration and the Karma tests.
-  The MFE has its own monitoring setup.
+- **Unchanged, because they are written like MFE code:** `react/components/` and `react/widgets/` (Paragon).
+  Only their imports of `react/platform/` adapters are replaced, and their text is wrapped in `react-intl`
+  messages.
+- **Not carried over:** `react/platform/` (page-model bridge, formatting, tracking), `components/react/` (mounting,
+  error boundary, RUM adapter, `ParagonProvider`, widget markers), `insights-theme.css`,
+  `react-loader.js`, the waffle flag, the Django mount points, `webpack/paragon/`, and the Karma tests. In the MFE,
+  frontend-platform provides the providers, and its theme and monitoring apply.
+
+## 17. How Paragon is wired into this page
+
+Paragon is built for MFEs, which use webpack 5 and no other CSS. Insights uses webpack 3, Babel 7.17, UglifyJS
+(ES5 only) and Bootstrap 3, so the build has extra steps. They live in `webpack/paragon/` and the three configs
+(`webpack.config.js`, `webpack.prod.config.js`, `karma.conf.js`). Developers don't need to change them to build a
+widget.
+
+| Problem | What the build does |
+|---|---|
+| Paragon and 10 of its dependencies ship ES2015+ code, which UglifyJS rejects | Transpiles exactly those packages (the list in `webpack/paragon/index.js`) |
+| Paragon's JavaScript imports an SCSS file for its breakpoints | Replaces it with `components/react/paragon/breakpoints.js` |
+| Webpack 3 ignores `sideEffects: false`, so one import bundles all 2,319 icons and every component | A Babel plugin rewrites `import { Card } from '@openedx/paragon'` and icon imports into per-file imports. Source code keeps the MFE style |
+| Paragon's Bootstrap 4 CSS would restyle the Bootstrap 3 page | Scopes it under `.paragon-styles` (`webpack/paragon/scope-paragon-css.js`). **The build fails if a rule would apply outside the scope.** Only the `:root` variable rules stay global |
+| Tooltips and popovers are drawn into `<body>`, outside the scope | Adds copies of their rules that only match Bootstrap 4's `bs-tooltip-*` and `bs-popover-*` classes |
+| Insights sets `html { font-size: 14px }`; Paragon's `rem` sizes assume 16px | Converts Paragon's `rem` values to `px` |
+| Browsers ignore Paragon's `@media (--pgn-...)` custom media queries | Resolves them from Paragon's own definitions |
+
+At run time: `ParagonProvider` wraps each Paragon widget in `react-intl`'s provider (English) and an element with
+the class `paragon-styles`, and a page must link the `paragon-styles` CSS file (and, in development, its JS bundle) to get the styles.
+
+**Before you use a Paragon modal, toast or sheet:** Paragon draws these into elements it creates at the end of
+`<body>` (`paragon-portal-root`, `toast-root`, `sheet-root`), which are outside `.paragon-styles`, so they would be
+unstyled. Create those three elements once, before the first one is shown, each with the class `paragon-styles`
+(for example `document.createElement('div')`, set its `id`, add the class, append it to `document.body`).
+Paragon reuses an element that already exists. Tooltips, popovers and dropdown menus need none of this.
+
+Cost, measured with the first Paragon card: about 175 KB of gzipped JavaScript in the React chunk and 78 KB of
+gzipped CSS, downloaded only by a page that uses Paragon widgets.
+
+## 18. Upgrading Paragon
+
+1. Change the exact version in `package.json`, then `npm install`.
+2. `npm run build`. If it fails with "from UglifyJs" or "Module parse failed", the error names a file in
+   `node_modules`. Add that package (not only Paragon itself) to the list in `webpack/paragon/index.js`, and build
+   again. Repeat until the build passes; each upgrade usually needs zero to two additions.
+3. If the build reports selectors that would apply outside `.paragon-styles`, or a global `:root` rule with
+   declarations other than `--*` custom properties, extend `webpack/paragon/scope-paragon-css.js` and add a case
+   to `webpack/paragon/check-paragon-build.js`. If `npm run check:paragon` reports new `@keyframes` names
+   (keyframe names are global), check them against the `@keyframes` in Insights' CSS, then update the list in
+   that script.
+4. Run `npm run check:paragon` and `npm test`. Check that the breakpoints in `breakpoints.js` still match
+   Paragon's `styles/scss/core/_exports.module.scss`, and that the `--pgn-*` variables in `insights-theme.css`
+   still exist.
+5. Look at a Paragon widget in a browser, with the flag on and off, including its tooltip.

@@ -85,7 +85,7 @@ describe('loadReactWidgets', () => {
       loadReactWidgets(flagOn(), importWidgets).then((started) => {
         expect(started).toBe(false);
         expect(widget.innerHTML).toBe(serverMarkup);
-        // Marked for the debug outline (?react_debug=1); invisible otherwise.
+        // Marked, to see it in DevTools.
         expect(widget.getAttribute('data-react-fallback')).toBe('total-enrollment');
 
         expect(rum.addError).toHaveBeenCalledTimes(1);

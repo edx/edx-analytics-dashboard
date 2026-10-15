@@ -5,7 +5,7 @@ import $ from 'jquery';
 
 import WidgetErrorBoundary from 'components/react/widget-error-boundary';
 import { reportFallbackActivated, reportWidgetFailure } from 'components/react/monitoring';
-import { enableReactDebugIfRequested, markFallback, markRendered } from 'components/react/react-debug';
+import { markFallback, markRendered } from 'components/react/widget-markers';
 
 /**
  * Renders a React component into an existing element and returns a function that unmounts it.
@@ -17,7 +17,7 @@ import { enableReactDebugIfRequested, markFallback, markRendered } from 'compone
  * (no wrapper element) and its Bootstrap tooltips are re-activated. Nothing about the error is shown to users.
  *
  * The element gets data-react-rendered="<widget>" after the first successful render, or
- * data-react-fallback="<widget>" when the fallback is shown. ?react_debug=1 outlines them (react-debug.js).
+ * data-react-fallback="<widget>" when the fallback is shown.
  *
  * @param {Element} element - Element to render into. Its existing content is the initial fallback.
  * @param {Function} Component - React component to render.
@@ -25,15 +25,18 @@ import { enableReactDebugIfRequested, markFallback, markRendered } from 'compone
  * @param {Object} [options.store] - Redux store; when given, the component is wrapped in <Provider>.
  * @param {Object} [options.props] - Props passed to the component.
  * @param {string} [options.name] - Widget name for monitoring; defaults to the element's data-react-widget.
+ * @param {Function} [options.wrapper] - Component that wraps the widget, inside the Redux <Provider>. Paragon
+ *   widgets pass ParagonProvider (components/react/paragon/ParagonProvider).
  * @returns {Function} Call to unmount the component. The element gets its original server-rendered HTML back.
  */
-export default function mountReact(element, Component, { store, props = {}, name } = {}) {
+export default function mountReact(element, Component, {
+  store, props = {}, name, wrapper: Wrapper,
+} = {}) {
   if (!element) {
     throw new Error(`mountReact: no element to render ${Component.name || 'the component'} into.`);
   }
   const widget = name || element.getAttribute('data-react-widget') || 'unknown';
   const serverHtml = element.innerHTML;
-  enableReactDebugIfRequested();
   const root = createRoot(element);
   let mounted = true;
 
@@ -66,9 +69,10 @@ export default function mountReact(element, Component, { store, props = {}, name
   };
 
   const tree = <Component {...props} />;
+  const wrapped = Wrapper ? <Wrapper>{tree}</Wrapper> : tree;
   root.render(
     <WidgetErrorBoundary container={element} onFallback={restore} onRendered={onRendered}>
-      {store ? <Provider store={store}>{tree}</Provider> : tree}
+      {store ? <Provider store={store}>{wrapped}</Provider> : wrapped}
     </WidgetErrorBoundary>,
   );
 

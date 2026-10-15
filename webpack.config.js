@@ -3,6 +3,7 @@
 const Merge = require('webpack-merge');
 const path = require('path');
 const commonConfig = require('./webpack.common.config.js');
+const { PARAGON_CSS_PATTERN, paragonImportsPlugin, transpiledPackagesRule } = require('./webpack/paragon');
 
 const djangoDevServer = process.env.DJANGO_DEV_SERVER || 'http://localhost:8110';
 
@@ -19,6 +20,8 @@ module.exports = Merge.smart(commonConfig, {
   module: {
     // Specify file-by-file rules to Webpack. Some file-types need a particular kind of loader.
     rules: [
+      // Paragon (@openedx/paragon) and its ES2015+ dependencies are transpiled to ES5, which UglifyJS requires.
+      transpiledPackagesRule(),
       // The babel-loader transforms newer ES2015 syntax to older ES5 for legacy browsers, and JSX for React.
       {
         test: /\.jsx?$/,
@@ -34,7 +37,7 @@ module.exports = Merge.smart(commonConfig, {
               }],
               ['@babel/preset-react', { runtime: 'automatic' }],
             ],
-            plugins: ['@babel/plugin-syntax-dynamic-import'],
+            plugins: ['@babel/plugin-syntax-dynamic-import', paragonImportsPlugin(true)],
             cacheDirectory: true,
           },
         },
@@ -70,8 +73,14 @@ module.exports = Merge.smart(commonConfig, {
         exclude: /node_modules/,
       },
       // Not all of our dependencies use Sass. We need an additional rule for requiring or including CSS files.
+      // Paragon's CSS is scoped under .paragon-styles by paragon-css-loader.
+      {
+        test: PARAGON_CSS_PATTERN,
+        use: ['style-loader', 'css-loader', 'paragon-css-loader'],
+      },
       {
         test: /\.css$/,
+        exclude: PARAGON_CSS_PATTERN,
         use: ['style-loader', 'css-loader', 'resolve-url-loader'],
         include: [path.join(__dirname, 'analytics_dashboard/static'), path.join(__dirname, 'node_modules')],
       },

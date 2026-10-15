@@ -122,6 +122,7 @@ validate_python: test_python quality
 #FIXME validate_js: requirements.js
 validate_js:
 	npm run test
+	npm run check:paragon
 	npm run lint -s
 
 validate: validate_python validate_js
