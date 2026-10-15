@@ -1,24 +1,17 @@
 import CourseModel from 'models/course-model';
 import { resetMonitoringForTests } from 'components/react/monitoring';
+import connectPageModelToStore from 'course-list/react/platform/page-model-bridge';
 import createCourseListStore from 'course-list/react/state/store';
-import connectPageModelToStore, { toSummaryPayload } from 'course-list/react/platform/page-model-bridge';
-import { selectSummaryText, selectTotalEnrollment } from 'course-list/react/state/summary-slice';
 
-describe('connectPageModelToStore', () => {
-  const summaryText = {
-    total_enrollment: { label: 'Total Enrollment', tooltip: 'Total enrollments across all of your courses.' },
-  };
-  const summary = value => ({
-    total_enrollment: value,
-    current_enrollment: 101,
-    enrollment_change_7_days: 202,
-    verified_enrollment: 303,
-    masters_enrollment: 404,
-  });
+const fixture = require('course-list/react/spec/fixtures/course-list-rows.json');
+
+describe('page model bridge', () => {
   let originalRum;
   let rum;
-  let courseModel;
   let store;
+
+  const connect = attributes => connectPageModelToStore(new CourseModel(attributes), store);
+  const reportedContext = () => rum.addError.calls.argsFor(0)[1];
 
   beforeEach(() => {
     resetMonitoringForTests();
@@ -30,7 +23,6 @@ describe('connectPageModelToStore', () => {
     window.DD_RUM = rum;
     // The monitoring adapter logs reported failures to the console in development builds.
     spyOn(console, 'error');
-    courseModel = new CourseModel({ summary: summary(3378149), summary_text: summaryText });
     store = createCourseListStore();
   });
 
@@ -38,82 +30,81 @@ describe('connectPageModelToStore', () => {
     window.DD_RUM = originalRum;
   });
 
-  it('maps the server keys to store keys', () => {
-    expect(toSummaryPayload(summary(1), summaryText)).toEqual({
-      metrics: {
-        totalEnrollment: 1,
-        currentEnrollment: 101,
-        enrollmentChange7Days: 202,
-        verifiedEnrollment: 303,
-        mastersEnrollment: 404,
-      },
-      text: { totalEnrollment: summaryText.total_enrollment },
+  it('starts as loading, before any page data is read', () => {
+    expect(store.getState().courses.status).toBe('loading');
+  });
+
+  it('loads the rows and the programs', () => {
+    connect({ course_list_json: fixture.rows, programs_json: fixture.programs });
+
+    const { courses } = store.getState();
+    expect(courses.status).toBe('ready');
+    expect(courses.rows.length).toBe(4);
+    expect(courses.rows[0].course_id).toBe('course-v1:Edx+Algebra+2024');
+    expect(courses.programs).toEqual(fixture.programs);
+    expect(rum.addError).not.toHaveBeenCalled();
+  });
+
+  it('loads the rows when the server sent no programs', () => {
+    connect({ course_list_json: fixture.rows });
+
+    expect(store.getState().courses.status).toBe('ready');
+    expect(store.getState().courses.programs).toEqual([]);
+  });
+
+  [
+    ['missing', {}],
+    ['null', { course_list_json: null }],
+    ['empty (the server sends [] when there is no course data)', { course_list_json: [] }],
+  ].forEach(([description, attributes]) => {
+    it(`marks the data unavailable, without reporting an error, when the course list is ${description}`, () => {
+      connect(attributes);
+
+      expect(store.getState().courses.status).toBe('unavailable');
+      expect(rum.addError).not.toHaveBeenCalled();
     });
-    expect(toSummaryPayload(undefined, null)).toEqual({ metrics: {}, text: {} });
   });
 
-  it('loads the page model into the store when connected', () => {
-    connectPageModelToStore(courseModel, store);
+  [
+    ['not a list', { course_list_json: 'oops' }],
+    ['programs that are not a list', { course_list_json: [fixture.rows[0]], programs_json: 'oops' }],
+  ].forEach(([description, attributes]) => {
+    it(`marks the data as an error and reports it once for ${description}`, () => {
+      connect(attributes);
 
-    expect(selectTotalEnrollment(store.getState())).toBe(3378149);
-    expect(selectSummaryText(store.getState(), 'totalEnrollment')).toEqual(summaryText.total_enrollment);
-    expect(rum.addError).not.toHaveBeenCalled();
+      expect(store.getState().courses.status).toBe('error');
+      expect(rum.addError).toHaveBeenCalledTimes(1);
+      expect(reportedContext()['insights.react.widget']).toBe('course-list');
+      expect(reportedContext()['insights.react.failure_type']).toBe('invalid_update');
+      expect(reportedContext()['insights.react.recovery']).toBe('error_state');
+    });
   });
 
-  it('updates the store when the page model gets a valid value', () => {
-    connectPageModelToStore(courseModel, store);
-    courseModel.set('summary', summary(3378150));
+  it('drops rows without a course_id and reports it once', () => {
+    connect({ course_list_json: [fixture.rows[0], { catalog_course_title: 'No id' }, null, 'text'] });
 
-    expect(selectTotalEnrollment(store.getState())).toBe(3378150);
-    expect(rum.addError).not.toHaveBeenCalled();
-  });
-
-  it('keeps the previous value and reports once when the page model gets invalid values', () => {
-    connectPageModelToStore(courseModel, store);
-    courseModel.set('summary', summary('3,378,149'));
-    courseModel.set('summary', summary(NaN));
-
-    expect(selectTotalEnrollment(store.getState())).toBe(3378149);
+    expect(store.getState().courses.status).toBe('ready');
+    expect(store.getState().courses.rows.length).toBe(1);
     expect(rum.addError).toHaveBeenCalledTimes(1);
-    const context = rum.addError.calls.argsFor(0)[1];
-    expect(context['insights.react.widget']).toBe('summary');
-    expect(context['insights.react.failure_type']).toBe('invalid_update');
-    expect(context['insights.react.recovery']).toBe('kept_last_value');
+    expect(reportedContext()['insights.react.recovery']).toBe('dropped_invalid_rows');
   });
 
-  it('keeps the previous value and reports when the summary is not an object', () => {
+  it('updates the store when the page model changes', () => {
+    const courseModel = new CourseModel({ course_list_json: [fixture.rows[0]] });
     connectPageModelToStore(courseModel, store);
 
-    expect(() => {
-      courseModel.set('summary', 'not an object');
-      courseModel.set('summary_text', 42);
-    }).not.toThrow();
+    courseModel.set('course_list_json', fixture.rows);
 
-    expect(selectTotalEnrollment(store.getState())).toBe(3378149);
-    expect(selectSummaryText(store.getState(), 'totalEnrollment')).toEqual(summaryText.total_enrollment);
-    expect(rum.addError).toHaveBeenCalledTimes(1);
-    expect(rum.addError.calls.argsFor(0)[1]['insights.react.failure_type']).toBe('invalid_update');
+    expect(store.getState().courses.rows.length).toBe(4);
   });
 
-  it('reports server_html as the recovery when no valid value was ever accepted', () => {
-    connectPageModelToStore(new CourseModel({ summary: summary('3,378,149'), summary_text: summaryText }), store);
+  it('stops syncing when the returned function is called', () => {
+    const courseModel = new CourseModel({ course_list_json: [fixture.rows[0]] });
+    const stop = connectPageModelToStore(courseModel, store);
 
-    expect(selectTotalEnrollment(store.getState())).toBeUndefined();
-    expect(rum.addError).toHaveBeenCalledTimes(1);
-    expect(rum.addError.calls.argsFor(0)[1]['insights.react.recovery']).toBe('server_html');
-  });
+    stop();
+    courseModel.set('course_list_json', fixture.rows);
 
-  it('does not throw or report when the page has no summary at all', () => {
-    expect(() => connectPageModelToStore(new CourseModel({}), store)).not.toThrow();
-
-    expect(rum.addError).not.toHaveBeenCalled();
-  });
-
-  it('stops updating the store once disconnected', () => {
-    const disconnect = connectPageModelToStore(courseModel, store);
-    disconnect();
-    courseModel.set('summary', summary(1));
-
-    expect(selectTotalEnrollment(store.getState())).toBe(3378149);
+    expect(store.getState().courses.rows.length).toBe(1);
   });
 });

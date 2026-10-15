@@ -1,10 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
 
-import summaryReducer from 'course-list/react/state/summary-slice';
+import coursesReducer from 'course-list/react/state/courses-slice';
 
 export default function createCourseListStore(preloadedState) {
   return configureStore({
-    reducer: { summary: summaryReducer },
+    reducer: { courses: coursesReducer },
     preloadedState,
   });
 }

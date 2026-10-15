@@ -1,15 +1,11 @@
 import CourseModel from 'models/course-model';
-import loadReactWidgets from 'course-list/app/react-loader';
+import loadReactPage, { showLoadError } from 'course-list/app/react-loader';
 import { resetMonitoringForTests } from 'components/react/monitoring';
 
-describe('loadReactWidgets', () => {
-  const SERVER_MARKUP = '<div class="col col-12 sm-col-12 md-col-3" data-stat-type="total_enrollment"'
-    + ' data-react-widget="total-enrollment"><div class="summary-point text-center">'
-    + '<div class="summary-point-wrapper"><div class="summary-point-number" title="1,234">1,234</div>'
-    + '</div></div></div>';
+describe('loadReactPage', () => {
   let originalRum;
   let rum;
-  let page;
+  let root;
 
   const flagOn = () => new CourseModel({ enable_react_course_list: true });
 
@@ -23,8 +19,8 @@ describe('loadReactWidgets', () => {
     window.DD_RUM = rum;
     // The monitoring adapter logs reported failures to the console in development builds.
     spyOn(console, 'error');
-    setFixtures(`<div id="react-loader-page">${SERVER_MARKUP}</div>`);
-    page = document.getElementById('react-loader-page');
+    setFixtures('<div id="course-list-react-root"><div class="loading-container">Loading</div></div>');
+    root = document.getElementById('course-list-react-root');
   });
 
   afterEach(() => {
@@ -36,28 +32,26 @@ describe('loadReactWidgets', () => {
     ['off', { enable_react_course_list: false }],
   ].forEach(([description, attributes]) => {
     it(`does not load the React code when the flag is ${description}`, (done) => {
-      const importWidgets = jasmine.createSpy('importWidgets');
+      const importPage = jasmine.createSpy('importPage');
 
-      loadReactWidgets(new CourseModel(attributes), importWidgets).then((started) => {
+      loadReactPage(new CourseModel(attributes), importPage).then((started) => {
         expect(started).toBe(false);
-        expect(importWidgets).not.toHaveBeenCalled();
-        expect(page.querySelector('[data-react-fallback]')).toBeNull();
+        expect(importPage).not.toHaveBeenCalled();
+        expect(root.querySelector('.loading-container')).not.toBeNull();
         expect(rum.addError).not.toHaveBeenCalled();
-        expect(rum.addAction).not.toHaveBeenCalled();
         done();
       }).catch(done.fail);
     });
   });
 
-  it('starts the React widgets with the page model when the flag is on', (done) => {
+  it('starts the React page with the page model when the flag is on', (done) => {
     const courseModel = flagOn();
-    const startReactWidgets = jasmine.createSpy('startReactWidgets');
+    const startReactPage = jasmine.createSpy('startReactPage');
 
-    loadReactWidgets(courseModel, () => Promise.resolve({ default: startReactWidgets })).then((started) => {
+    loadReactPage(courseModel, () => Promise.resolve({ default: startReactPage })).then((started) => {
       expect(started).toBe(true);
-      expect(startReactWidgets).toHaveBeenCalledWith({ courseModel });
+      expect(startReactPage).toHaveBeenCalledWith({ courseModel });
       expect(rum.addError).not.toHaveBeenCalled();
-      expect(rum.addAction).not.toHaveBeenCalled();
       done();
     }).catch(done.fail);
   });
@@ -66,44 +60,55 @@ describe('loadReactWidgets', () => {
     {
       failureType: 'chunk_load',
       description: 'the React code fails to load',
-      importWidgets: () => Promise.reject(new Error('Loading chunk failed')),
+      importPage: () => Promise.reject(new Error('Loading chunk failed')),
     },
     {
       failureType: 'start_error',
-      description: 'the React widgets fail to start',
-      importWidgets: () => Promise.resolve({
+      description: 'the React page fails to start',
+      importPage: () => Promise.resolve({
         default: () => {
           throw new Error('start failed');
         },
       }),
     },
-  ].forEach(({ failureType, description, importWidgets }) => {
-    it(`keeps the server markup and reports once when ${description}`, (done) => {
-      const widget = page.querySelector('[data-react-widget]');
-      const serverMarkup = widget.innerHTML;
-
-      loadReactWidgets(flagOn(), importWidgets).then((started) => {
+  ].forEach(({ failureType, description, importPage }) => {
+    it(`shows the error alert in place of the spinner and reports once when ${description}`, (done) => {
+      loadReactPage(flagOn(), importPage).then((started) => {
         expect(started).toBe(false);
-        expect(widget.innerHTML).toBe(serverMarkup);
-        // Marked, to see it in DevTools.
-        expect(widget.getAttribute('data-react-fallback')).toBe('total-enrollment');
+        expect(root.querySelector('.loading-container')).toBeNull();
+        expect(root.querySelector('.alert.alert-error[role="alert"]')).not.toBeNull();
+        expect(root.querySelector('.alert-title').textContent).toBe('We are unable to load this page.');
+        expect(root.querySelector('.alert-copy-with-title').textContent).toBe('Reload the page to try again.');
 
         expect(rum.addError).toHaveBeenCalledTimes(1);
         const context = rum.addError.calls.argsFor(0)[1];
         expect(context['insights.react.widget']).toBe('course-list');
         expect(context['insights.react.failure_type']).toBe(failureType);
-        expect(context['insights.react.recovery']).toBe('server_html');
-
-        expect(rum.addAction).toHaveBeenCalledTimes(1);
-        expect(rum.addAction).toHaveBeenCalledWith(
-          'insights_react_fallback_activated',
-          jasmine.objectContaining({
-            'insights.react.fallback': 'server_html',
-            'insights.react.failure_type': failureType,
-          }),
-        );
+        expect(context['insights.react.recovery']).toBe('error_state');
+        expect(rum.addAction).not.toHaveBeenCalled();
         done();
       }).catch(done.fail);
+    });
+  });
+
+  describe('showLoadError', () => {
+    it('replaces the spinner with the error alert and reports the failure once', () => {
+      const result = showLoadError('start_error', new Error('init failed'));
+
+      expect(result).toBe(false);
+      expect(root.querySelector('.loading-container')).toBeNull();
+      expect(root.querySelector('.alert-error .alert-title').textContent).toBe('We are unable to load this page.');
+      expect(rum.addError).toHaveBeenCalledTimes(1);
+      const context = rum.addError.calls.argsFor(0)[1];
+      expect(context['insights.react.failure_type']).toBe('start_error');
+      expect(context['insights.react.recovery']).toBe('error_state');
+    });
+
+    it('still reports the failure when the page has no mount point', () => {
+      setFixtures('<div id="somewhere-else"></div>');
+
+      expect(showLoadError('start_error', new Error('init failed'))).toBe(false);
+      expect(rum.addError).toHaveBeenCalledTimes(1);
     });
   });
 });

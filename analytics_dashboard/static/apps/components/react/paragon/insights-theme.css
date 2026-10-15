@@ -47,3 +47,65 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 body {
   background-color: transparent;
 }
+
+/*
+ * The course list page: its sections and their headings, and the placeholders that mark where a developer's
+ * component goes. Heading sizes follow the mockup.
+ */
+.insights-page-section {
+  margin-bottom: 30px;
+}
+
+.insights-section-heading {
+  margin-bottom: 15px;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.insights-placeholder {
+  padding: 24px;
+  border: 2px dashed #D4D2CF; /* $gray-l2 */
+  color: #8B857F; /* $gray */
+  text-align: center;
+}
+
+.insights-loading-state,
+.insights-empty-state {
+  padding: 24px 0;
+}
+
+/*
+ * Insights' error alert (.alert.alert-error) is styled by the global CSS of the pattern library. Inside this
+ * scope Paragon's own .alert rule would replace its border, background and shadow (it makes them transparent),
+ * and its body text and heading rules change the text size, colour and title, so they are restored here. Only
+ * the error alert is restored, so Paragon's own Alert components keep their look. The values are the pattern
+ * library's, in px (Insights' root font size is 14px).
+ */
+.alert.alert-error {
+  margin-bottom: 0;
+  padding: 17.5px;
+  border: 1px solid #CB0712;
+  border-radius: 0;
+  background-color: #FFF;
+  box-shadow: inset 0 0 0 3.5px #FEECED;
+  color: #000;
+  font-size: 14px;
+  line-height: normal;
+  text-align: start;
+}
+
+/* Paragon has its own .alert .alert-icon rule: a fixed 24px square with a margin. */
+.alert-error .alert-icon {
+  width: auto;
+  height: auto;
+  margin-inline-end: 0;
+  color: #FFF;
+}
+
+.alert-error .alert-title {
+  margin: -8.75px 0 8.75px;
+  font-size: 15.75px;
+  font-weight: 600;
+  line-height: 25.2px;
+}
