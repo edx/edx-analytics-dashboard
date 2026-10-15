@@ -94,6 +94,21 @@ describe('createResultsTracker', () => {
     }]]);
   });
 
+  it('sends the legacy sort and page events, the page as a 0-based index', () => {
+    const trackingModel = new Backbone.Model();
+    const events = [];
+    trackingModel.on('segment:track', (...args) => events.push(args));
+    const track = createResultsTracker(trackingModel);
+
+    track.sorted('count', 'desc');
+    track.paged(3);
+
+    expect(events).toEqual([
+      ['edx.bi.course_list.sorted', { category: 'count_desc' }],
+      ['edx.bi.course_list.paged', { category: 2 }],
+    ]);
+  });
+
   it('does nothing without a tracking model', () => {
     expect(() => createResultsTracker(undefined).courseOpened({ course_id: 'a' })).not.toThrow();
   });

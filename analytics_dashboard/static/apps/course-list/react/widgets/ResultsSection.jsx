@@ -1,16 +1,17 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 import DownloadCsvButton from 'course-list/react/components/controls/DownloadCsvButton';
 import CourseTable from 'course-list/react/components/results/CourseTable';
 import ResultCount from 'course-list/react/components/results/ResultCount';
+import TablePagination from 'course-list/react/components/results/TablePagination';
 import EmptyState from 'course-list/react/components/status/EmptyState';
 import LoadingState from 'course-list/react/components/status/LoadingState';
 import { selectStatus } from 'course-list/react/state/courses-slice';
-import { selectQuery } from 'course-list/react/state/query-slice';
+import { pageChanged, selectQuery, sortChanged } from 'course-list/react/state/query-slice';
 import {
-  selectAvailableColumns, selectPageRows, selectResultCount,
+  selectAvailableColumns, selectCurrentPage, selectPageCount, selectPageRows, selectResultCount,
 } from 'course-list/react/state/selectors';
 
 // The same messages as the legacy course list (course-list/list/views/results.js).
@@ -20,22 +21,34 @@ const NO_DATA_DETAIL = 'No courses are enrolled, or course activity data has not
 const NO_MATCH_MESSAGE = 'No courses matched your criteria.';
 
 /**
- * The results: a toolbar row (the count, and Download CSV when the server sent its URL), then the course table, or a
- * message when the search and filters match nothing. The table shows the columns of the columns registry that exist
- * for this page (the waffle switches decide some of them). The callbacks are for analytics.
+ * The results: a toolbar row (the count, and Download CSV when the server sent its URL), then the course table and its
+ * pager, or a message when the search and filters match nothing. The table shows the columns of the columns registry
+ * that exist for this page (the waffle switches decide some of them). Sorting and paging are stored in the query; the
+ * callbacks are for analytics.
  */
 export default function ResultsSection({
-  downloadUrl, onDownload, passingUsersEnabled, filtersEnabled, onCourseOpen,
+  downloadUrl, onDownload, passingUsersEnabled, filtersEnabled, onCourseOpen, onSort, onPage,
 }) {
-  const page = useMemo(() => ({ passingUsersEnabled, filtersEnabled }), [passingUsersEnabled, filtersEnabled]);
+  const dispatch = useDispatch();
+  const switches = useMemo(() => ({ passingUsersEnabled, filtersEnabled }), [passingUsersEnabled, filtersEnabled]);
   const status = useSelector(selectStatus);
   const count = useSelector(selectResultCount);
   const rows = useSelector(selectPageRows);
-  const available = useSelector(state => selectAvailableColumns(state, page));
+  const available = useSelector(state => selectAvailableColumns(state, switches));
   // The columns shown until the user changes them (the Columns menu comes next): Total Engagements and Engagement
   // Rate start hidden, as in the prototype.
   const columns = useMemo(() => available.filter(column => column.defaultVisible !== false), [available]);
-  const { search, filters } = useSelector(selectQuery);
+  const { search, filters, sort } = useSelector(selectQuery);
+  const page = useSelector(selectCurrentPage);
+  const pageCount = useSelector(selectPageCount);
+  const changeSort = useCallback((key, dir) => {
+    dispatch(sortChanged({ key, dir }));
+    onSort(key, dir);
+  }, [dispatch, onSort]);
+  const changePage = useCallback((target) => {
+    dispatch(pageChanged(target));
+    onPage(target);
+  }, [dispatch, onPage]);
 
   if (status === 'loading') {
     return <LoadingState />;
@@ -61,9 +74,18 @@ export default function ResultsSection({
           {downloadUrl && <DownloadCsvButton url={downloadUrl} onClick={onDownload} />}
         </div>
       </div>
-      {count
-        ? <CourseTable columns={columns} rows={rows} onCourseOpen={onCourseOpen} />
-        : <EmptyState message={NO_MATCH_MESSAGE} detail={suggestions} />}
+      {count ? (
+        <>
+          <CourseTable
+            columns={columns}
+            rows={rows}
+            sort={sort}
+            onSortChange={changeSort}
+            onCourseOpen={onCourseOpen}
+          />
+          <TablePagination page={page} pageCount={pageCount} onPageChange={changePage} />
+        </>
+      ) : <EmptyState message={NO_MATCH_MESSAGE} detail={suggestions} />}
     </>
   );
 }
@@ -76,6 +98,9 @@ ResultsSection.propTypes = {
   filtersEnabled: PropTypes.bool,
   // Called with the row of the course whose link is clicked.
   onCourseOpen: PropTypes.func,
+  // Called with (column id, 'asc' | 'desc') after a sort, and with the 1-based page after a page change.
+  onSort: PropTypes.func,
+  onPage: PropTypes.func,
 };
 
 ResultsSection.defaultProps = {
@@ -84,4 +109,6 @@ ResultsSection.defaultProps = {
   passingUsersEnabled: false,
   filtersEnabled: false,
   onCourseOpen: () => {},
+  onSort: () => {},
+  onPage: () => {},
 };

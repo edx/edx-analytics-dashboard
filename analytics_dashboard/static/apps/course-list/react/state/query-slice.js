@@ -13,7 +13,8 @@ const querySlice = createSlice({
     search: '', filters: {}, sort: DEFAULT_SORT, page: 1,
   },
   reducers: {
-    searchChanged: (state, action) => ({ ...state, search: String(action.payload) }),
+    // A new search, filter or sort starts again at the first page.
+    searchChanged: (state, action) => ({ ...state, search: String(action.payload), page: 1 }),
     filterChanged: (state, action) => {
       const { id, values } = action.payload;
       const filters = { ...state.filters };
@@ -22,12 +23,22 @@ const querySlice = createSlice({
       } else {
         delete filters[id];
       }
-      return { ...state, filters };
+      return { ...state, filters, page: 1 };
     },
+    // payload: { key, dir }. The table decides the direction (numbers start descending), so it is set, not toggled.
+    sortChanged: (state, action) => {
+      const { key, dir } = action.payload;
+      return { ...state, sort: { key, dir: dir === 'desc' ? 'desc' : 'asc' }, page: 1 };
+    },
+    pageChanged: (state, action) => (
+      Number.isInteger(action.payload) && action.payload >= 1 ? { ...state, page: action.payload } : state
+    ),
   },
 });
 
-export const { searchChanged, filterChanged } = querySlice.actions;
+export const {
+  searchChanged, filterChanged, sortChanged, pageChanged,
+} = querySlice.actions;
 export const selectQuery = state => state.query;
 
 export default querySlice.reducer;

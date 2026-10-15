@@ -8,6 +8,7 @@ describe('CourseTable', () => {
   let element;
   let root;
   let onCourseOpen;
+  let onSortChange;
 
   const COLUMNS = [
     {
@@ -43,13 +44,25 @@ describe('CourseTable', () => {
     },
   ];
 
-  const render = (columns = COLUMNS, rows = ROWS) => {
+  const render = (columns = COLUMNS, rows = ROWS, sort = { key: 'catalog_course_title', dir: 'asc' }) => {
     act(() => {
       root.render(
-        <ParagonProvider><CourseTable columns={columns} rows={rows} onCourseOpen={onCourseOpen} /></ParagonProvider>,
+        <ParagonProvider>
+          <CourseTable
+            columns={columns}
+            rows={rows}
+            sort={sort}
+            onSortChange={onSortChange}
+            onCourseOpen={onCourseOpen}
+          />
+        </ParagonProvider>,
       );
     });
   };
+  const headerCell = label => Array.prototype.find.call(
+    element.querySelectorAll('thead th'),
+    th => th.textContent.indexOf(label) === 0,
+  );
   const headers = () => Array.prototype.map.call(element.querySelectorAll('thead th'), th => th.textContent.trim());
   const cells = index => Array.prototype.map.call(
     element.querySelectorAll('tbody tr')[index].querySelectorAll('td'),
@@ -58,6 +71,7 @@ describe('CourseTable', () => {
 
   beforeEach(() => {
     onCourseOpen = jasmine.createSpy('onCourseOpen');
+    onSortChange = jasmine.createSpy('onSortChange');
     setFixtures('<div id="course-table-root"></div>');
     element = document.getElementById('course-table-root');
     root = createRoot(element);
@@ -71,7 +85,8 @@ describe('CourseTable', () => {
     render();
 
     expect(headers()).toEqual([
-      'Course Name', 'Start Date', 'Current Enrollment', 'Engagement Rate', 'Sales Model', 'B2B Enrollment',
+      'Course Name, sorted ascending', 'Start Date', 'Current Enrollment', 'Engagement Rate', 'Sales Model',
+      'B2B Enrollment',
     ]);
     expect(element.querySelectorAll('tbody tr').length).toBe(2);
     expect(element.querySelector('.insights-course-table .pgn__data-table')).not.toBeNull();
@@ -117,5 +132,44 @@ describe('CourseTable', () => {
     expect(cells(0)[5].querySelector('[aria-hidden="true"]').textContent).toBe('--');
     expect(cells(0)[5].querySelector('.sr-only').textContent).toBe('Data not available yet');
     expect(cells(0)[5].querySelector('[title]').getAttribute('title')).toBe('Data not available yet');
+  });
+
+  describe('sorting', () => {
+    it('makes every header with data a button, and says which column is sorted', () => {
+      render();
+
+      expect(headerCell('Course Name').querySelector('button.insights-sort-button')).not.toBeNull();
+      expect(headerCell('Course Name').querySelector('.sr-only').textContent).toBe(', sorted ascending');
+      expect(headerCell('Current Enrollment').querySelector('button')).not.toBeNull();
+      expect(headerCell('B2B Enrollment').querySelector('button')).toBeNull();
+    });
+
+    it('sorts a number column descending on the first click, and a text column ascending', () => {
+      render();
+
+      act(() => headerCell('Current Enrollment').querySelector('button').click());
+      expect(onSortChange).toHaveBeenCalledWith('count', 'desc');
+
+      act(() => headerCell('Start Date').querySelector('button').click());
+      expect(onSortChange).toHaveBeenCalledWith('start_date', 'asc');
+    });
+
+    it('reverses the sorted column, and never sorts a column without data', () => {
+      render();
+
+      act(() => headerCell('Course Name').querySelector('button').click());
+      expect(onSortChange).toHaveBeenCalledWith('catalog_course_title', 'desc');
+
+      onSortChange.calls.reset();
+      act(() => headerCell('B2B Enrollment').click());
+      expect(onSortChange).not.toHaveBeenCalled();
+    });
+
+    it('starts with the sort it is given', () => {
+      render(COLUMNS, ROWS, { key: 'count', dir: 'desc' });
+
+      expect(headerCell('Current Enrollment').querySelector('.sr-only').textContent).toBe(', sorted descending');
+      expect(onSortChange).not.toHaveBeenCalled();
+    });
   });
 });

@@ -45,6 +45,8 @@ describe('ResultsSection', () => {
       passingUsersEnabled: true,
       filtersEnabled: true,
       onCourseOpen: jasmine.createSpy('onCourseOpen'),
+      onSort: jasmine.createSpy('onSort'),
+      onPage: jasmine.createSpy('onPage'),
     };
     setFixtures('<div id="results-root"></div>');
     element = document.getElementById('results-root');
@@ -71,7 +73,7 @@ describe('ResultsSection', () => {
     render();
 
     expect(headers()).toEqual([
-      'Course Name', 'Start Date', 'End Date', 'Total Enrollment', 'Current Enrollment', 'Change Last Week',
+      'Course Name, sorted ascending', 'Start Date', 'End Date', 'Total Enrollment', 'Current Enrollment', 'Change Last Week',
       'Verified Enrollment', 'Passing Learners', 'Sales Model', 'Funding Model', 'B2B Enrollment',
       'B2C Enrollment', 'Subscription Enrollment', 'À la Carte Enrollment',
     ]);
@@ -120,5 +122,57 @@ describe('ResultsSection', () => {
 
     expect(props.onDownload).toHaveBeenCalledTimes(1);
     expect(props.onCourseOpen.calls.argsFor(0)[0].course_id).toBe('course-v1:Edx+Algebra+2024');
+  });
+
+  describe('sorting and paging', () => {
+    // 105 course runs: two pages.
+    const many = Array.from({ length: 105 }, (value, index) => ({
+      course_id: `course-v1:Edx+C${String(index).padStart(3, '0')}+2024`,
+      catalog_course_title: `Course ${String(index).padStart(3, '0')}`,
+      count: index,
+    }));
+    const button = text => Array.prototype.find.call(
+      element.querySelectorAll('button'),
+      node => node.textContent.trim() === text,
+    );
+    const header = label => Array.prototype.find.call(
+      element.querySelectorAll('thead th button'),
+      node => node.textContent.indexOf(label) === 0,
+    );
+
+    beforeEach(() => {
+      store.dispatch(coursesLoaded({ rows: normalizeCourseRows(many), programs: [] }));
+    });
+
+    it('shows 100 course runs per page, with the pager, and moves to another page', () => {
+      render();
+
+      expect(element.querySelectorAll('tbody tr').length).toBe(100);
+      act(() => Array.prototype.slice.call(element.querySelectorAll('.pagination button.page-link'), -1)[0].click());
+
+      expect(store.getState().query.page).toBe(2);
+      expect(titles()).toEqual(['Course 100', 'Course 101', 'Course 102', 'Course 103', 'Course 104']);
+      expect(props.onPage).toHaveBeenCalledWith(2);
+    });
+
+    it('sorts by a header click, starting again at the first page', () => {
+      render();
+      act(() => button('Last').click());
+      act(() => header('Current Enrollment').click());
+
+      expect(store.getState().query.sort).toEqual({ key: 'count', dir: 'desc' });
+      expect(store.getState().query.page).toBe(1);
+      expect(titles()[0]).toBe('Course 104');
+      expect(props.onSort).toHaveBeenCalledWith('count', 'desc');
+    });
+
+    it('starts again at the first page after a new search', () => {
+      render();
+      act(() => Array.prototype.slice.call(element.querySelectorAll('.pagination button.page-link'), -1)[0].click());
+      dispatch(searchChanged('course'));
+
+      expect(store.getState().query.page).toBe(1);
+      expect(titles()[0]).toBe('Course 000');
+    });
   });
 });

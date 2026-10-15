@@ -169,6 +169,31 @@ body {
   background-color: #F9F9F9;
 }
 
+/* The header label is a button, so sorting works from the keyboard; it looks like the header text. */
+.insights-course-table .insights-sort-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.insights-course-table .insights-sort-button:focus {
+  outline: 2px solid #0075B4;
+  outline-offset: 2px;
+}
+
+.insights-table-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 12px 0;
+}
+
 .insights-course-table .pgn__data-table .insights-cell-number {
   text-align: right;
 }

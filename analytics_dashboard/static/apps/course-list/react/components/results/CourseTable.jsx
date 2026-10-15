@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { DataTable } from '@openedx/paragon';
 
@@ -66,14 +66,58 @@ ValueCell.defaultProps = { value: null };
 
 const FORMATS = { number: formatCount, percent: formatPercent, text: String };
 
+/**
+ * A sortable header. DataTable sorts when the header cell is clicked, but the cell can't be reached with the keyboard,
+ * so the label is a button: Enter or Space clicks it, and the click reaches the cell. The sort state is read out to
+ * screen readers.
+ */
+function SortableHeader({ column }) {
+  if (!column.canSort) {
+    return column.label;
+  }
+  let state = '';
+  if (column.isSorted) {
+    state = column.isSortedDesc ? ', sorted descending' : ', sorted ascending';
+  }
+  return (
+    <button type="button" className="insights-sort-button" title={`Sort by ${column.label}`}>
+      {column.label}
+      {state && <span className="sr-only">{state}</span>}
+    </button>
+  );
+}
+
+SortableHeader.propTypes = {
+  column: PropTypes.shape({
+    label: PropTypes.string,
+    canSort: PropTypes.bool,
+    isSorted: PropTypes.bool,
+    isSortedDesc: PropTypes.bool,
+  }).isRequired,
+};
+
+// DataTable keys each cell by `${column.Header}${row.id}`, so every column needs a Header whose text is unique.
+function headerFor(id) {
+  function Header(props) {
+    return <SortableHeader {...props} />;
+  }
+  Header.displayName = 'SortableHeader';
+  Header.toString = () => id;
+  return Header;
+}
+
 /** Builds the DataTable column for one entry of the columns registry (see registries/columns.js). */
 function toTableColumn(column, onCourseOpen) {
   const numeric = column.cell === 'number' || column.cell === 'percent';
   const tableColumn = {
-    Header: column.label,
+    Header: headerFor(column.id),
+    label: column.label,
     id: column.id,
     accessor: column.id,
     cellClassName: numeric ? 'insights-cell-number' : undefined,
+    // Numbers sort descending on the first click, as decided for the new table; a column without data can't sort.
+    sortDescFirst: numeric,
+    disableSortBy: !column.hasData,
   };
   if (!column.hasData) {
     // A pending column whose data the server doesn't send yet.
@@ -88,19 +132,44 @@ function toTableColumn(column, onCourseOpen) {
   return { ...tableColumn, Cell: ValueCell, format: FORMATS[column.cell] || String };
 }
 
+// react-table options: the caller sorts the rows, so the table must not reset or remove the sort by itself.
+const TABLE_OPTIONS = { autoResetSortBy: false, disableSortRemove: true, disableMultiSort: true };
+
 /**
- * The course table: Paragon DataTable showing the given rows (one page, already filtered, sorted and paged by the
- * caller) in the given columns. onCourseOpen(row) is called when a course link is clicked, for analytics.
+ * The course table: Paragon DataTable in manual sort mode, the way the Open edX MFEs use it. It shows the given rows
+ * (one page, already filtered, sorted and paged by the caller) in the given columns. A header click calls
+ * onSortChange(key, dir); the caller sorts and passes the new rows. onCourseOpen(row) is called when a course link is
+ * clicked, for analytics.
  */
-export default function CourseTable({ columns, rows, onCourseOpen }) {
+export default function CourseTable({
+  columns, rows, sort, onSortChange, onCourseOpen,
+}) {
   const tableColumns = useMemo(
     () => columns.map(column => toTableColumn(column, onCourseOpen)),
     [columns, onCourseOpen],
   );
+  // The table starts with the caller's sort; afterwards it reports the user's clicks through fetchData.
+  const [initialState] = useState(() => ({ sortBy: [{ id: sort.key, desc: sort.dir === 'desc' }] }));
+  const fetchData = useCallback(({ sortBy }) => {
+    const next = sortBy[0];
+    const dir = next && next.desc ? 'desc' : 'asc';
+    if (next && (next.id !== sort.key || dir !== sort.dir)) {
+      onSortChange(next.id, dir);
+    }
+  }, [sort, onSortChange]);
 
   return (
     <div className="insights-course-table">
-      <DataTable columns={tableColumns} data={rows} itemCount={rows.length}>
+      <DataTable
+        columns={tableColumns}
+        data={rows}
+        itemCount={rows.length}
+        isSortable
+        manualSortBy
+        initialState={initialState}
+        initialTableOptions={TABLE_OPTIONS}
+        fetchData={fetchData}
+      >
         <DataTable.Table />
       </DataTable>
     </div>
@@ -118,9 +187,15 @@ CourseTable.propTypes = {
   rows: PropTypes.arrayOf(PropTypes.shape({
     course_id: PropTypes.string.isRequired,
   })).isRequired,
+  sort: PropTypes.shape({
+    key: PropTypes.string.isRequired,
+    dir: PropTypes.oneOf(['asc', 'desc']).isRequired,
+  }).isRequired,
+  onSortChange: PropTypes.func,
   onCourseOpen: PropTypes.func,
 };
 
 CourseTable.defaultProps = {
+  onSortChange: () => {},
   onCourseOpen: () => {},
 };

@@ -42,8 +42,9 @@ export function createControlsTracker(trackingModel) {
 }
 
 /**
- * The analytics of the course table, with the names and properties of the legacy table. Opening a course sends the
- * event that js/views/tracking-view.js builds from the legacy link's data-track-* attributes
+ * The analytics of the course table, with the names and properties of the legacy table. paged gets a 1-based page
+ * and sends the 0-based index, as the legacy pager does. Opening a course sends the event that
+ * js/views/tracking-view.js builds from the legacy link's data-track-* attributes
  * (course-list/list/templates/course-id-and-name-cell.underscore).
  */
 export function createResultsTracker(trackingModel) {
@@ -62,5 +63,8 @@ export function createResultsTracker(trackingModel) {
       'menu-depth': 'insights',
       'link-name': 'course_row',
     }),
+    // The legacy table's sort and page events (components/generic-list/list/views/table.js, paging-footer.js).
+    sorted: (key, dir) => track('edx.bi.course_list.sorted', { category: `${key}_${dir}` }),
+    paged: page => track('edx.bi.course_list.paged', { category: page - 1 }),
   };
 }

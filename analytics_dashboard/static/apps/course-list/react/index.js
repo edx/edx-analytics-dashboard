@@ -47,6 +47,8 @@ export default function startReactPage({ courseModel, trackingModel }) {
         passingUsersEnabled: courseModel.get('enable_passing_users') === true,
         filtersEnabled,
         onCourseOpen: trackResults.courseOpened,
+        onSort: trackResults.sorted,
+        onPage: trackResults.paged,
       },
     },
   });
