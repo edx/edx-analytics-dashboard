@@ -56,5 +56,12 @@
   "programs": [
     { "program_id": "program-a", "program_title": "Program A", "course_ids": ["course-v1:Edx+Algebra+2024", "course-v1:Edx+Biology+2023"] },
     { "program_id": "program-b", "program_title": "Program B", "course_ids": ["course-v1:Edx+Algebra+2024"] }
-  ]
+  ],
+  "expected_summary": {
+    "total_enrollment": 1300,
+    "current_enrollment": 240,
+    "enrollment_change_7_days": 3,
+    "verified_enrollment": 57,
+    "masters_enrollment": 0
+  }
 }

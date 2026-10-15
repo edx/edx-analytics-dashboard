@@ -20,7 +20,7 @@ The page is a skeleton whose sections are placeholders that are replaced one by 
 | Widget | Draws |
 |---|---|
 | `CourseListPage` | The two sections and their headings: *Performance summary* and *Courses* |
-| `SummarySection` | The summary cards (placeholder) |
+| `SummarySection` | The summary cards: one for each entry of `registries/metrics.js` (the Total Enrollment card so far). **The sample of a card, a registry entry and the data path behind them** (section 15) |
 | `ControlsSection` | The filter bar: search, filters, Columns menu, Download CSV (placeholder) |
 | `ResultsSection` | The result count, table and pagination (placeholder; it already shows the loading and "no course data" states) |
 
@@ -63,7 +63,8 @@ analytics_dashboard/static/apps/
         ├── state/                 store, slices, selectors and data validation
         ├── components/            presentational components: props in, markup out
         ├── widgets/               components connected to Redux with useSelector
-        ├── platform/              Insights-only adapters: page-model bridge, formatting
+        ├── registries/            configuration: one entry per summary card (metrics.js); filters and columns follow
+        ├── platform/              Insights-only adapters: page-model bridge, row normalization, formatting, tracking
         └── spec/fixtures/         JSON fixtures shared by the Python and JavaScript tests
 
 webpack/paragon/                   build helpers for Paragon (section 17); not application code
@@ -90,7 +91,8 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
 ## 3. Styling
 
 - **Use Paragon components and utility classes** (`d-flex`, `text-center`, `py-3`, `h2`, ...). Don't write CSS
-  for them. Paragon takes its colours, font and corners from `--pgn-*` theme variables, and
+  for them, except the rules that make a widget match the legacy look, which go in `insights-theme.css` with
+  `insights-` class names (the summary card's are an example). Paragon takes its colours, font and corners from `--pgn-*` theme variables, and
   `components/react/paragon/insights-theme.css` sets those to Insights' values (Open Sans, the edX blue
   `#0075B4`, the card border and corner radius). Change the look there, in one place.
 - **Paragon's CSS is scoped.** The build applies it only inside the `.paragon-styles` element that
@@ -121,8 +123,10 @@ Naming: React components use `PascalCase.jsx`; other modules use `kebab-case.js`
   the page model (`initModelData.course`) into the store, and listens for changes.
 - **The Backbone course list collection:** a one-way collection bridge in `platform/` (planned, not in the code
   yet).
-- Every bridge validates values with a pure function in `react/state/`, like `acceptValidRows`. It
-  dispatches only valid values and reports rejected ones as `invalid_update` (see section 11).
+- A bridge validates values with a pure function in `react/state/`, like `acceptValidRows`. It
+  dispatches only valid values and reports rejected ones as `invalid_update` (see section 11). Text that has to be
+  complete to be shown, such as the label and tooltip of a card, is checked where it is used: the widget throws
+  and its boundary shows the error state.
 - React never writes to Backbone directly. Changes go through a commands module in `platform/` that calls the
   collection's methods (planned, not in the code yet).
 - Only one layer writes any piece of state at a time. State is never synced in both directions. Today the
@@ -145,7 +149,7 @@ Insights isn't internationalized, so React widgets show English.
 
 - Use `formatCount` from `react/platform/format.js`, which uses Globalize like the rest of the course list.
   Never use `toLocaleString`.
-- For summary cards (not built yet), use `formatSummaryNumber`. It mirrors the legacy template: `default_if_none:0`,
+- For summary cards, use `formatSummaryNumber` (`SummaryCard` does). It mirrors the legacy template: `default_if_none:0`,
   the full `intcomma` value in the `title`, and `truncatechars:13` for the visible text.
 - **English only.** The match with the template is exact in English, and the shared fixture and tests check
   English. Django's `intcomma` and Globalize can differ in other languages (digits, separators, length), so
@@ -170,7 +174,9 @@ Insights isn't internationalized, so React widgets show English.
 - **Analytics for Paragon tooltips.** `TrackingView` listens for Bootstrap's `shown.bs.tooltip`, which Paragon's
   tooltips don't fire. A Paragon widget must send the same `segment:track` event itself, through the tracking
   model (`trackingModel.trigger('segment:track', 'edx.bi.tooltip.displayed', { title, category, type })`), with
-  the same properties as the legacy markup's `data-track-*` attributes.
+  the same properties as the legacy markup's `data-track-*` attributes. `platform/tracking.js`
+  (`createTooltipTracker`) does it for the summary cards: `startReactPage` creates it from the tracking model and
+  passes it down as `onTooltipShown`, and it sends the event once per card, like the legacy code.
 
 ## 9. Mounting
 
@@ -203,7 +209,8 @@ these rules:
 | Flag off | The legacy page; no React code is loaded |
 | The React chunk or the page model fails to load, or `startReactPage` throws | The spinner is replaced by Insights' error alert, "We are unable to load this page." (`react-loader.js`, `showLoadError`) |
 | The server sent no course data (no list, or an empty one) | The legacy "No course data is currently available for your course." message in the results |
-| The course data is malformed | The results section shows the error state |
+| The course data is malformed | The summary and the results show the error state (neither shows a made-up number) |
+| The server sent no label or tooltip for a summary card (a missing `summary_text` entry or a wrong `textKey`) | The whole summary section shows the error state, so a missing card text is noticed at once |
 | The page layout throws while rendering | The error alert replaces the page (the layout has its own `SectionBoundary`) |
 | A section throws while rendering | That section shows the same error alert (`ErrorState`: "We are unable to load this section."); the other sections keep working |
 | Some rows have no `course_id` | Those rows are dropped and the rest is shown |
@@ -305,7 +312,8 @@ Rules:
   automatically.
 - Wrap every React render, update and unmount in `act` from `react`.
 - Share expectations between Python and JavaScript through a JSON fixture under `react/spec/fixtures/`, like
-  `total-enrollment-card.json`. Don't hard-code expected values in specs.
+  `total-enrollment-card.json` (the card's text and number formats) and `course-list-rows.json` (course rows and the
+  summary numbers the server must compute for them, `expected_summary`). Don't hard-code expected values in specs.
 - Test monitoring by setting `window.DD_RUM` to an object with `addError` and `addAction` spies, and call
   `resetMonitoringForTests()` in `beforeEach`.
 - Test the failure paths: a section that throws, data that is unavailable or malformed, and the chunk failing to
@@ -347,6 +355,35 @@ Rules:
    state, flag off and on, axe-core and monitoring.
 8. Run the bundle check (section 13), and look at the widget in a browser with the flag on and off.
 9. Update this README if you introduce a new pattern.
+
+### Adding a summary card (the Total Enrollment card is the sample)
+
+How a card gets its data: Django puts the page data in the HTML (`initModelData.course`), Backbone's page model
+holds it, `platform/page-model-bridge.js` copies it into the Redux store, and `SummarySection` reads it. The
+**number** is computed in the browser from the course rows (`course_list_json`), so the cards can follow the filters
+later. The **label and tooltip** come from the page data's `summary_text`. The server's `summary` numbers are not
+read.
+
+To add a card, for example Current Enrollment:
+
+1. Add an entry to `registries/metrics.js`: `id`, `textKey` (the key in `summary_text`) and `reduce(rows)`, which
+   returns the number from the course rows. The rows are the normalized ones (`platform/course-rows.js`), which
+   copy `verified_enrollment` out of `enrollment_modes` and turn missing numbers into 0. A field that is not
+   normalized there, such as `enrollment_modes.masters.count` for the Master's card, may be missing: read it safely,
+   or add it to the normalization (with a case in `course-rows-spec.js`). The number must equal the server's
+   `CourseSummariesPresenter.get_course_summary_metrics` for the same courses.
+2. Add the card's label and tooltip to `summary_text` in `CourseIndex.get_context_data`
+   (`courses/views/course_summaries.py`), with the same `_()` messages as `courses/index.html`, so the translations
+   stay the same, and add it to the flag-on assertion of `test_react_flag_on`. **Do this in the same change as step
+   1:** a registry entry without its text makes the whole summary section show the error state.
+3. Add a case to `registries/spec/metrics-spec.js` that checks `reduce` against `expected_summary` in
+   `spec/fixtures/course-list-rows.json`. The fixture already holds the server's numbers for all five cards, and the
+   Python test `test_get_course_summary_metrics_matches_the_react_fixture` checks them against the server's code, so
+   the card and the server can't drift apart. If the card needs a case the fixture rows don't have, add rows and the
+   new expected numbers to the fixture.
+4. Look at the card in a browser, with the flag on, next to the legacy card (it is built to look the same).
+
+No new component is needed: `SummarySection` draws one `SummaryCard` for each registry entry.
 
 ## 16. What moves to an MFE
 

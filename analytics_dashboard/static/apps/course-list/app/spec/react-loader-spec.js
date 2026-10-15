@@ -34,7 +34,7 @@ describe('loadReactPage', () => {
     it(`does not load the React code when the flag is ${description}`, (done) => {
       const importPage = jasmine.createSpy('importPage');
 
-      loadReactPage(new CourseModel(attributes), importPage).then((started) => {
+      loadReactPage(new CourseModel(attributes), { importPage }).then((started) => {
         expect(started).toBe(false);
         expect(importPage).not.toHaveBeenCalled();
         expect(root.querySelector('.loading-container')).not.toBeNull();
@@ -44,13 +44,15 @@ describe('loadReactPage', () => {
     });
   });
 
-  it('starts the React page with the page model when the flag is on', (done) => {
+  it('starts the React page with the page model and the tracking model when the flag is on', (done) => {
     const courseModel = flagOn();
+    const trackingModel = new CourseModel();
     const startReactPage = jasmine.createSpy('startReactPage');
+    const importPage = () => Promise.resolve({ default: startReactPage });
 
-    loadReactPage(courseModel, () => Promise.resolve({ default: startReactPage })).then((started) => {
+    loadReactPage(courseModel, { trackingModel, importPage }).then((started) => {
       expect(started).toBe(true);
-      expect(startReactPage).toHaveBeenCalledWith({ courseModel });
+      expect(startReactPage).toHaveBeenCalledWith({ courseModel, trackingModel });
       expect(rum.addError).not.toHaveBeenCalled();
       done();
     }).catch(done.fail);
@@ -73,7 +75,7 @@ describe('loadReactPage', () => {
     },
   ].forEach(({ failureType, description, importPage }) => {
     it(`shows the error alert in place of the spinner and reports once when ${description}`, (done) => {
-      loadReactPage(flagOn(), importPage).then((started) => {
+      loadReactPage(flagOn(), { importPage }).then((started) => {
         expect(started).toBe(false);
         expect(root.querySelector('.loading-container')).toBeNull();
         expect(root.querySelector('.alert.alert-error[role="alert"]')).not.toBeNull();

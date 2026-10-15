@@ -39,13 +39,15 @@ export function showLoadError(failureType, error) {
  * so it's allowed.
  *
  * @param {Backbone.Model} courseModel - The page model built from initModelData.course.
- * @param {Function} [importPage] - Loads the React chunk; replaced in tests.
+ * @param {Object} [options]
+ * @param {Backbone.Model} [options.trackingModel] - Sends analytics events; passed to the React page.
+ * @param {Function} [options.importPage] - Loads the React chunk; replaced in tests.
  * @returns {Promise<boolean>} Resolves to true when the React page was started.
  */
-export default function loadReactPage(
-  courseModel,
+export default function loadReactPage(courseModel, {
+  trackingModel,
   importPage = () => import('apps/course-list/react/index'),
-) {
+} = {}) {
   if (!courseModel.get('enable_react_course_list')) {
     return Promise.resolve(false);
   }
@@ -53,7 +55,7 @@ export default function loadReactPage(
   return importPage().then(
     ({ default: startReactPage }) => {
       try {
-        startReactPage({ courseModel });
+        startReactPage({ courseModel, trackingModel });
         return true;
       } catch (error) {
         return showLoadError('start_error', error);

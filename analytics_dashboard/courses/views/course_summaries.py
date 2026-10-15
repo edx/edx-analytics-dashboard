@@ -72,6 +72,8 @@ class CourseIndex(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, TrackedV
         if react_enabled:
             # Only sent when the flag is on, so the flag-off page data stays exactly as it was.
             data['enable_react_course_list'] = True
+            # Not read by the React page, which computes the summary cards from the course rows so they can follow
+            # the filters. Kept so the page data stays as it was until all the cards are built.
             data['summary'] = summary
             data['summary_text'] = {
                 'total_enrollment': {
