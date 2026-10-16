@@ -1,11 +1,12 @@
 import connectUrlStateToStore, { buildHash, parseHash } from 'course-list/react/platform/url-state';
-import { coursesLoaded } from 'course-list/react/state/courses-slice';
+import { resolveFilters } from 'course-list/react/registries/filters';
+import { coursesLoaded, coursesUnavailable } from 'course-list/react/state/courses-slice';
 import { filterChanged, pageChanged, searchChanged } from 'course-list/react/state/query-slice';
 import createCourseListStore from 'course-list/react/state/store';
 import { columnsChanged } from 'course-list/react/state/view-slice';
 
 describe('the course list in the address of the page', () => {
-  const SWITCHES = { passingUsersEnabled: true, filtersEnabled: true };
+  const SWITCHES = { passingUsersEnabled: true, filtersEnabled: true, timeframeEnabled: true };
   const DEFAULT_HASH = '#?sortKey=catalog_course_title&order=asc&page=1';
   const parse = (hash, switches = SWITCHES) => parseHash(hash, { switches });
 
@@ -79,6 +80,54 @@ describe('the course list in the address of the page', () => {
       expect(cut).toBe('a'.repeat(200));
       expect(() => encodeURIComponent(kept)).not.toThrow();
       expect(() => encodeURIComponent(cut)).not.toThrow();
+    });
+
+    it('reads the Pacing filter, and the Program filter for the programs the page has, as in a legacy link', () => {
+      const filters = resolveFilters({
+        rows: [], programs: [{ program_id: 'program-a', program_title: 'Program A', course_ids: [] }],
+      });
+      const hash = '#?pacing_type=self_paced,bogus&program_ids=program-a,program-z';
+
+      expect(parseHash(hash, { switches: SWITCHES, filters }).query.filters)
+        .toEqual({ program_ids: ['program-a'], pacing_type: ['self_paced'] });
+      expect(parse(hash).query.filters).toEqual({ pacing_type: ['self_paced'] });
+    });
+
+    it('reads the timeframe, with dates only for Custom and only well-formed ones', () => {
+      expect(parse('#?timeframe=30d&from=2026-01-01').query.timeframe).toEqual({ range: '30d', from: '', to: '' });
+      expect(parse('#?timeframe=custom&from=2026-01-01&to=nope').query.timeframe)
+        .toEqual({ range: 'custom', from: '2026-01-01', to: '' });
+      expect(parse('#?timeframe=forever').query.timeframe).toBeUndefined();
+    });
+
+    it('drops impossible dates, and To when it is before From (as the menu does)', () => {
+      const custom = hash => parse(`#?timeframe=custom&${hash}`).query.timeframe;
+
+      expect(custom('from=2026-13-45&to=2026-02-30')).toEqual({ range: 'custom', from: '', to: '' });
+      expect(custom('from=2024-02-29&to=2024-03-01')).toEqual({ range: 'custom', from: '2024-02-29', to: '2024-03-01' });
+      expect(custom('from=2026-05-02&to=2026-05-01')).toEqual({ range: 'custom', from: '2026-05-02', to: '' });
+    });
+
+    it('ignores the timeframe while its menu is hidden', () => {
+      expect(parse('#?timeframe=30d', { ...SWITCHES, timeframeEnabled: false }).query.timeframe).toBeUndefined();
+    });
+
+    it('writes the timeframe after the search, and nothing for All Time', () => {
+      const base = {
+        search: 'demo', filters: {}, sort: { key: 'count', dir: 'desc' }, page: 1,
+      };
+
+      expect(buildHash({ query: { ...base, timeframe: { range: 'custom', from: '2026-01-01', to: '2026-02-01' } } }))
+        .toBe('#?text_search=demo&timeframe=custom&from=2026-01-01&to=2026-02-01&sortKey=count&order=desc&page=1');
+      expect(buildHash({ query: { ...base, timeframe: { range: 'all', from: '', to: '' } } }))
+        .toBe('#?text_search=demo&sortKey=count&order=desc&page=1');
+    });
+
+    it('reads the Course filter for the courses the page has', () => {
+      const filters = resolveFilters({ rows: [{ course_id: 'run-1', catalog_course: 'edX+Bio' }], programs: [] });
+
+      expect(parseHash('#?courses=edX%2BBio,edX%2BNope', { switches: SWITCHES, filters }).query.filters)
+        .toEqual({ courses: ['edX+Bio'] });
     });
 
     it('reads filters only when the course filters switch is on, as the legacy page offered them only then', () => {
@@ -193,9 +242,77 @@ describe('the course list in the address of the page', () => {
       start('#?text_search=demo&availability=Current&sortKey=count&order=desc&page=4&cols=count');
 
       expect(store.getState().query).toEqual({
-        search: 'demo', filters: { availability: ['Current'] }, sort: { key: 'count', dir: 'desc' }, page: 4,
+        search: 'demo',
+        filters: { availability: ['Current'] },
+        sort: { key: 'count', dir: 'desc' },
+        page: 4,
+        timeframe: { range: 'all', from: '', to: '' },
       });
       expect(store.getState().view).toEqual({ visibleColumns: ['count'], urlInvalid: false });
+    });
+
+    it('reads the address again when the course data comes after it, so its Program and Course filters are kept', () => {
+      start('#?program_ids=program-a,program-z&courses=edX%2BBio&text_search=bio');
+      expect(store.getState().query.filters).toEqual({});
+      settle();
+
+      store.dispatch(coursesLoaded({
+        rows: [{
+          course_id: 'c-0', catalog_course: 'edX+Bio', catalog_course_title: 'Biology', program_ids: ['program-a'],
+        }],
+        programs: [{ program_id: 'program-a', program_title: 'Program A', course_ids: ['c-0'] }],
+      }));
+      settle();
+
+      expect(store.getState().query.filters).toEqual({ program_ids: ['program-a'], courses: ['edX+Bio'] });
+      expect(win.location.hash).toBe('#?text_search=bio&program_ids=program-a&courses=edX%2BBio'
+        + '&sortKey=catalog_course_title&order=asc&page=1');
+    });
+
+    it('reads the address again when the page had no course data at first and gets it later', () => {
+      store.dispatch(coursesUnavailable());
+      start('#?courses=edX%2BBio');
+      expect(store.getState().query.filters).toEqual({});
+
+      store.dispatch(coursesLoaded({ rows: [{ course_id: 'c-0', catalog_course: 'edX+Bio' }], programs: [] }));
+
+      expect(store.getState().query.filters).toEqual({ courses: ['edX+Bio'] });
+    });
+
+    it('clears the "invalid" message the user changed something under while the course data was loading', () => {
+      start('#?page=abc');
+      expect(store.getState().view.urlInvalid).toBe(true);
+      store.dispatch(searchChanged('algebra'));
+      store.dispatch(coursesLoaded({ rows: rows(1), programs: [] }));
+
+      expect(store.getState().view.urlInvalid).toBe(false);
+      expect(store.getState().query.search).toBe('algebra');
+    });
+
+    it('keeps what the user changed before the course data came, and adds the link\'s Program and Course', () => {
+      start('#?program_ids=program-a&availability=Current&courses=edX%2BBio');
+      store.dispatch(searchChanged('algebra'));
+      store.dispatch(filterChanged({ id: 'availability', values: [] }));
+      store.dispatch(coursesLoaded({
+        rows: [{ course_id: 'c-0', catalog_course: 'edX+Bio', program_ids: [] }],
+        programs: [{ program_id: 'program-a', course_ids: [] }],
+      }));
+      settle();
+
+      expect(store.getState().query.search).toBe('algebra');
+      // Availability, which the user cleared, stays cleared.
+      expect(store.getState().query.filters).toEqual({ program_ids: ['program-a'], courses: ['edX+Bio'] });
+      expect(win.location.hash).toContain('program_ids=program-a&courses=edX%2BBio');
+    });
+
+    it('restores a Program filter for the programs in the store', () => {
+      store.dispatch(coursesLoaded({
+        rows: [{ course_id: 'c-0', catalog_course_title: 'Course 0', program_ids: ['program-a'] }],
+        programs: [{ program_id: 'program-a', program_title: 'Program A', course_ids: ['c-0'] }],
+      }));
+      start('#?program_ids=program-a,program-z');
+
+      expect(store.getState().query.filters).toEqual({ program_ids: ['program-a'] });
     });
 
     it('writes the plain address of the legacy page when the address has nothing, keeping the path and query', () => {

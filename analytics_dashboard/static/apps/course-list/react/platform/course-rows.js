@@ -3,7 +3,7 @@
 // filters of the React page match the legacy page.
 
 const NUMBER_FIELDS = ['count', 'cumulative_count', 'count_change_7_days', 'verified_enrollment', 'passing_users'];
-const STRING_FIELDS = ['catalog_course_title', 'start_date', 'end_date', 'pacing_type'];
+const STRING_FIELDS = ['catalog_course', 'catalog_course_title', 'start_date', 'end_date', 'pacing_type'];
 
 const asNumber = value => (typeof value === 'number' && Number.isFinite(value) ? value : 0);
 

@@ -224,14 +224,8 @@ describe('ResultsSection', () => {
   describe('the Columns menu', () => {
     const toggle = () => element.querySelector('#columns-toggle');
     const boxes = () => element.querySelectorAll('.insights-checkbox-menu input[type="checkbox"]');
-    // The text of a checkbox's Paragon wrapper (PhantomJS has no Element.closest).
-    const labelOf = (input) => {
-      let node = input;
-      while (node && !/(^| )pgn__form-checkbox( |$)/.test(node.className)) {
-        node = node.parentNode;
-      }
-      return node ? node.textContent.trim() : '';
-    };
+    // The text of a checkbox's label, which holds it.
+    const labelOf = input => input.parentNode.textContent.trim();
     const box = label => Array.prototype.find.call(boxes(), input => labelOf(input) === label);
     const open = () => act(() => toggle().click());
 

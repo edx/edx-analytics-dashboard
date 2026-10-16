@@ -14,6 +14,16 @@ describe('course rows', () => {
     expect(normalizeCourseRow({ course_id: 'a' }).verified_enrollment).toBe(0);
   });
 
+  it('keeps the segment counts the Sales Model and Funding Model filters read, and leaves them out when missing', () => {
+    const counts = {
+      b2b_count: 4, b2c_count: 1, alacarte_count: 2, subscription_count: 3,
+    };
+    const row = normalizeCourseRow({ course_id: 'a', ...counts });
+
+    expect(row).toEqual(jasmine.objectContaining(counts));
+    expect('b2b_count' in normalizeCourseRow({ course_id: 'b' })).toBe(false);
+  });
+
   it('keeps the availability, and turns an empty one into unknown', () => {
     expect(normalizeCourseRow(algebra).availability).toBe('Current');
     expect(normalizeCourseRow(drawing).availability).toBe('unknown');

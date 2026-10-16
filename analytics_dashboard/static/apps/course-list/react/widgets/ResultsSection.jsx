@@ -3,10 +3,10 @@ import {
 } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
-import { ViewColumn } from '@openedx/paragon/icons';
 
 import CheckboxDropdown from 'course-list/react/components/controls/CheckboxDropdown';
 import DownloadCsvButton from 'course-list/react/components/controls/DownloadCsvButton';
+import { ViewColumnSharp } from 'course-list/react/components/icons';
 import CourseTable from 'course-list/react/components/results/CourseTable';
 import ResultCount from 'course-list/react/components/results/ResultCount';
 import TablePagination from 'course-list/react/components/results/TablePagination';
@@ -160,7 +160,7 @@ export default function ResultsSection({
           <CheckboxDropdown
             id="columns"
             label="Columns"
-            icon={ViewColumn}
+            icon={ViewColumnSharp}
             showCount={false}
             options={columnOptions}
             selected={shownIds}
