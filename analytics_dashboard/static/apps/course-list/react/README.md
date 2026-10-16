@@ -20,7 +20,7 @@ The page's widgets and what each draws:
 | Widget | Draws |
 |---|---|
 | `CourseListPage` | The two sections and their headings: *Performance summary* and *Courses* |
-| `SummarySection` | The summary cards: one for each entry of `registries/metrics.js` (the Total Enrollment card so far). **The sample of a card, a registry entry and the data path behind them** (section 15) |
+| `SummarySection` | The summary cards: one for each entry of `registries/metrics.js` (the prototype's six: Total Enrollment, Current Enrollment, Total Engagements, Change in Last Week, Verified Enrollment and Master's Enrollment). **The sample of a card, a registry entry and the data path behind them** (section 15) |
 | `ControlsSection` | The filter bar: search box and one dropdown per entry of `registries/filters.js` |
 | `ResultsSection` | A toolbar row (the course run count, the Columns menu, Download CSV), then the course table (Paragon `DataTable`, one column per entry of `registries/columns.js`) and its pager; or the loading, "no course data" and "no match" states. **The sample of a table column** (section 15) |
 
@@ -140,7 +140,8 @@ Insights isn't internationalized, so React widgets show English.
   moves to the MFE, wrap its strings in `react-intl` messages there.
 - **Strings the legacy widget already shows from a Django template:** pass them from the view in the page data,
   with the same message IDs, so both versions show identical text while the flag exists. `summary_text` in
-  `CourseIndex.get_context_data` does this for the Total Enrollment label and tooltip.
+  `CourseIndex.get_context_data` does this for the summary card labels. Their tooltips are new text ("… in the
+  courses matching your filters."), because the React cards count only the courses that match the filters.
 - Paragon requires `react-intl` (many of its components use it for their built-in text, such as "Close" or
   "Search"), so `ParagonProvider` supplies it, fixed to English. That is a technical requirement of Paragon, not
   internationalization of Insights.
@@ -373,9 +374,11 @@ To add a card, for example Current Enrollment:
    or add it to the normalization (with a case in `course-rows-spec.js`). The number must equal the server's
    `CourseSummariesPresenter.get_course_summary_metrics` for the same courses.
 2. Add the card's label and tooltip to `summary_text` in `CourseIndex.get_context_data`
-   (`courses/views/course_summaries.py`), with the same `_()` messages as `courses/index.html`, so the translations
-   stay the same, and add it to the flag-on assertion of `test_react_flag_on`. **Do this in the same change as step
-   1:** a registry entry without its text makes the whole summary section show the error state.
+   (`courses/views/course_summaries.py`): the label with the same `_()` message as `courses/index.html`, so the
+   translations stay the same, and a tooltip that says what is counted "in the courses matching your filters." Add
+   them to `spec/fixtures/summary-text.json` too: `test_react_flag_on` checks the page data against it, and
+   the JavaScript specs load it as the page's text. **Do this in the same change as step 1:** a registry entry
+   without its text makes the whole summary section show the error state.
 3. Add a case to `registries/spec/metrics-spec.js` that checks `reduce` against `expected_summary` in
    `spec/fixtures/course-list-rows.json`. The fixture already holds the server's numbers for all five cards, and the
    Python test `test_get_course_summary_metrics_matches_the_react_fixture` checks them against the server's code, so
@@ -384,6 +387,18 @@ To add a card, for example Current Enrollment:
 4. Look at the card in a browser, with the flag on, next to the legacy card (it is built to look the same).
 
 No new component is needed: `SummarySection` draws one `SummaryCard` for each registry entry.
+
+**Cards waiting for data.** A card whose number the API doesn't send yet (Total Engagements) is an entry with
+`pending: true` and `field`, the row field it reads, like a pending column. While no course row has the field, the
+card shows "--" ("Data not available yet" for screen readers); as soon as one row has it, the card shows the number,
+with no code change. Keep the field out of the numbers `course-rows.js` turns into 0. `SHOW_PENDING_COLUMNS` in
+`registries/columns.js` hides a pending card without data too, so set it to `false` before the release.
+
+**Layout.** The cards are a grid (`insights-summary-cards` in `insights-theme.css`): six in a row from 1200px, three
+from 600px, one below, never an uneven row. Narrower than those widths, a card can't fit its longest label word and a
+seven-digit number, so check them again if a card gets a longer label. Every card in a row is as tall as the tallest,
+with the number at the same height in each. The help tooltips look like Insights' legacy tooltip (black, see-through):
+`insights-summary-tooltip`.
 
 ### Adding a filter (Availability is the sample)
 

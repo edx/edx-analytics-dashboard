@@ -63,6 +63,51 @@ describe('selectors', () => {
       expect(first[1].value).toBe(1);
       expect(second[1].value).toBe(3);
     });
+
+    describe('with a pending metric', () => {
+      const withPending = [
+        ...metrics,
+        {
+          id: 'engagements',
+          textKey: 'engagements_text',
+          pending: true,
+          field: 'total_engagements',
+          reduce: rows => rows.reduce((sum, row) => sum + (row.total_engagements || 0), 0),
+        },
+      ];
+      const pendingValue = (showPendingColumns, rows, query) => {
+        const select = createSelectors({
+          filters, metrics: withPending, columns, showPendingColumns,
+        }).selectSummaryMetrics;
+        const entry = select(stateWith(rows, query)).find(metric => metric.id === 'engagements');
+        return entry ? entry.value : 'not listed';
+      };
+
+      it('has the value null while no row has its field, so the card shows "--"', () => {
+        expect(pendingValue(true, [{ count: 1 }])).toBeNull();
+        expect(pendingValue(true, [])).toBeNull();
+      });
+
+      it('is not listed without data when pending entries are hidden, like a pending column', () => {
+        expect(pendingValue(false, [{ count: 1 }])).toBe('not listed');
+      });
+
+      it('is computed from the rows as soon as one row has its field, whether pending entries are shown or not', () => {
+        const rows = [{ count: 1, total_engagements: 4 }, { count: 2 }];
+
+        expect(pendingValue(true, rows)).toBe(4);
+        expect(pendingValue(false, rows)).toBe(4);
+      });
+
+      it('keeps a number when the filters leave only rows without the field', () => {
+        const rows = [
+          { course_id: 'a', color: 'red', total_engagements: 4 },
+          { course_id: 'b', color: 'blue' },
+        ];
+
+        expect(pendingValue(true, rows, { filters: { color: ['blue'] } })).toBe(0);
+      });
+    });
   });
 
   describe('selectFilteredRows', () => {

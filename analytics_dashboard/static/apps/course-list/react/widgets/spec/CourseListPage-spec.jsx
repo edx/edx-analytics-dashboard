@@ -11,8 +11,10 @@ import createCourseListStore from 'course-list/react/state/store';
 import { summaryTextLoaded } from 'course-list/react/state/summary-slice';
 import CourseListPage from 'course-list/react/widgets/CourseListPage';
 
+// The text of every summary card, as the server sends it.
+const TEXT = require('course-list/react/spec/fixtures/summary-text.json');
+
 describe('CourseListPage', () => {
-  const TEXT = { total_enrollment: { label: 'Total Enrollment', tooltip: 'Help text.' } };
   let element;
   let root;
   let store;
@@ -67,18 +69,18 @@ describe('CourseListPage', () => {
     expect(document.getElementById('courses-heading').textContent).toBe('Courses');
   });
 
-  it('has the summary card, the filter bar and the course table, once the data is ready', () => {
+  it('has the summary cards, the filter bar and the course table, once the data is ready', () => {
     dispatch(coursesLoaded({ rows: [], programs: [] }));
     render();
 
-    expect(element.querySelectorAll('.pgn__card').length).toBe(1);
+    expect(element.querySelectorAll('.pgn__card').length).toBe(6);
     expect(element.querySelector('input[type="search"]')).not.toBeNull();
     expect(placeholders()).toEqual([]);
     expect(element.textContent).toContain('Course runs: 0');
     expect(onSectionError).not.toHaveBeenCalled();
   });
 
-  it('shows the total of the course rows in the summary card', () => {
+  it('shows the total of the course rows in the Total Enrollment card', () => {
     dispatch(coursesLoaded({ rows: [{ course_id: 'a', cumulative_count: 40 }, { course_id: 'b', cumulative_count: 2 }], programs: [] }));
     render();
 

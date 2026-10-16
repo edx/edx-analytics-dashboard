@@ -7,9 +7,10 @@ import startReactPage from 'course-list/react/index';
 
 const fixture = require('course-list/react/spec/fixtures/course-list-rows.json');
 const card = require('course-list/react/spec/fixtures/total-enrollment-card.json');
+// The text of every summary card, as the server sends it.
+const TEXT = require('course-list/react/spec/fixtures/summary-text.json');
 
 describe('startReactPage', () => {
-  const TEXT = { total_enrollment: { label: card.label, tooltip: card.tooltip } };
   let originalRum;
   let rum;
   let root;
@@ -59,12 +60,24 @@ describe('startReactPage', () => {
     expect(rum.addError).not.toHaveBeenCalled();
   });
 
-  it('shows the Total Enrollment card with the total of the course rows and the text from the page data', () => {
+  it('shows the summary cards with the server\'s totals of the course rows and the text from the page data', () => {
     start(modelWith({ course_list_json: fixture.rows }));
 
-    expect(root.querySelectorAll('.pgn__card').length).toBe(1);
-    expect(root.querySelector('.insights-summary-number').textContent).toBe('1,300');
-    expect(root.querySelector('.insights-summary-label').textContent).toBe(card.label);
+    const texts = selector => Array.prototype.map.call(root.querySelectorAll(selector), node => node.textContent);
+    const summary = fixture.expected_summary;
+    expect(texts('.insights-summary-label')).toEqual([
+      'Total Enrollment', 'Current Enrollment', 'Total Engagements', 'Change in Last Week', 'Verified Enrollment',
+      "Master's Enrollment",
+    ]);
+    // expected_summary is what the server's CourseSummariesPresenter computes for the same rows. The API sends no
+    // total_engagements yet, so that card shows "--".
+    expect(texts('.insights-summary-number')).toEqual([
+      '1,300', '240', '--Data not available yet', '3', '57', '4',
+    ]);
+    expect([
+      summary.total_enrollment, summary.current_enrollment, summary.enrollment_change_7_days,
+      summary.verified_enrollment, summary.masters_enrollment,
+    ]).toEqual([1300, 240, 3, 57, 4]);
     expect(rum.addError).not.toHaveBeenCalled();
   });
 

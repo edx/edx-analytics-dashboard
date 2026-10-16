@@ -71,6 +71,28 @@ describe('SummaryCard', () => {
     });
   });
 
+  it('shows "--" for a card whose data is not available yet, and tells screen readers why', () => {
+    act(() => {
+      root.render(
+        <ParagonProvider>
+          <SummaryCard
+            value={null}
+            label="Total Engagements"
+            tooltip="Active learners in the courses matching your filters."
+            tooltipId="summary-tooltip-test"
+            onTooltipShown={onTooltipShown}
+          />
+        </ParagonProvider>,
+      );
+    });
+
+    const number = element.querySelector('.h2');
+    expect(number.querySelector('[aria-hidden="true"]').textContent).toBe('--');
+    expect(number.querySelector('.sr-only').textContent).toBe('Data not available yet');
+    expect(number.getAttribute('title')).toBe('Data not available yet');
+    expect(element.querySelector('.h4').textContent).toBe('Total Engagements');
+  });
+
   it('shows the label', () => {
     renderCard({ value: card.cases[0].value });
 
@@ -100,6 +122,14 @@ describe('SummaryCard', () => {
     expect(tooltips().length).toBe(1);
     expect(tooltips()[0].textContent).toBe(card.tooltip);
     expect(onTooltipShown).toHaveBeenCalledWith(card.label);
+  });
+
+  it('marks its tooltip for the legacy see-through look', () => {
+    renderCard({ value: card.cases[0].value });
+
+    fire(helpButton(), 'mouseover');
+
+    expect(tooltips()[0].classList.contains('insights-summary-tooltip')).toBe(true);
   });
 
   it('removes the tooltip when the card is removed', () => {

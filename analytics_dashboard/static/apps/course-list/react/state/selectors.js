@@ -11,7 +11,7 @@ export const PAGE_SIZE = 100;
 
 /**
  * Builds the selectors that turn the stored course rows and the user's query into what the page shows. The
- * registries (and whether pending columns are shown) are parameters so specs can pass their own.
+ * registries (and whether pending columns and cards are shown) are parameters so specs can pass their own.
  */
 export function createSelectors({
   filters, metrics, columns, showPendingColumns,
@@ -50,13 +50,16 @@ export function createSelectors({
   );
 
   // One entry per metric of the registry, with its value computed from the filtered rows: the cards follow the filters.
+  // A pending metric whose field no row has yet (looking at every row, so filtering doesn't change it) has the value
+  // null, and is listed only if pending entries are shown, like a pending column.
   const selectSummaryMetrics = createSelector(
-    [selectFilteredRows],
-    rows => metrics.map(metric => ({
-      id: metric.id,
-      textKey: metric.textKey,
-      value: metric.reduce(rows),
-    })),
+    [selectRows, selectFilteredRows],
+    (allRows, rows) => metrics
+      .map((metric) => {
+        const hasData = !metric.pending || allRows.some(row => !isEmpty(row[metric.field]));
+        return { id: metric.id, textKey: metric.textKey, value: hasData ? metric.reduce(rows) : null };
+      })
+      .filter(entry => entry.value !== null || showPendingColumns),
   );
 
   // All the rows in the order of the sort. Numbers compare as numbers (a value that isn't one counts as empty), dates
