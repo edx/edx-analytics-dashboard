@@ -67,4 +67,11 @@ describe('course rows', () => {
     expect(rows.map(row => row.course_id)).toEqual(fixture.rows.map(row => row.course_id));
     expect(rows[0].program_ids).toEqual(['program-a', 'program-b']);
   });
+
+  it('adds the titles of the programs the course belongs to, and none without programs_json', () => {
+    const programs = normalizeCourseRows(fixture.rows, fixture.programs).map(row => row.program);
+
+    expect(programs).toEqual(['Program A, Program B', 'Program A', '', '']);
+    expect(normalizeCourseRows(fixture.rows)[0].program).toBe('');
+  });
 });

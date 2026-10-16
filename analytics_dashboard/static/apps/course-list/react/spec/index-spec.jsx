@@ -41,6 +41,7 @@ describe('startReactPage', () => {
   });
 
   afterEach(() => {
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
     window.DD_RUM = originalRum;
     Array.prototype.forEach.call(tooltips(), (tooltip) => {
       tooltip.parentNode.removeChild(tooltip);
@@ -89,7 +90,7 @@ describe('startReactPage', () => {
     });
 
     expect(root.querySelector('.insights-empty-state-message')).toBeNull();
-    expect(root.querySelector('.insights-placeholder')).not.toBeNull();
+    expect(root.querySelectorAll('.insights-course-table tbody tr').length).toBe(4);
     expect(root.querySelector('.insights-summary-number').textContent).toBe('1,300');
   });
 
@@ -125,9 +126,53 @@ describe('startReactPage', () => {
     ]);
   });
 
+  it('puts Download CSV in the results toolbar and sends the legacy course link event', () => {
+    const events = [];
+    trackingModel.on('segment:track', (...args) => events.push(args));
+    start(modelWith({ course_list_json: fixture.rows, course_list_download_url: '/courses/csv/course_list/' }));
+
+    expect(root.querySelector('.insights-results-actions a').getAttribute('href')).toBe('/courses/csv/course_list/');
+    const link = root.querySelector('.insights-course-link');
+    act(() => {
+      link.addEventListener('click', event => event.preventDefault());
+      link.click();
+    });
+    expect(events.map(args => args[0])).toEqual(['edx.bi.ui.menu.navigated']);
+  });
+
   it('throws when the page has no mount point', () => {
     setFixtures('<div id="somewhere-else"></div>');
 
     expect(() => startReactPage({ courseModel: modelWith({}) })).toThrowError(/course-list-react-root/);
+  });
+
+  it('sends the page view of the course list when it starts', () => {
+    const pageViews = jasmine.createSpy('pageViews');
+    trackingModel.on('segment:page', pageViews);
+    start(modelWith({ course_list_json: fixture.rows }));
+
+    expect(trackingModel.get('page').name).toBe('insights_home');
+    expect(pageViews).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the view in the address of the page, and keeps the address up to date', () => {
+    jasmine.clock().install();
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#?text_search=bio&sortKey=cumulative_count&order=desc`);
+    start(modelWith({ course_list_json: fixture.rows }));
+
+    expect(root.querySelector('input[type="search"]').value).toBe('bio');
+    expect(Array.prototype.map.call(root.querySelectorAll('.insights-course-title'), node => node.textContent))
+      .toEqual(['Biology']);
+    expect(root.querySelector('thead th[aria-sort="descending"]').textContent).toContain('Total Enrollment');
+
+    const header = Array.prototype.find.call(
+      root.querySelectorAll('thead th button'),
+      node => node.textContent.indexOf('Start Date') === 0,
+    );
+    act(() => header.click());
+    // The address is rewritten once the view has stopped changing for a moment.
+    jasmine.clock().tick(250);
+    expect(window.location.hash).toBe('#?text_search=bio&sortKey=start_date&order=asc&page=1');
+    jasmine.clock().uninstall();
   });
 });

@@ -2,17 +2,16 @@ import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 
 import CheckboxDropdown from 'course-list/react/components/controls/CheckboxDropdown';
-import DownloadCsvButton from 'course-list/react/components/controls/DownloadCsvButton';
 import SearchBox from 'course-list/react/components/controls/SearchBox';
 import filterRegistry from 'course-list/react/registries/filters';
 import { filterChanged, searchChanged, selectQuery } from 'course-list/react/state/query-slice';
 
 /**
- * The filter bar: the search box, one dropdown for each entry of the filters registry (only when the server enabled
- * the filters), and Download CSV (only when the server sent its URL). The callbacks are for analytics.
+ * The filter bar: the search box, and one dropdown for each entry of the filters registry (only when the server
+ * enabled the filters). The callbacks are for analytics. Download CSV is in the results toolbar (ResultsSection).
  */
 export default function ControlsSection({
-  filtersEnabled, downloadUrl, onSearch, onFilter, onDownload,
+  filtersEnabled, onSearch, onFilter,
 }) {
   const dispatch = useDispatch();
   const { search, filters } = useSelector(selectQuery);
@@ -33,25 +32,20 @@ export default function ControlsSection({
           }}
         />
       ))}
-      {downloadUrl && <DownloadCsvButton url={downloadUrl} onClick={onDownload} />}
     </div>
   );
 }
 
 ControlsSection.propTypes = {
   filtersEnabled: PropTypes.bool,
-  downloadUrl: PropTypes.string,
   // Called with the search text when Enter is pressed.
   onSearch: PropTypes.func,
   // Called with the selected values of a filter after a change.
   onFilter: PropTypes.func,
-  onDownload: PropTypes.func,
 };
 
 ControlsSection.defaultProps = {
   filtersEnabled: false,
-  downloadUrl: '',
   onSearch: () => {},
   onFilter: () => {},
-  onDownload: () => {},
 };

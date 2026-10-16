@@ -24,7 +24,6 @@ describe('ControlsSection', () => {
   const searchInput = () => element.querySelector('input[type="search"]');
   const toggle = () => element.querySelector('#availability-toggle');
   const checkboxes = () => element.querySelectorAll('input[type="checkbox"]');
-  const downloadLink = () => element.querySelector('a');
   // PhantomJS has no Event constructor, so events are created the old way.
   const fire = (target, type) => {
     const event = document.createEvent('Event');
@@ -41,10 +40,8 @@ describe('ControlsSection', () => {
   beforeEach(() => {
     props = {
       filtersEnabled: true,
-      downloadUrl: '/courses/csv/',
       onSearch: jasmine.createSpy('onSearch'),
       onFilter: jasmine.createSpy('onFilter'),
-      onDownload: jasmine.createSpy('onDownload'),
     };
     setFixtures('<div id="controls-root"></div>');
     element = document.getElementById('controls-root');
@@ -56,23 +53,20 @@ describe('ControlsSection', () => {
     act(() => root.unmount());
   });
 
-  it('has the search box, the Availability filter and the Download CSV link', () => {
+  it('has the search box and the Availability filter, and no Download CSV link (it is in the results toolbar)', () => {
     render();
 
     expect(searchInput().getAttribute('aria-label')).toBe('Find a course');
     expect(toggle().textContent).toBe('Availability');
-    expect(downloadLink().textContent).toBe('Download CSV');
-    expect(downloadLink().getAttribute('href')).toBe('/courses/csv/');
+    expect(element.querySelector('a')).toBeNull();
   });
 
-  it('has no filters when the server did not enable them, and no link without a URL', () => {
+  it('has no filters when the server did not enable them', () => {
     props.filtersEnabled = false;
-    props.downloadUrl = '';
     render();
 
     expect(searchInput()).not.toBeNull();
     expect(toggle()).toBeNull();
-    expect(downloadLink()).toBeNull();
   });
 
   it('stores the search text as it is typed, and reports a search when Enter is pressed', () => {
@@ -101,15 +95,5 @@ describe('ControlsSection', () => {
 
     act(() => checkboxes()[0].click());
     expect(store.getState().query.filters).toEqual({ availability: ['Current'] });
-  });
-
-  it('reports a click on Download CSV', () => {
-    render();
-    act(() => {
-      downloadLink().addEventListener('click', event => event.preventDefault());
-      downloadLink().click();
-    });
-
-    expect(props.onDownload).toHaveBeenCalledTimes(1);
   });
 });

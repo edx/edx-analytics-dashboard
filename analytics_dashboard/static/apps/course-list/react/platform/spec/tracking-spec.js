@@ -1,6 +1,8 @@
 import Backbone from 'backbone';
 
-import createTooltipTracker, { createControlsTracker } from 'course-list/react/platform/tracking';
+import createTooltipTracker, {
+  createControlsTracker, createResultsTracker, trackPageView,
+} from 'course-list/react/platform/tracking';
 
 describe('createTooltipTracker', () => {
   let trackingModel;
@@ -68,5 +70,69 @@ describe('createControlsTracker', () => {
 
   it('does nothing without a tracking model', () => {
     expect(() => createControlsTracker(undefined).csvDownloaded()).not.toThrow();
+  });
+});
+
+describe('createResultsTracker', () => {
+  it('sends the legacy course link event, with the properties of the legacy link', () => {
+    const trackingModel = new Backbone.Model();
+    const events = [];
+    trackingModel.on('segment:track', (...args) => events.push(args));
+
+    createResultsTracker(trackingModel).courseOpened({
+      course_id: 'course-v1:Edx+Algebra+2024', catalog_course_title: 'Algebra I',
+    });
+
+    expect(events).toEqual([['edx.bi.ui.menu.navigated', {
+      type: 'click',
+      text: 'Algebra I | course-v1:Edx+Algebra+2024',
+      url: '/courses/course-v1:Edx+Algebra+2024',
+      'target-scope': 'course',
+      'target-lens': 'home',
+      'menu-depth': 'insights',
+      'link-name': 'course_row',
+    }]]);
+  });
+
+  it('sends the legacy sort and page events (the 1-based page, as legacy), and the columns event', () => {
+    const trackingModel = new Backbone.Model();
+    const events = [];
+    trackingModel.on('segment:track', (...args) => events.push(args));
+    const track = createResultsTracker(trackingModel);
+
+    track.sorted('count', 'desc');
+    track.paged(3);
+    track.columnsChanged('start_date', false);
+    track.columnsChanged('total_engagements', true);
+
+    expect(events).toEqual([
+      ['edx.bi.course_list.sorted', { category: 'count_desc' }],
+      ['edx.bi.course_list.paged', { category: 3 }],
+      ['edx.bi.course_list.columns_changed', { category: 'start_date_hidden' }],
+      ['edx.bi.course_list.columns_changed', { category: 'total_engagements_shown' }],
+    ]);
+  });
+
+  it('does nothing without a tracking model', () => {
+    expect(() => createResultsTracker(undefined).courseOpened({ course_id: 'a' })).not.toThrow();
+  });
+});
+
+describe('trackPageView', () => {
+  it('sets the page of the legacy course list and sends the page view', () => {
+    const trackingModel = new Backbone.Model();
+    const pageViews = jasmine.createSpy('pageViews');
+    trackingModel.on('segment:page', pageViews);
+
+    trackPageView(trackingModel);
+
+    expect(trackingModel.get('page')).toEqual({
+      scope: 'insights', lens: 'home', report: '', depth: '', name: 'insights_home',
+    });
+    expect(pageViews).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing without a tracking model', () => {
+    expect(() => trackPageView(undefined)).not.toThrow();
   });
 });

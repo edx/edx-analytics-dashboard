@@ -40,3 +40,52 @@ export function createControlsTracker(trackingModel) {
     csvDownloaded: () => track('edx.bi.csv.downloaded', 'course_list'),
   };
 }
+
+/**
+ * The page view of the course list, with the properties the legacy page's controller sets
+ * (course-list/app/controller.js). The React page sends it once, when it starts.
+ */
+export function trackPageView(trackingModel) {
+  if (trackingModel) {
+    trackingModel.set('page', {
+      scope: 'insights',
+      lens: 'home',
+      report: '',
+      depth: '',
+      name: 'insights_home',
+    });
+    trackingModel.trigger('segment:page');
+  }
+}
+
+/**
+ * The analytics of the course table, with the names and properties of the legacy table. paged sends the 1-based
+ * page number, as the legacy pager does (its collection's firstPage is 1). Opening a course sends the event that
+ * js/views/tracking-view.js builds from the legacy link's data-track-* attributes
+ * (course-list/list/templates/course-id-and-name-cell.underscore).
+ */
+export function createResultsTracker(trackingModel) {
+  const track = (name, properties) => {
+    if (trackingModel) {
+      trackingModel.trigger('segment:track', name, properties);
+    }
+  };
+  return {
+    courseOpened: row => track('edx.bi.ui.menu.navigated', {
+      type: 'click',
+      text: `${row.catalog_course_title} | ${row.course_id}`,
+      url: `/courses/${row.course_id}`,
+      'target-scope': 'course',
+      'target-lens': 'home',
+      'menu-depth': 'insights',
+      'link-name': 'course_row',
+    }),
+    // The legacy table's sort and page events (components/generic-list/list/views/table.js, paging-footer.js).
+    sorted: (key, dir) => track('edx.bi.course_list.sorted', { category: `${key}_${dir}` }),
+    paged: page => track('edx.bi.course_list.paged', { category: page }),
+    // New with the Columns menu (no legacy event): which column was shown or hidden.
+    columnsChanged: (id, shown) => track('edx.bi.course_list.columns_changed', {
+      category: `${id}_${shown ? 'shown' : 'hidden'}`,
+    }),
+  };
+}

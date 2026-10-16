@@ -1,4 +1,4 @@
-import { createSelectors } from 'course-list/react/state/selectors';
+import { createSelectors, PAGE_SIZE } from 'course-list/react/state/selectors';
 
 describe('selectors', () => {
   // A registry for the spec: the real one is checked in registries/spec/metrics-spec.js.
@@ -7,10 +7,33 @@ describe('selectors', () => {
     { id: 'second', textKey: 'second_text', reduce: rows => rows.reduce((sum, row) => sum + row.count, 0) },
   ];
   const filters = [{ id: 'color', matches: (row, selected) => selected.indexOf(row.color) !== -1 }];
-  const { selectFilteredRows, selectSummaryMetrics } = createSelectors({ filters, metrics });
-  const stateWith = (rows, query = {}) => ({
+  // A columns registry for the spec: the real one is checked in registries/spec/columns-spec.js.
+  const columns = [
+    {
+      id: 'catalog_course_title', label: 'Course Name', cell: 'courseName', alwaysVisible: true,
+    },
+    { id: 'start_date', label: 'Start Date', cell: 'date' },
+    { id: 'count', label: 'Current Enrollment', cell: 'number' },
+    {
+      id: 'passing_users', label: 'Passing Learners', cell: 'number', enabled: page => page.passingUsersEnabled,
+    },
+    {
+      id: 'b2b_count', label: 'B2B Enrollment', cell: 'number', pending: true,
+    },
+    {
+      id: 'total_engagements', label: 'Total Engagements', cell: 'number', pending: true, defaultVisible: false,
+    },
+  ];
+  const selectors = createSelectors({
+    filters, metrics, columns, showPendingColumns: true,
+  });
+  const { selectFilteredRows, selectSummaryMetrics } = selectors;
+  const stateWith = (rows, query = {}, visibleColumns = null) => ({
     courses: { rows, programs: [], status: 'ready' },
-    query: { search: '', filters: {}, ...query },
+    view: { visibleColumns },
+    query: {
+      search: '', filters: {}, sort: { key: 'catalog_course_title', dir: 'asc' }, page: 1, ...query,
+    },
   });
 
   describe('selectSummaryMetrics', () => {
@@ -78,10 +101,166 @@ describe('selectors', () => {
       expect(titles({ search: 'biology', filters: { color: ['red'] } })).toEqual([]);
     });
 
+    it('keeps the same rows and cards when only the sort or the page changes', () => {
+      const state = stateWith(rows);
+      const sorted = { ...state, query: { ...state.query, sort: { key: 'count', dir: 'desc' }, page: 2 } };
+
+      expect(selectFilteredRows(sorted)).toBe(selectFilteredRows(state));
+      expect(selectSummaryMetrics(sorted)).toBe(selectSummaryMetrics(state));
+    });
+
     it('makes the summary cards follow the search and the filters', () => {
       const state = stateWith(rows, { filters: { color: ['red'] } });
 
       expect(selectSummaryMetrics(state).map(entry => entry.value)).toEqual([2, 5]);
+    });
+  });
+
+  describe('selectSortedRows', () => {
+    const rows = [
+      {
+        course_id: 'c-3', catalog_course_title: 'biology', start_date: '2024-05-01T00:00:00Z', count: 20,
+      },
+      {
+        course_id: 'c-1', catalog_course_title: 'Algebra', start_date: '', count: 5,
+      },
+      {
+        course_id: 'c-2', catalog_course_title: 'Algebra', start_date: '2023-01-01T00:00:00Z', count: 300,
+      },
+      {
+        course_id: 'c-4', catalog_course_title: 'Chemistry', start_date: '2025-09-01T00:00:00Z', count: 20,
+      },
+    ];
+    const ids = sort => selectors.selectSortedRows(stateWith(rows, { sort })).map(row => row.course_id);
+
+    it('sorts by course name, ignoring case, with equal names in course ID order', () => {
+      expect(ids({ key: 'catalog_course_title', dir: 'asc' })).toEqual(['c-1', 'c-2', 'c-3', 'c-4']);
+      expect(ids({ key: 'catalog_course_title', dir: 'desc' })).toEqual(['c-4', 'c-3', 'c-1', 'c-2']);
+    });
+
+    it('sorts number columns as numbers', () => {
+      expect(ids({ key: 'count', dir: 'desc' })).toEqual(['c-2', 'c-3', 'c-4', 'c-1']);
+      expect(ids({ key: 'count', dir: 'asc' })).toEqual(['c-1', 'c-3', 'c-4', 'c-2']);
+    });
+
+    it('puts empty values last in both directions', () => {
+      expect(ids({ key: 'start_date', dir: 'asc' })).toEqual(['c-2', 'c-3', 'c-4', 'c-1']);
+      expect(ids({ key: 'start_date', dir: 'desc' })).toEqual(['c-4', 'c-3', 'c-2', 'c-1']);
+    });
+
+    it('sorts dates by the moment they mean, whatever format the API sent them in', () => {
+      const dates = [
+        { course_id: 'd-1', start_date: '2017-01-10T182754' },
+        { course_id: 'd-2', start_date: '2017-01-10T00:00:00Z' },
+        { course_id: 'd-3', start_date: '2016-12-31T235959' },
+        { course_id: 'd-4', start_date: '' },
+      ];
+      const order = dir => selectors.selectSortedRows(stateWith(dates, { sort: { key: 'start_date', dir } }))
+        .map(row => row.course_id);
+
+      expect(order('asc')).toEqual(['d-3', 'd-2', 'd-1', 'd-4']);
+      expect(order('desc')).toEqual(['d-1', 'd-2', 'd-3', 'd-4']);
+    });
+
+    it('sorts a number sent as text as a number, and a value that is not a number as empty', () => {
+      const counts = [
+        { course_id: 'n-1', count: '12' },
+        { course_id: 'n-2', count: 100 },
+        { course_id: 'n-3', count: 'abc' },
+        { course_id: 'n-4', count: 5 },
+      ];
+      const order = dir => selectors.selectSortedRows(stateWith(counts, { sort: { key: 'count', dir } }))
+        .map(row => row.course_id);
+
+      expect(order('asc')).toEqual(['n-4', 'n-1', 'n-2', 'n-3']);
+      expect(order('desc')).toEqual(['n-2', 'n-1', 'n-4', 'n-3']);
+    });
+
+    it('does not sort again when only the search or the filters change', () => {
+      const state = stateWith(rows, { sort: { key: 'count', dir: 'desc' } });
+      selectors.selectSortedRows(state);
+      spyOn(Array.prototype, 'sort').and.callThrough();
+
+      const searched = { ...state, query: { ...state.query, search: 'chem' } };
+      const result = selectors.selectSortedRows(searched).map(row => row.course_id);
+
+      expect(result).toEqual(['c-4']);
+      expect(Array.prototype.sort).not.toHaveBeenCalled();
+    });
+
+    it('keeps course ID order for a column no row has', () => {
+      expect(ids({ key: 'b2b_count', dir: 'desc' })).toEqual(['c-1', 'c-2', 'c-3', 'c-4']);
+    });
+  });
+
+  describe('paging and the count', () => {
+    const many = Array.from({ length: PAGE_SIZE + 5 }, (value, index) => ({
+      course_id: `c-${String(index).padStart(3, '0')}`, catalog_course_title: 'Course', color: index < 3 ? 'red' : 'blue',
+    }));
+
+    it('shows 100 course runs per page and counts all of them', () => {
+      const state = stateWith(many);
+
+      expect(PAGE_SIZE).toBe(100);
+      expect(selectors.selectResultCount(state)).toBe(105);
+      expect(selectors.selectPageCount(state)).toBe(2);
+      expect(selectors.selectPageRows(state).length).toBe(100);
+      expect(selectors.selectPageRows(stateWith(many, { page: 2 })).map(row => row.course_id))
+        .toEqual(['c-100', 'c-101', 'c-102', 'c-103', 'c-104']);
+    });
+
+    it('shows the last page for a page past the end, and one page when nothing matches', () => {
+      const filtered = stateWith(many, { page: 2, filters: { color: ['red'] } });
+
+      expect(selectors.selectCurrentPage(filtered)).toBe(1);
+      expect(selectors.selectPageRows(filtered).length).toBe(3);
+      expect(selectors.selectPageCount(stateWith([]))).toBe(1);
+    });
+  });
+
+  describe('selectAvailableColumns', () => {
+    const ids = (state, page = { passingUsersEnabled: true, filtersEnabled: true }, from = selectors) => (
+      from.selectAvailableColumns(state, page).map(column => `${column.id}:${column.hasData}`)
+    );
+
+    it('has every column, a pending column without data marked as such', () => {
+      expect(ids(stateWith([{ course_id: 'a' }]))).toEqual([
+        'catalog_course_title:true', 'start_date:true', 'count:true', 'passing_users:true', 'b2b_count:false',
+        'total_engagements:false',
+      ]);
+    });
+
+    it('leaves out a column whose waffle switch is off', () => {
+      expect(ids(stateWith([]), { passingUsersEnabled: false, filtersEnabled: true }))
+        .not.toContain('passing_users:true');
+    });
+
+    it('shows a pending column with its data as soon as a row has the field, a 0 included', () => {
+      expect(ids(stateWith([{ course_id: 'a' }, { course_id: 'b', b2b_count: 0 }]))).toContain('b2b_count:true');
+    });
+
+    it('leaves out pending columns without data when they are not shown', () => {
+      const released = createSelectors({
+        filters, metrics, columns, showPendingColumns: false,
+      });
+
+      expect(ids(stateWith([{ course_id: 'a' }]), undefined, released)).not.toContain('b2b_count:false');
+      expect(ids(stateWith([{ course_id: 'a', b2b_count: 3 }]), undefined, released)).toContain('b2b_count:true');
+    });
+  });
+
+  describe('selectVisibleColumns', () => {
+    const SWITCHES = { passingUsersEnabled: true, filtersEnabled: true };
+    const ids = visible => selectors.selectVisibleColumns(stateWith([{ course_id: 'a' }], {}, visible), SWITCHES)
+      .map(column => column.id);
+
+    it('shows the columns that start visible until the user changes them', () => {
+      expect(ids(null)).toEqual(['catalog_course_title', 'start_date', 'count', 'passing_users', 'b2b_count']);
+    });
+
+    it('shows Course Name and the ticked columns, in registry order, ignoring unknown ones', () => {
+      expect(ids(['total_engagements', 'count', 'unknown'])).toEqual(['catalog_course_title', 'count', 'total_engagements']);
+      expect(ids([])).toEqual(['catalog_course_title']);
     });
   });
 });
