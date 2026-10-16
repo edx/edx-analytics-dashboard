@@ -1,7 +1,7 @@
 import { createSelector } from '@reduxjs/toolkit';
 
 import columnRegistry, { SHOW_PENDING_COLUMNS } from 'course-list/react/registries/columns';
-import filterRegistry from 'course-list/react/registries/filters';
+import filterRegistry, { resolveFilters } from 'course-list/react/registries/filters';
 import metricRegistry from 'course-list/react/registries/metrics';
 import {
   dateValue, isEmpty, isNumericCell, toNumber,
@@ -19,6 +19,20 @@ export function createSelectors({
   const selectRows = state => state.courses.rows;
   const selectSearch = state => state.query.search;
   const selectSelectedFilters = state => state.query.filters;
+
+  // The filters of the registry with their options, which for Program and Course come from the page data. A filter
+  // waiting for data is left out until a row has it, unless showPending (by default, whether pending columns are
+  // shown: the same rule as the columns). Call it as selectFilters(state, showPending). There is one memoized selector
+  // per value of showPending, so callers passing different values don't make each other rebuild the lists.
+  const filtersSelector = showPending => createSelector(
+    [selectRows, state => state.courses.programs],
+    (rows, programs) => resolveFilters({ rows, programs }, filters).filter(filter => (
+      !filter.pendingFields || showPending
+      || rows.some(row => filter.pendingFields.some(field => !isEmpty(row[field])))
+    )),
+  );
+  const filtersSelectors = { true: filtersSelector(true), false: filtersSelector(false) };
+  const selectFilters = (state, showPending = showPendingColumns) => filtersSelectors[Boolean(showPending)](state);
 
   // The course runs that match the search text and the filters. Searching: a course run matches when any word of the
   // text is part of its title or course ID, ignoring case.
@@ -124,6 +138,7 @@ export function createSelectors({
   );
 
   return {
+    selectFilters,
     selectFilteredRows,
     selectSummaryMetrics,
     selectSortedRows,
@@ -137,6 +152,7 @@ export function createSelectors({
 }
 
 export const {
+  selectFilters,
   selectFilteredRows,
   selectSummaryMetrics,
   selectSortedRows,

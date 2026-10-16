@@ -1,7 +1,7 @@
 import columnRegistry from 'course-list/react/registries/columns';
-import filterRegistry from 'course-list/react/registries/filters';
+import filterRegistry, { resolveFilters } from 'course-list/react/registries/filters';
 import { queryRestored } from 'course-list/react/state/query-slice';
-import { selectAvailableColumns, selectCurrentPage } from 'course-list/react/state/selectors';
+import { selectAvailableColumns, selectCurrentPage, selectFilters } from 'course-list/react/state/selectors';
 import { viewRestored } from 'course-list/react/state/view-slice';
 
 /**
@@ -12,6 +12,7 @@ import { viewRestored } from 'course-list/react/state/view-slice';
  *   /courses/#?text_search=algebra&availability=Current,Upcoming&sortKey=count&order=desc&page=3&cols=start_date,count
  *
  *   text_search  the search text
+ *   timeframe    7d, 30d, 60d or custom (new, the prototype's keys); with custom, from and to (YYYY-MM-DD)
  *   <filter id>  the selected values of a filter, comma-separated. The id of a filter in registries/filters.js is its
  *                key in the address (as in the legacy page: availability, pacing_type, program_ids)
  *   sortKey      the id of a column of registries/columns.js
@@ -25,6 +26,19 @@ import { viewRestored } from 'course-list/react/state/view-slice';
  */
 
 const MAX_SEARCH_LENGTH = 200;
+// The timeframes other than All Time (the default, not written), with the prototype's keys; Custom has from and to.
+const TIMEFRAME_VALUES = ['7d', '30d', '60d', 'custom'];
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Whether text is a real calendar date written YYYY-MM-DD (not 2026-13-45 or 2026-02-30). */
+function isDate(text) {
+  if (!DATE_PATTERN.test(text || '')) {
+    return false;
+  }
+  const [year, month, day] = text.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+}
 // How long the address waits for the view to stop changing before it is rewritten (browsers limit how often a page may
 // rewrite its address: Safari throws after about 100 times in 30 seconds, which fast typing could reach).
 const WRITE_DELAY = 200;
@@ -81,17 +95,18 @@ function sortableColumnIds(columns, switches, visibleColumns, dataColumnIds) {
 /**
  * Reads an address hash.
  * @param {string} hash - window.location.hash.
- * @param {Object} [options] - { switches, columns, filters, dataColumnIds }: the page's waffle switches
- *   ({ passingUsersEnabled, filtersEnabled }), the registries (the real ones by default) and the ids of the columns
- *   that have data (by default the ones that aren't pending). Filters are read only with the filters switch on, as the
- *   legacy page offered them only then.
+ * @param {Object} [options] - { switches, columns, filters, dataColumnIds }: the page's switches
+ *   ({ passingUsersEnabled, filtersEnabled, timeframeEnabled }), the columns registry and the filters with their
+ *   options (the real ones by default, with no page data) and the ids of the columns that have data (by default the
+ *   ones that aren't pending). Filters are read only with the filters switch on, as the legacy page offered them only
+ *   then.
  * @returns {{ query: Object, visibleColumns: (string[]|null), invalid: boolean }} The query to restore (only the
  *   parts the address has), the ticked columns (null when it has none) and whether it has an invalid parameter.
  */
 export function parseHash(hash, {
   switches = {},
   columns = columnRegistry,
-  filters = filterRegistry,
+  filters = resolveFilters({ rows: [], programs: [] }),
   dataColumnIds = columns.filter(column => !column.pending).map(column => column.id),
 } = {}) {
   const params = readParams(hash);
@@ -106,13 +121,20 @@ export function parseHash(hash, {
     query.search = Array.from(params.text_search).slice(0, MAX_SEARCH_LENGTH).join('');
   }
 
+  // The timeframe is read only while its menu is shown. Custom dates must be real ones, and To no earlier than From
+  // (To is dropped otherwise, as the menu does).
+  if (switches.timeframeEnabled && TIMEFRAME_VALUES.indexOf(params.timeframe) !== -1) {
+    const isCustom = params.timeframe === 'custom';
+    const from = isCustom && isDate(params.from) ? params.from : '';
+    const to = isCustom && isDate(params.to) && !(from && params.to < from) ? params.to : '';
+    query.timeframe = { range: params.timeframe, from, to };
+  }
+
   const selected = {};
   filters.forEach((filter) => {
     if (switches.filtersEnabled && typeof params[filter.id] === 'string') {
-      const allowed = Array.isArray(filter.options) && filter.options.length
-        ? filter.options.map(option => option.value) : null;
-      const values = params[filter.id].split(',')
-        .filter(value => value !== '' && (!allowed || allowed.indexOf(value) !== -1));
+      const allowed = filter.options.map(option => option.value);
+      const values = params[filter.id].split(',').filter(value => allowed.indexOf(value) !== -1);
       if (values.length) {
         selected[filter.id] = values.filter((value, index) => values.indexOf(value) === index);
       }
@@ -154,6 +176,10 @@ export function buildHash({ query, visibleColumns }, { filters = filterRegistry 
   if (query.search.trim() !== '') {
     params.push(['text_search', query.search]);
   }
+  if (query.timeframe && query.timeframe.range !== 'all') {
+    params.push(['timeframe', query.timeframe.range]);
+    ['from', 'to'].filter(field => query.timeframe[field]).forEach(field => params.push([field, query.timeframe[field]]));
+  }
   filters.forEach((filter) => {
     if (query.filters[filter.id] && query.filters[filter.id].length) {
       params.push([filter.id, query.filters[filter.id].join(',')]);
@@ -185,13 +211,21 @@ export default function connectUrlStateToStore(store, { switches = {}, win = win
   let restoredColumns = null;
   let restoring = false;
   let timer = null;
+  // The filters whose options come from the data (Program, Course) can only be checked once the course rows are in
+  // (status 'ready'). If the address is read before (the data is still loading, or the page had none at first and gets
+  // it later), it is read again, as it was then, when the data comes, unless the user changed the view meanwhile.
+  let waitingForData = store.getState().courses.status !== 'ready';
+  let readHash = win.location.hash;
 
-  const restore = () => {
+  const restore = (hash = win.location.hash) => {
+    readHash = hash;
     const state = store.getState();
     const dataColumnIds = selectAvailableColumns(state, switches)
       .filter(column => column.hasData)
       .map(column => column.id);
-    const { query, visibleColumns, invalid } = parseHash(win.location.hash, { switches, dataColumnIds });
+    const { query, visibleColumns, invalid } = parseHash(hash, {
+      switches, dataColumnIds, filters: selectFilters(state, switches.pendingFiltersShown),
+    });
     // The two dispatches are one change: the address isn't rewritten in between.
     restoring = true;
     store.dispatch(queryRestored(query));
@@ -199,6 +233,24 @@ export default function connectUrlStateToStore(store, { switches = {}, win = win
     restoring = false;
     restoredQuery = store.getState().query;
     restoredColumns = store.getState().view.visibleColumns;
+  };
+
+  // The user changed the view before the course data came: their changes stay, and the filters of the address that
+  // were left out when it was first read, because their options weren't known yet (Program, Course), are added unless
+  // the user has set them since.
+  const addDataFilters = (state) => {
+    const { query } = parseHash(readHash, { switches, filters: selectFilters(state, switches.pendingFiltersShown) });
+    const added = {};
+    Object.keys(query.filters || {}).forEach((id) => {
+      if (!restoredQuery.filters[id] && !state.query.filters[id]) {
+        added[id] = query.filters[id];
+      }
+    });
+    if (Object.keys(added).length) {
+      restoring = true;
+      store.dispatch(queryRestored({ ...state.query, filters: { ...state.query.filters, ...added } }));
+      restoring = false;
+    }
   };
 
   const write = () => {
@@ -225,7 +277,16 @@ export default function connectUrlStateToStore(store, { switches = {}, win = win
     if (restoring) {
       return;
     }
-    const state = store.getState();
+    let state = store.getState();
+    if (waitingForData && state.courses.status === 'ready') {
+      waitingForData = false;
+      if (state.query === restoredQuery && state.view.visibleColumns === restoredColumns) {
+        restore(readHash);
+      } else {
+        addDataFilters(state);
+      }
+      state = store.getState();
+    }
     if (state.view.urlInvalid
       && (state.query !== restoredQuery || state.view.visibleColumns !== restoredColumns)) {
       // The user changed something: the address is theirs to rewrite now, and the message goes away.

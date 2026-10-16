@@ -7,6 +7,7 @@ import createTooltipTracker, {
   createControlsTracker, createResultsTracker, trackPageView,
 } from 'course-list/react/platform/tracking';
 import connectUrlStateToStore from 'course-list/react/platform/url-state';
+import { SHOW_PENDING_COLUMNS } from 'course-list/react/registries/columns';
 import CourseListPage from 'course-list/react/widgets/CourseListPage';
 
 const reportSectionFailure = (name, error) => reportWidgetFailure({
@@ -33,7 +34,14 @@ export default function startReactPage({ courseModel, trackingModel }) {
   const filtersEnabled = courseModel.get('enable_course_filters') === true;
   const passingUsersEnabled = courseModel.get('enable_passing_users') === true;
   // The view in the page's address (search, filters, sort, page, columns) is read before the page is drawn.
-  connectUrlStateToStore(store, { switches: { passingUsersEnabled, filtersEnabled } });
+  connectUrlStateToStore(store, {
+    switches: {
+      passingUsersEnabled,
+      filtersEnabled,
+      timeframeEnabled: filtersEnabled && SHOW_PENDING_COLUMNS,
+      pendingFiltersShown: SHOW_PENDING_COLUMNS,
+    },
+  });
   mountReact(element, CourseListPage, {
     store,
     wrapper: ParagonProvider,
@@ -43,6 +51,9 @@ export default function startReactPage({ courseModel, trackingModel }) {
       onTooltipShown: createTooltipTracker(trackingModel),
       controls: {
         filtersEnabled,
+        // Timeframe has no data yet (LP-1321): it is shown only in the preview, as the columns waiting for data.
+        timeframeEnabled: SHOW_PENDING_COLUMNS,
+        pendingFiltersShown: SHOW_PENDING_COLUMNS,
         onSearch: track.searched,
         onFilter: track.filtered,
       },

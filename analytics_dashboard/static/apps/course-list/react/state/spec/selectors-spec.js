@@ -249,6 +249,37 @@ describe('selectors', () => {
     });
   });
 
+  describe('selectFilters', () => {
+    const segmentFilters = [
+      ...filters,
+      {
+        id: 'segment', options: [{ value: 'b2b', label: 'B2B' }], pendingFields: ['b2b_count'], matches: () => true,
+      },
+    ];
+    const filterIds = (rows, showPendingColumns) => createSelectors({
+      filters: segmentFilters, metrics, columns, showPendingColumns,
+    }).selectFilters(stateWith(rows)).map(filter => filter.id);
+
+    it('keeps one cached list per showPending value, so callers passing different ones don\'t rebuild it', () => {
+      const { selectFilters } = createSelectors({
+        filters: segmentFilters, metrics, columns, showPendingColumns: false,
+      });
+      const state = stateWith([{ course_id: 'a' }]);
+      const shown = selectFilters(state, true);
+      const hidden = selectFilters(state, false);
+
+      expect(selectFilters(state, true)).toBe(shown);
+      expect(selectFilters(state, false)).toBe(hidden);
+      expect(selectFilters(state)).toBe(hidden);
+    });
+
+    it('lists a filter waiting for data while pending columns are shown, or once a row has its data', () => {
+      expect(filterIds([{ course_id: 'a' }], true)).toEqual(['color', 'segment']);
+      expect(filterIds([{ course_id: 'a' }], false)).toEqual(['color']);
+      expect(filterIds([{ course_id: 'a', b2b_count: 0 }], false)).toEqual(['color', 'segment']);
+    });
+  });
+
   describe('selectVisibleColumns', () => {
     const SWITCHES = { passingUsersEnabled: true, filtersEnabled: true };
     const ids = visible => selectors.selectVisibleColumns(stateWith([{ course_id: 'a' }], {}, visible), SWITCHES)

@@ -392,12 +392,41 @@ The search text and the selected values of each filter are in the Redux `query` 
 filtered rows. Values of one filter are alternatives (OR); filters narrow each other (AND). The search matches any word of the
 text, ignoring case, in the course title or course ID.
 
-To add a filter, for example Pacing, add one entry to `registries/filters.js`: `id` (also its key in the page's
-address, so use the legacy one: `pacing_type`), `label`, `options` (`value`
+The filter bar is, in the prototype's order: the search box, Timeframe, then the filters Program, Course, Sales Model,
+Funding Model, Availability and Pacing. To add a filter, add one entry to
+`registries/filters.js`: `id` (also its key in the page's address, so use the legacy one if there is one, as
+`pacing_type` does), `label`, `options` (`value`
 and `label`) and `matches(row, selectedValues)`. `ControlsSection` draws a `CheckboxDropdown` for it and the
 selectors apply it, so no other code changes. Add a case to `registries/spec/filters-spec.js` with the fixture rows.
-A filter whose options come from the data (Program) needs its options built from `state.courses.programs` instead of
-a fixed list. The dropdowns are only shown when the server enabled the filters (`enable_course_filters`).
+A filter whose options come from the data has a function of `{ rows, programs }` (`state.courses`) as its `options`,
+as Program and Course do; `selectFilters` works them out. A filter with no options isn't shown, as in the legacy page.
+**The options follow the data**: Program and Course list what the server sent; Availability and Pacing always list their
+fixed values (as in the prototype), plus any other value the course rows have (`valueOptions`); Sales Model and Funding
+Model list the segments with learners (`segmentOptions`), or their fixed list while the data has none. Timeframe's
+ranges are fixed.
+`searchLabel` (its placeholder, for example `'Filter programs'`) puts a search box in the dropdown (it lists up to 50 matches), for long lists such as Program and
+Course. Course offers one option per catalog course (`catalog_course`; a run without one is its own course). The
+dropdowns are only shown when the server enabled the filters (`enable_course_filters`).
+
+**Filters waiting for data.** Sales Model and Funding Model read the fields of the pending B2B, B2C, Subscription and
+À la carte columns (`pendingFields`): a course run matches when it has learners in a selected segment. Like the pending
+columns, they are shown while `SHOW_PENDING_COLUMNS` is true, or once a row has their data; until the data comes,
+selecting one matches no course run. **Timeframe** (`components/controls/TimeframeDropdown.jsx`: All Time, Last 7, 30
+or 60 days, Custom with From and To) is kept in the `query` slice and the address (`timeframe`, `from`, `to`), but the
+server has no data by date yet (LP-1321), so it changes no number; it is shown only while
+`SHOW_PENDING_COLUMNS` is true.
+
+**The look** follows the prototype, measured from it: the bar's controls are 34px high, 14px text, 8px apart; the
+menus are 260px to 340px wide. Every control is Paragon's: the dropdowns (`components/controls/FilterDropdown.jsx`,
+shared by the filters, Timeframe and Columns) and Download CSV are the neutral `outline-secondary` Button with
+Paragon's `ArrowDropDown` caret; the search boxes are `Form.Control` with Paragon's `Search` and `Close` icons; the
+options are `Form.Checkbox` (`MenuOption.jsx`) and `Form.Radio`. They are themed in the "filter bar" rules of
+`insights-theme.css`, mostly through Paragon's own properties (`--pgn-btn-*` for the default button: white, `#CCC`
+border, `#333` text, grey on hover and while open; `--pgn-*-form-control-indicator-*` for 13px checkboxes and radios
+drawn like the browser's), plus a few rules where Paragon has no property (the dotted focus outline, the icon sizes).
+Check those property names against Paragon's CSS when upgrading it: a renamed one silently falls back to Paragon's
+look. The Columns and Download CSV icons are Material Symbols Sharp (`components/icons.jsx`), which Paragon doesn't
+have.
 
 The filter bar sends the legacy analytics events (`platform/tracking.js`, `createControlsTracker`). The Download CSV
 link goes to the server's `course_list_download_url` and always downloads the full list: making the CSV follow the
@@ -442,8 +471,8 @@ Back button, a bookmark and a shared link show the same view, and old links stil
 ```
 
 - **The key of a filter is its `id`** in `registries/filters.js` (the legacy keys: `availability`, `pacing_type`,
-  `program_ids`), so a new filter needs no address code. Until the Pacing and Program filters exist, those two keys in
-  an old link are ignored; the search, Availability filter, sort and page of an old link work. Filters in the address
+  `program_ids`), so a new filter needs no address code, and every part of an old link works. A program the page
+  doesn't have is left out, like any unknown value. Filters in the address
   are read only with the `enable_course_filters` switch on, as the legacy page offered them only then. `sortKey` is a
   column `id`; `cols` is new (the legacy page had no Columns menu).
 - The address is read on start and when it changes by itself (the user edits it, follows a link or uses Back), and

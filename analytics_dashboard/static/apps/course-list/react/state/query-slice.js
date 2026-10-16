@@ -5,10 +5,13 @@ import { createSlice } from '@reduxjs/toolkit';
 //   filters: { <filter id>: [selected values] }; a filter with nothing selected is absent
 //   sort:    { key: <column id>, dir: 'asc' | 'desc' }
 //   page:    1-based page of the table
+//   timeframe: { range: 'all' | '7d' | '30d' | '60d' | 'custom', from, to } (dates as YYYY-MM-DD, '' when not set;
+//            only Custom has them)
 export const DEFAULT_SORT = { key: 'catalog_course_title', dir: 'asc' };
+export const DEFAULT_TIMEFRAME = { range: 'all', from: '', to: '' };
 
 const INITIAL_QUERY = {
-  search: '', filters: {}, sort: DEFAULT_SORT, page: 1,
+  search: '', filters: {}, sort: DEFAULT_SORT, page: 1, timeframe: DEFAULT_TIMEFRAME,
 };
 
 const querySlice = createSlice({
@@ -38,11 +41,13 @@ const querySlice = createSlice({
     pageChanged: (state, action) => (
       Number.isInteger(action.payload) && action.payload >= 1 ? { ...state, page: action.payload } : state
     ),
+    // payload: { range, from, to }.
+    timeframeChanged: (state, action) => ({ ...state, timeframe: { ...DEFAULT_TIMEFRAME, ...action.payload } }),
   },
 });
 
 export const {
-  searchChanged, filterChanged, sortChanged, pageChanged, queryRestored,
+  searchChanged, filterChanged, sortChanged, pageChanged, queryRestored, timeframeChanged,
 } = querySlice.actions;
 export const selectQuery = state => state.query;
 

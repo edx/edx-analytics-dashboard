@@ -70,41 +70,331 @@ body {
   text-align: center;
 }
 
-/* The filter bar: a white box with the search and the filter dropdowns, as in the prototype. */
+/*
+ * The filter bar, as in the prototype (its values are measured from it): a white box with the search box and the
+ * dropdowns 8px apart, 14px text, controls 34px high. The controls are Paragon's (Dropdown, Button, Form.Control,
+ * Form.Checkbox, Form.Radio), themed through Paragon's own custom properties to the prototype's look.
+ */
 .insights-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 4px;
+  gap: 8px;
+  margin: 10px 0 4px;
   padding: 10px 12px;
   border: 1px solid #D4D2CF; /* $gray-l2 */
   border-radius: 3px;
   background-color: #FFFFFF;
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
 }
 
 .insights-controls .insights-search-box {
-  flex: 1 1 240px;
-  max-width: 360px;
+  flex: 0 1 230px;
+  min-width: 220px;
 }
 
-.insights-checkbox-menu {
-  padding: 8px 16px;
-  min-width: 180px;
+/*
+ * Insights' default button, as in the prototype: the dropdowns' toggles, Columns and Download CSV, all Paragon's
+ * neutral outline-secondary button. Paragon reads every colour and size from these properties: white with a #CCC
+ * border and #333 text, grey (#E6E6E6, #ADADAD border) on hover and while open or pressed. 34px high with text only,
+ * 38px with a 24px icon, as in the prototype.
+ */
+.insights-default-button {
+  --pgn-btn-color: #333333;
+  --pgn-btn-bg: #FFFFFF;
+  --pgn-btn-border-color: #CCCCCC;
+  --pgn-btn-hover-color: #333333;
+  --pgn-btn-hover-bg: #E6E6E6;
+  --pgn-btn-hover-border-color: #ADADAD;
+  --pgn-btn-active-color: #333333;
+  --pgn-btn-active-bg: #E6E6E6;
+  --pgn-btn-active-border-color: #ADADAD;
+  --pgn-btn-focus-color: #333333;
+  --pgn-btn-focus-bg: #FFFFFF;
+  --pgn-btn-focus-border-color: #CCCCCC;
+  --pgn-spacing-btn-padding-y-base: 6px;
+  --pgn-spacing-btn-padding-x-base: 12px;
+  --pgn-typography-btn-font-size-base: 14px;
+  --pgn-typography-btn-line-height-base: 20px;
+  --pgn-typography-btn-font-weight: 400;
+  --pgn-size-btn-border-radius-base: 2px;
+  --pgn-size-btn-border-width: 1px;
+  white-space: nowrap;
 }
 
-/* One option per line. */
-.insights-checkbox-menu .pgn__form-checkbox {
+/* Focused while open, it stays grey. */
+.show > .insights-default-button {
+  --pgn-btn-focus-bg: #E6E6E6;
+  --pgn-btn-focus-border-color: #ADADAD;
+}
+
+/* The prototype's focus is a 2px dotted outline, not Paragon's ring (drawn in ::before), and the caret is
+   ArrowDropDown, not the dropdown's own (drawn in ::after). */
+.insights-default-button::before,
+.insights-default-button::after {
+  display: none;
+}
+
+.btn.insights-default-button:focus,
+.btn.insights-default-button:focus-visible {
+  outline: 2px dotted #000000;
+  outline-offset: 0;
+}
+
+/* A 24px icon before the label in #414141, 4px from it (Columns, Download CSV). */
+.insights-default-button .btn-icon-before {
+  width: 24px;
+  height: 24px;
+  margin: 0 4px 0 0;
+  color: #414141;
+}
+
+/* The caret: Paragon's ArrowDropDown, sized so its triangle is the prototype's (8px wide, 4px after the label). */
+.insights-default-button .btn-icon-after {
+  width: 20px;
+  height: 20px;
+  margin: 0 -6px 0 -2px;
+}
+
+/*
+ * The search boxes (the bar's and the menus'): Paragon's Form.Control, 34px high with a light border, a grey search
+ * icon on the left and, for the bar's, a clear button on the right. Paragon leaves room for 44px decorators; these
+ * are 16px, as in the prototype.
+ */
+.insights-search-box {
+  margin: 0;
+}
+
+.insights-search-box .pgn__form-control-decorator-group {
+  width: 100%;
+  margin: 0;
+}
+
+.insights-search-box .form-control {
+  height: 34px;
+  padding: 6px 26px 6px 27px;
+  border: 1px solid #CCCCCC;
+  border-radius: 2px;
+  background-color: #FFFFFF;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  color: #333333;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.insights-search-box .pgn__form-control-decorator-group.has-leading-element .form-control {
+  padding-left: 27px;
+}
+
+.insights-search-box .pgn__form-control-decorator-group.has-trailing-element .form-control {
+  padding-right: 26px;
+}
+
+/* The search boxes draw their own clear button: the browser's (Chrome, Safari) is hidden, so only one shows. */
+.insights-search-box .form-control::-webkit-search-cancel-button {
+  display: none;
+  -webkit-appearance: none;
+}
+
+.insights-search-box .form-control::placeholder {
+  color: #8B857F; /* $gray */
+  opacity: 1;
+}
+
+.insights-search-box .pgn__form-control-decorator-group .pgn__form-control-decorator {
+  top: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
-  padding: 4px 0;
+  justify-content: flex-start;
+  width: auto;
+  height: 34px;
+  padding: 0;
 }
 
-/* Insights makes every label bold. Labels stay on one line, as in the prototype's Columns menu. */
-.insights-checkbox-menu label {
-  font-weight: normal;
+.insights-search-box .pgn__form-control-decorator-leading {
+  left: 8px;
+}
+
+.insights-search-box .pgn__form-control-decorator-trailing {
+  right: 4px;
+}
+
+.insights-search-icon {
+  width: 15px;
+  height: 15px;
+  color: #A0A0A0;
+}
+
+.insights-search-clear {
+  color: #414141;
+}
+
+.insights-search-clear:hover {
+  color: #000000;
+}
+
+/*
+ * The menu of a dropdown: the prototype's panel, 260px to 340px wide, with a shadow. Its checkboxes and radios are
+ * Paragon's, themed through Paragon's properties to look like the browser's own, which the prototype shows: 13px,
+ * a #767676 border, and when checked the browser's blue (#0075FF) with a white check or dot.
+ */
+.insights-checkbox-menu {
+  --pgn-size-form-control-indicator-base: 13px;
+  --pgn-size-form-control-indicator-border-width: 1px;
+  --pgn-color-form-control-indicator-border: #767676;
+  --pgn-color-form-control-indicator-bg-base: #FFFFFF;
+  --pgn-color-form-control-indicator-checked-border-base: #0075FF;
+  --pgn-size-form-control-border-checkbox-indicator-radius: 2px;
+  --pgn-spacing-form-control-gutter: 4px;
+  --pgn-other-content-form-control-checkbox-indicator-icon-checked-base: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 13 13'%3E%3Crect width='13' height='13' fill='%230075FF'/%3E%3Cpath d='M3 6.6l2.4 2.4L10 4.3' fill='none' stroke='%23FFFFFF' stroke-width='1.8'/%3E%3C/svg%3E");
+  --pgn-other-content-form-control-radio-indicator-icon-checked-base: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'%3E%3Ccircle cx='5.5' cy='5.5' r='3.5' fill='%230075FF'/%3E%3C/svg%3E");
+  min-width: 260px;
+  max-width: 340px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #D4D2CF; /* $gray-l2 */
+  border-radius: 0;
+  background-color: #FFFFFF;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.18);
+  color: #000000;
+  font-size: 14px;
+}
+
+.insights-checkbox-menu .insights-checkbox-menu-search {
+  margin-bottom: 8px;
+}
+
+/* The long lists of the searchable menus (Program, Course) scroll under their search box. */
+.insights-checkbox-menu-searchable .insights-checkbox-menu-options {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+/* One option per line, 21px high and 4px apart; a label too long for the menu is cut off with an ellipsis (the full
+   text is its hover title). Insights makes every label bold: these aren't. */
+.insights-checkbox-menu .insights-menu-option {
+  display: flex;
+  align-items: center;
+  min-height: 21px;
+  margin: 0 0 4px;
+  padding: 0;
+}
+
+.insights-checkbox-menu .insights-menu-option > div {
+  min-width: 0;
+}
+
+.insights-checkbox-menu .insights-menu-option .pgn__form-label {
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  color: #000000;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: normal;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
+  /* The prototype's text sits on the box's baseline, 1px below the centre of the line. */
+  position: relative;
+  top: 1px;
+}
+
+/* Centred on the line, without Bootstrap 3's 4px top margin on inputs. As the browser's own, a click shows no focus
+   ring (Paragon draws one in ::before); the keyboard gets the browser's. */
+.insights-checkbox-menu .insights-menu-option input {
+  flex: none;
+  margin: 0 4px 0 0;
+}
+
+.insights-checkbox-menu .insights-menu-option input:focus::before {
+  display: none;
+}
+
+/* Paragon puts a grey halo around a hovered or focused box: the browser's has none. */
+.insights-checkbox-menu .insights-menu-option input,
+.insights-checkbox-menu .insights-menu-option input:hover,
+.insights-checkbox-menu .insights-menu-option input:focus {
+  box-shadow: none;
+}
+
+/* Paragon darkens a focused box's border; the browser's keeps its own. */
+.insights-checkbox-menu .insights-menu-option input:focus {
+  border-color: var(--pgn-color-form-control-indicator-border);
+}
+
+.insights-checkbox-menu .insights-menu-option input:checked:focus {
+  border-color: var(--pgn-color-form-control-indicator-checked-border-base);
+}
+
+.insights-checkbox-menu .insights-menu-option input:focus-visible {
+  outline: auto 1px -webkit-focus-ring-color;
+}
+
+/* The radios of the Timeframe menu are a Paragon Form.RadioSet: no space of its own around them, and the dates sit
+   6px under the last one, as in the prototype (where the margins collapse). */
+.insights-timeframe-menu .pgn__form-control-set {
+  margin: 0;
+}
+
+.insights-timeframe-menu .pgn__form-control-set .insights-menu-option:last-child {
+  margin-bottom: 0;
+}
+
+.insights-menu-note {
+  padding-top: 4px;
+  color: #8A8F8F;
+  font-size: 85%;
+}
+
+/* The From and To dates of a Custom timeframe (Paragon Form.Group, Form.Label and Form.Control). */
+.insights-timeframe-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #D9D9D9;
+}
+
+.insights-timeframe-dates .insights-timeframe-date {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+}
+
+.insights-timeframe-dates .pgn__form-label {
+  margin: 0;
+  color: #000000;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* The date fields are 150px, at the right of the menu. */
+.insights-timeframe-dates .pgn__form-control-decorator-group {
+  flex: none;
+  width: auto;
+  margin: 0;
+}
+
+.insights-timeframe-dates .form-control {
+  width: 150px;
+  height: 30px;
+  padding: 2px 6px;
+  border: 1px solid #CCCCCC;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  color: #333333;
+  font-size: 13px;
+}
+
+/* Paragon puts the className of Form.Control on its wrapper. */
+.insights-timeframe-dates .is-empty .form-control {
+  color: #767676;
 }
 
 /* The row between the filter bar and the table: the count on the left, Columns and Download CSV on the right. */
@@ -114,11 +404,15 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin: 8px 0;
+  /* 10px under the filter bar, as in the prototype. */
+  margin: 10px 0 8px;
+  /* The prototype's 14px base, so the count is 11.9px as there. */
+  font-size: 14px;
 }
 
 .insights-result-count {
   font-size: 0.85em;
+  line-height: normal;
   color: #414141;
 }
 

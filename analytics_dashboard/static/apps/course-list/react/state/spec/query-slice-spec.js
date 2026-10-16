@@ -1,14 +1,26 @@
 import reducer, {
-  filterChanged, pageChanged, queryRestored, searchChanged, sortChanged,
+  filterChanged, pageChanged, queryRestored, searchChanged, sortChanged, timeframeChanged,
 } from 'course-list/react/state/query-slice';
 
 describe('query slice', () => {
   const empty = {
-    search: '', filters: {}, sort: { key: 'catalog_course_title', dir: 'asc' }, page: 1,
+    search: '',
+    filters: {},
+    sort: { key: 'catalog_course_title', dir: 'asc' },
+    page: 1,
+    timeframe: { range: 'all', from: '', to: '' },
   };
 
-  it('starts with no search and no filters, sorted by course name, on the first page', () => {
+  it('starts with no search and no filters, sorted by course name, on the first page, for all time', () => {
     expect(reducer(undefined, { type: 'init' })).toEqual(empty);
+  });
+
+  it('stores the timeframe, filling what it leaves out, without leaving the page', () => {
+    const onPage3 = { ...empty, page: 3 };
+
+    expect(reducer(onPage3, timeframeChanged({ range: 'custom', from: '2026-01-01' })))
+      .toEqual({ ...onPage3, timeframe: { range: 'custom', from: '2026-01-01', to: '' } });
+    expect(reducer(onPage3, timeframeChanged({ range: '30d' })).timeframe).toEqual({ range: '30d', from: '', to: '' });
   });
 
   it('stores the search text', () => {
