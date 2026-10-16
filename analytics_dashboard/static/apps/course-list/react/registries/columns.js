@@ -1,7 +1,7 @@
 /**
  * Set to false before the page is released (see the release checklist in the plan): real users must never see a
- * column of "--". While true, pending columns (below) are shown even before the server sends their data, so the full
- * table can be built and reviewed.
+ * column of "--". While true, pending columns (below) and pending summary cards (registries/metrics.js) are shown even
+ * before the server sends their data, so the full page can be built and reviewed.
  */
 export const SHOW_PENDING_COLUMNS = true;
 

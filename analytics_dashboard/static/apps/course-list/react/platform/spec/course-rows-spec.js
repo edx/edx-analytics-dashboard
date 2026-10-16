@@ -14,6 +14,16 @@ describe('course rows', () => {
     expect(normalizeCourseRow({ course_id: 'a' }).verified_enrollment).toBe(0);
   });
 
+  it('copies the Master\'s enrollment count out of enrollment_modes, as the server\'s summary does', () => {
+    expect(normalizeCourseRow(drawing).masters_enrollment).toBe(4);
+  });
+
+  it('sets masters_enrollment to 0 when the course has no Master\'s mode or no number for it', () => {
+    expect(normalizeCourseRow(algebra).masters_enrollment).toBe(0);
+    expect(normalizeCourseRow({ course_id: 'a' }).masters_enrollment).toBe(0);
+    expect(normalizeCourseRow({ course_id: 'a', enrollment_modes: { masters: {} } }).masters_enrollment).toBe(0);
+  });
+
   it('keeps the segment counts the Sales Model and Funding Model filters read, and leaves them out when missing', () => {
     const counts = {
       b2b_count: 4, b2c_count: 1, alacarte_count: 2, subscription_count: 3,

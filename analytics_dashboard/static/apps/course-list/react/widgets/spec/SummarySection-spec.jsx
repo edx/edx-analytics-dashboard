@@ -5,12 +5,15 @@ import { Provider } from 'react-redux';
 import ParagonProvider from 'components/react/paragon/ParagonProvider';
 import ignoreExpectedErrors from 'components/react/spec/ignore-expected-errors';
 import SectionBoundary from 'course-list/react/components/SectionBoundary';
+import { normalizeCourseRows } from 'course-list/react/platform/course-rows';
 import { coursesFailed, coursesLoaded } from 'course-list/react/state/courses-slice';
 import createCourseListStore from 'course-list/react/state/store';
 import { summaryTextLoaded } from 'course-list/react/state/summary-slice';
 import SummarySection from 'course-list/react/widgets/SummarySection';
 
 const card = require('course-list/react/spec/fixtures/total-enrollment-card.json');
+// The text of every card, as the server sends it.
+const text = require('course-list/react/spec/fixtures/summary-text.json');
 
 function Fallback() {
   return <p className="fallback">Error</p>;
@@ -22,7 +25,6 @@ describe('SummarySection', () => {
   let store;
   let restoreOnError;
   let onTooltipShown;
-  const text = { total_enrollment: { label: card.label, tooltip: card.tooltip } };
 
   const render = (content) => {
     act(() => {
@@ -56,12 +58,48 @@ describe('SummarySection', () => {
     restoreOnError();
   });
 
-  it('has a card for each metric of the registry, with the label from the page data', () => {
+  it('has a card for each metric of the registry, in order, with the label from the page data', () => {
     dispatch(summaryTextLoaded(text));
     render(<SummarySection />);
 
-    expect(element.querySelectorAll('.pgn__card').length).toBe(1);
-    expect(element.querySelector('.h4').textContent).toBe(card.label);
+    const labels = Array.prototype.map.call(element.querySelectorAll('.pgn__card .h4'), node => node.textContent);
+    expect(labels).toEqual([
+      'Total Enrollment', 'Current Enrollment', 'Total Engagements', 'Change in Last Week', 'Verified Enrollment',
+      "Master's Enrollment",
+    ]);
+    expect(element.querySelectorAll('.insights-summary-cards > .insights-summary-col > .pgn__card').length).toBe(6);
+  });
+
+  it('shows every card\'s number from the course rows, and "--" for Total Engagements while the API has no data', () => {
+    dispatch(summaryTextLoaded(text));
+    // Normalized as the page-model bridge stores them.
+    dispatch(coursesLoaded({
+      rows: normalizeCourseRows([
+        {
+          course_id: 'a',
+          cumulative_count: 1200,
+          count: 900,
+          count_change_7_days: -3,
+          enrollment_modes: { verified: { count: 40 }, masters: { count: 5 } },
+        },
+        {
+          course_id: 'b', cumulative_count: 300, count: 100, count_change_7_days: 8,
+        },
+      ]),
+      programs: [],
+    }));
+    render(<SummarySection />);
+
+    const numbers = Array.prototype.map.call(element.querySelectorAll('.pgn__card .h2'), node => node.textContent);
+    expect(numbers).toEqual(['1,500', '1,000', '--Data not available yet', '5', '40', '5']);
+  });
+
+  it('shows the Total Engagements number once a course row has it', () => {
+    dispatch(summaryTextLoaded(text));
+    dispatch(coursesLoaded({ rows: normalizeCourseRows([{ course_id: 'a', total_engagements: 2500 }]), programs: [] }));
+    render(<SummarySection />);
+
+    expect(element.querySelectorAll('.pgn__card .h2')[2].textContent).toBe('2,500');
   });
 
   it('shows the total of the course rows', () => {
@@ -104,7 +142,7 @@ describe('SummarySection', () => {
     });
 
     expect(tooltips().length).toBe(1);
-    expect(tooltips()[0].textContent).toBe(card.tooltip);
+    expect(tooltips()[0].textContent).toBe(text.total_enrollment.tooltip);
     expect(onTooltipShown).toHaveBeenCalledWith(card.label);
   });
 

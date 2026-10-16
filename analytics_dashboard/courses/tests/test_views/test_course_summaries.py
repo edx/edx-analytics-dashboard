@@ -28,6 +28,12 @@ TOTAL_ENROLLMENT_CARD_FIXTURE = (
 )
 TOTAL_ENROLLMENT_CARD = json.loads(TOTAL_ENROLLMENT_CARD_FIXTURE.read_text(encoding='utf-8'))
 
+# Expected label and tooltip of every summary card of the React page (the page data's summary_text). The React
+# page's JavaScript tests read the same file.
+SUMMARY_TEXT = json.loads(
+    TOTAL_ENROLLMENT_CARD_FIXTURE.with_name('summary-text.json').read_text(encoding='utf-8')
+)
+
 
 @ddt
 class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, TestCase):
@@ -153,12 +159,10 @@ class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, T
         course_data = json.loads(response.context['page_data'])['course']
         self.assertIs(course_data['enable_react_course_list'], True)
         self.assertEqual(course_data['summary'], response.context['summary'])
-        self.assertEqual(course_data['summary_text'], {
-            'total_enrollment': {
-                'label': TOTAL_ENROLLMENT_CARD['label'],
-                'tooltip': TOTAL_ENROLLMENT_CARD['tooltip'],
-            },
-        })
+        self.assertEqual(course_data['summary_text'], SUMMARY_TEXT)
+        # The legacy card and the React card have the same Total Enrollment label (the React tooltip differs: the
+        # React cards count only the courses matching the filters).
+        self.assertEqual(SUMMARY_TEXT['total_enrollment']['label'], TOTAL_ENROLLMENT_CARD['label'])
         # The React page's mount point holds the loading spinner.
         self.assertContains(response, 'id="course-list-react-root"')
         self.assertContains(response, 'loading-container')

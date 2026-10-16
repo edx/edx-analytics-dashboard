@@ -595,10 +595,43 @@ body {
 }
 
 /*
+ * The summary cards: a grid of all the cards in one row from 1200px, three in a row from 600px and one below. Those
+ * are the widths from which every card still fits its longest label word and a seven-digit number (measured in a
+ * browser): narrower, six or three columns would overflow. With six cards the rows are always even (6, 3 + 3 or one
+ * by one). With five (the pending Total Engagements card hidden by SHOW_PENDING_COLUMNS while it has no data), the
+ * cards are 3 + 2 from 600px to 1199px. 16px between cards and none at the row's edges, like the prototype; every
+ * card in a row is as tall as the tallest.
+ */
+.insights-summary-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: 16px;
+  margin-top: 24px;
+}
+
+@media (min-width: 600px) {
+  .insights-summary-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .insights-summary-cards {
+    /* SummarySection sets the count, so five cards (a pending card hidden) also fill the row. */
+    grid-template-columns: repeat(var(--insights-summary-count, 6), minmax(0, 1fr));
+  }
+}
+
+.insights-summary-col {
+  display: flex;
+}
+
+/*
  * The summary card looks like the legacy .summary-point card (_base.scss): 1px #D4D2CF border, 3px corners, drawn at
- * 95% size and growing to full size on hover, with the number turning blue; 30px number and 18px label in
- * weight 500; the help icon, like the legacy .ico-tooltip, light grey and 18px, blue on hover. Paragon's icon button
- * takes its colours from the --btn-icon-* custom properties.
+ * 95% size and growing to full size on hover, with the number turning blue; an 18px label and a number in weight 500
+ * (30px, smaller with six cards in a row, as in the prototype), at the same height in every card of a row; the help
+ * icon, like the legacy .ico-tooltip, light grey and 18px, blue on hover. Paragon's icon button takes its colours from
+ * the --btn-icon-* custom properties.
  */
 .insights-summary-card {
   border: 1px solid #D4D2CF; /* $gray-l2 */
@@ -622,14 +655,21 @@ body {
 
 .insights-summary-card .insights-summary-number {
   margin: 0 0 10px;
-  font-size: 30px;
+  font-size: clamp(20px, 5vw, 30px);
   font-weight: 500;
-  line-height: 33px;
+  line-height: 1.1;
   transition: color 0.5s ease-in-out;
 }
 
 .insights-summary-card:hover .insights-summary-number {
   color: #0075B4; /* $brand-primary */
+}
+
+/* Six cards in a row (see .insights-summary-cards): the prototype's size, which follows the screen width. */
+@media (min-width: 1200px) {
+  .insights-summary-card .insights-summary-number {
+    font-size: clamp(18px, 2.3vw, 30px);
+  }
 }
 
 .insights-summary-card .insights-summary-label {
@@ -658,6 +698,18 @@ body {
 .insights-summary-card .insights-help-icon.btn-icon .pgn__icon.btn-icon__icon {
   width: 18px;
   height: 18px;
+}
+
+/*
+ * The summary cards' tooltips look like Insights' legacy tooltip (the pattern library's .tooltip-inner, shown at
+ * 90%): a black background you can see through, with light text. Paragon draws its tooltip from these variables.
+ * The arrow's is set too: :root defines it from the background colour there, so it wouldn't follow.
+ */
+.tooltip.insights-summary-tooltip {
+  --pgn-other-tooltip-opacity: 0.9;
+  --pgn-color-tooltip-bg-base: hsla(0, 0%, 4%, 0.75);
+  --pgn-color-tooltip-arrow-base: hsla(0, 0%, 4%, 0.75);
+  --pgn-color-tooltip-text: #FAFAFA;
 }
 
 /*

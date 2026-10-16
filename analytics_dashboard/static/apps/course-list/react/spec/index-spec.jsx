@@ -4,12 +4,14 @@ import Backbone from 'backbone';
 import CourseModel from 'models/course-model';
 import { resetMonitoringForTests } from 'components/react/monitoring';
 import startReactPage from 'course-list/react/index';
+import { formatSummaryNumber } from 'course-list/react/platform/format';
 
 const fixture = require('course-list/react/spec/fixtures/course-list-rows.json');
 const card = require('course-list/react/spec/fixtures/total-enrollment-card.json');
+// The text of every summary card, as the server sends it.
+const TEXT = require('course-list/react/spec/fixtures/summary-text.json');
 
 describe('startReactPage', () => {
-  const TEXT = { total_enrollment: { label: card.label, tooltip: card.tooltip } };
   let originalRum;
   let rum;
   let root;
@@ -59,12 +61,22 @@ describe('startReactPage', () => {
     expect(rum.addError).not.toHaveBeenCalled();
   });
 
-  it('shows the Total Enrollment card with the total of the course rows and the text from the page data', () => {
+  it('shows the summary cards with the server\'s totals of the course rows and the text from the page data', () => {
     start(modelWith({ course_list_json: fixture.rows }));
 
-    expect(root.querySelectorAll('.pgn__card').length).toBe(1);
-    expect(root.querySelector('.insights-summary-number').textContent).toBe('1,300');
-    expect(root.querySelector('.insights-summary-label').textContent).toBe(card.label);
+    const texts = selector => Array.prototype.map.call(root.querySelectorAll(selector), node => node.textContent);
+    // expected_summary is what the server's CourseSummariesPresenter computes for the same rows (checked by the
+    // Python presenter test), shown as the card formats it. The API sends no total_engagements yet: "--".
+    const summary = fixture.expected_summary;
+    const shown = value => formatSummaryNumber(value).display;
+    expect(texts('.insights-summary-label')).toEqual([
+      'Total Enrollment', 'Current Enrollment', 'Total Engagements', 'Change in Last Week', 'Verified Enrollment',
+      "Master's Enrollment",
+    ]);
+    expect(texts('.insights-summary-number')).toEqual([
+      shown(summary.total_enrollment), shown(summary.current_enrollment), '--Data not available yet',
+      shown(summary.enrollment_change_7_days), shown(summary.verified_enrollment), shown(summary.masters_enrollment),
+    ]);
     expect(rum.addError).not.toHaveBeenCalled();
   });
 
