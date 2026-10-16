@@ -7,6 +7,7 @@ import { normalizeCourseRows } from 'course-list/react/platform/course-rows';
 import { coursesLoaded, coursesUnavailable } from 'course-list/react/state/courses-slice';
 import { filterChanged, searchChanged } from 'course-list/react/state/query-slice';
 import createCourseListStore from 'course-list/react/state/store';
+import { viewRestored } from 'course-list/react/state/view-slice';
 import ResultsSection from 'course-list/react/widgets/ResultsSection';
 
 const fixture = require('course-list/react/spec/fixtures/course-list-rows.json');
@@ -338,6 +339,28 @@ describe('ResultsSection', () => {
       expect(element.querySelector('.insights-result-count').textContent).toBe('Course runs: 4');
       expect(element.querySelector('#columns-toggle')).not.toBeNull();
       expect(element.querySelector('.alert-error')).toBeNull();
+    });
+  });
+
+  describe('an address with a parameter that can not be used', () => {
+    it('shows the legacy "Invalid Parameters" message with its link, instead of the table', () => {
+      dispatch(viewRestored({ visibleColumns: null, invalid: true }));
+      render();
+
+      expect(element.querySelector('table')).toBeNull();
+      expect(element.querySelector('.alert-title').textContent).toBe('Invalid Parameters');
+      expect(element.querySelector('.alert').textContent).toContain('Sorry, we couldn\'t find any courses that matched that query.');
+      expect(element.querySelector('.alert a').getAttribute('href')).toBe('/courses/');
+      expect(element.querySelector('.insights-results-toolbar')).not.toBeNull();
+    });
+
+    it('shows the table again once the address is valid', () => {
+      dispatch(viewRestored({ visibleColumns: null, invalid: true }));
+      render();
+      dispatch(viewRestored({ visibleColumns: null, invalid: false }));
+
+      expect(element.querySelector('.alert')).toBeNull();
+      expect(element.querySelectorAll('tbody tr').length).toBe(4);
     });
   });
 });

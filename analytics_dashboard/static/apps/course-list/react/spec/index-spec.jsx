@@ -41,6 +41,7 @@ describe('startReactPage', () => {
   });
 
   afterEach(() => {
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
     window.DD_RUM = originalRum;
     Array.prototype.forEach.call(tooltips(), (tooltip) => {
       tooltip.parentNode.removeChild(tooltip);
@@ -143,5 +144,31 @@ describe('startReactPage', () => {
     setFixtures('<div id="somewhere-else"></div>');
 
     expect(() => startReactPage({ courseModel: modelWith({}) })).toThrowError(/course-list-react-root/);
+  });
+
+  it('sends the page view of the course list when it starts', () => {
+    const pageViews = jasmine.createSpy('pageViews');
+    trackingModel.on('segment:page', pageViews);
+    start(modelWith({ course_list_json: fixture.rows }));
+
+    expect(trackingModel.get('page').name).toBe('insights_home');
+    expect(pageViews).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the view in the address of the page, and keeps the address up to date', () => {
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#?text_search=bio&sortKey=cumulative_count&order=desc`);
+    start(modelWith({ course_list_json: fixture.rows }));
+
+    expect(root.querySelector('input[type="search"]').value).toBe('bio');
+    expect(Array.prototype.map.call(root.querySelectorAll('.insights-course-title'), node => node.textContent))
+      .toEqual(['Biology']);
+    expect(root.querySelector('thead th[aria-sort="descending"]').textContent).toContain('Total Enrollment');
+
+    const header = Array.prototype.find.call(
+      root.querySelectorAll('thead th button'),
+      node => node.textContent.indexOf('Start Date') === 0,
+    );
+    act(() => header.click());
+    expect(window.location.hash).toBe('#?text_search=bio&sortKey=start_date&order=asc&page=1');
   });
 });

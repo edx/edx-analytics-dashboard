@@ -4,8 +4,9 @@ import ParagonProvider from 'components/react/paragon/ParagonProvider';
 import createCourseListStore from 'course-list/react/state/store';
 import connectPageModelToStore from 'course-list/react/platform/page-model-bridge';
 import createTooltipTracker, {
-  createControlsTracker, createResultsTracker,
+  createControlsTracker, createResultsTracker, trackPageView,
 } from 'course-list/react/platform/tracking';
+import connectUrlStateToStore from 'course-list/react/platform/url-state';
 import CourseListPage from 'course-list/react/widgets/CourseListPage';
 
 const reportSectionFailure = (name, error) => reportWidgetFailure({
@@ -17,7 +18,8 @@ const reportSectionFailure = (name, error) => reportWidgetFailure({
  * when the enable_react_course_list waffle flag is on, in which case courses/templates/courses/index.html renders
  * #course-list-react-root instead of the legacy course list.
  *
- * Creates the store, fills it from the page model, and mounts the page. trackingModel sends the analytics events.
+ * Creates the store, fills it from the page model, restores the view from the page's address, and mounts the page.
+ * trackingModel sends the analytics events.
  */
 export default function startReactPage({ courseModel, trackingModel }) {
   const element = document.getElementById('course-list-react-root');
@@ -29,6 +31,9 @@ export default function startReactPage({ courseModel, trackingModel }) {
   const track = createControlsTracker(trackingModel);
   const trackResults = createResultsTracker(trackingModel);
   const filtersEnabled = courseModel.get('enable_course_filters') === true;
+  const passingUsersEnabled = courseModel.get('enable_passing_users') === true;
+  // The view in the page's address (search, filters, sort, page, columns) is read before the page is drawn.
+  connectUrlStateToStore(store, { switches: { passingUsersEnabled, filtersEnabled } });
   mountReact(element, CourseListPage, {
     store,
     wrapper: ParagonProvider,
@@ -44,7 +49,7 @@ export default function startReactPage({ courseModel, trackingModel }) {
       results: {
         downloadUrl: courseModel.get('course_list_download_url') || '',
         onDownload: track.csvDownloaded,
-        passingUsersEnabled: courseModel.get('enable_passing_users') === true,
+        passingUsersEnabled,
         filtersEnabled,
         onCourseOpen: trackResults.courseOpened,
         onSort: trackResults.sorted,
@@ -53,5 +58,6 @@ export default function startReactPage({ courseModel, trackingModel }) {
       },
     },
   });
+  trackPageView(trackingModel);
   return store;
 }

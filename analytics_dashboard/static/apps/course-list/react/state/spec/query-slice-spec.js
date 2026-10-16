@@ -1,5 +1,5 @@
 import reducer, {
-  filterChanged, pageChanged, searchChanged, sortChanged,
+  filterChanged, pageChanged, queryRestored, searchChanged, sortChanged,
 } from 'course-list/react/state/query-slice';
 
 describe('query slice', () => {
@@ -41,5 +41,14 @@ describe('query slice', () => {
 
     expect(reducer(onPage3, searchChanged('algebra')).page).toBe(1);
     expect(reducer(onPage3, filterChanged({ id: 'availability', values: ['Current'] })).page).toBe(1);
+  });
+
+  it('restores the query from the address: what it has, and the start for what it hasn\'t', () => {
+    const current = {
+      search: 'old', filters: { availability: ['Current'] }, sort: { key: 'count', dir: 'desc' }, page: 5,
+    };
+
+    expect(reducer(current, queryRestored({ search: 'new', page: 2 }))).toEqual({ ...empty, search: 'new', page: 2 });
+    expect(reducer(current, queryRestored({}))).toEqual(empty);
   });
 });

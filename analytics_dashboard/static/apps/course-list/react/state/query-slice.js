@@ -7,12 +7,17 @@ import { createSlice } from '@reduxjs/toolkit';
 //   page:    1-based page of the table
 export const DEFAULT_SORT = { key: 'catalog_course_title', dir: 'asc' };
 
+const INITIAL_QUERY = {
+  search: '', filters: {}, sort: DEFAULT_SORT, page: 1,
+};
+
 const querySlice = createSlice({
   name: 'query',
-  initialState: {
-    search: '', filters: {}, sort: DEFAULT_SORT, page: 1,
-  },
+  initialState: INITIAL_QUERY,
   reducers: {
+    // The query read from the page's address (platform/url-state.js, already checked): what it doesn't have goes back
+    // to the start, so opening the plain address shows the full list again.
+    queryRestored: (state, action) => ({ ...INITIAL_QUERY, ...action.payload }),
     // A new search, filter or sort starts again at the first page.
     searchChanged: (state, action) => ({ ...state, search: String(action.payload), page: 1 }),
     filterChanged: (state, action) => {
@@ -37,7 +42,7 @@ const querySlice = createSlice({
 });
 
 export const {
-  searchChanged, filterChanged, sortChanged, pageChanged,
+  searchChanged, filterChanged, sortChanged, pageChanged, queryRestored,
 } = querySlice.actions;
 export const selectQuery = state => state.query;
 

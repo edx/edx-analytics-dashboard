@@ -42,6 +42,23 @@ export function createControlsTracker(trackingModel) {
 }
 
 /**
+ * The page view of the course list, with the properties the legacy page's controller sets
+ * (course-list/app/controller.js). The React page sends it once, when it starts.
+ */
+export function trackPageView(trackingModel) {
+  if (trackingModel) {
+    trackingModel.set('page', {
+      scope: 'insights',
+      lens: 'home',
+      report: '',
+      depth: '',
+      name: 'insights_home',
+    });
+    trackingModel.trigger('segment:page');
+  }
+}
+
+/**
  * The analytics of the course table, with the names and properties of the legacy table. paged sends the 1-based
  * page number, as the legacy pager does (its collection's firstPage is 1). Opening a course sends the event that
  * js/views/tracking-view.js builds from the legacy link's data-track-* attributes

@@ -11,6 +11,7 @@ import CourseTable from 'course-list/react/components/results/CourseTable';
 import ResultCount from 'course-list/react/components/results/ResultCount';
 import TablePagination from 'course-list/react/components/results/TablePagination';
 import EmptyState from 'course-list/react/components/status/EmptyState';
+import InvalidParametersState from 'course-list/react/components/status/InvalidParametersState';
 import LoadingState from 'course-list/react/components/status/LoadingState';
 import { selectStatus } from 'course-list/react/state/courses-slice';
 import {
@@ -19,7 +20,7 @@ import {
 import {
   selectAvailableColumns, selectCurrentPage, selectPageCount, selectPageRows, selectResultCount, selectVisibleColumns,
 } from 'course-list/react/state/selectors';
-import { columnsChanged } from 'course-list/react/state/view-slice';
+import { columnsChanged, selectUrlInvalid } from 'course-list/react/state/view-slice';
 
 // The same messages as the legacy course list (course-list/list/views/results.js).
 const NO_DATA_MESSAGE = 'No course data is currently available for your course.';
@@ -52,6 +53,7 @@ export default function ResultsSection({
   const { search, filters, sort } = useSelector(selectQuery);
   const page = useSelector(selectCurrentPage);
   const pageCount = useSelector(selectPageCount);
+  const urlInvalid = useSelector(selectUrlInvalid);
   const table = useRef(null);
   // The table scrolls inside its own box: a new sort or page starts at its top.
   const scrollTableToTop = () => {
@@ -123,7 +125,10 @@ export default function ResultsSection({
   ].filter(Boolean).join(' ');
 
   let resultsBody;
-  if (count) {
+  if (urlInvalid) {
+    // The page's address had a parameter that can't be used: like the legacy page, the message replaces the results.
+    resultsBody = <InvalidParametersState />;
+  } else if (count) {
     resultsBody = (
       <>
         <div ref={table} tabIndex={-1} className="insights-results-table" role="region" aria-label="Course runs">
