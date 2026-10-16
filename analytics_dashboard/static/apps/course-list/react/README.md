@@ -369,9 +369,9 @@ To add a card, for example Current Enrollment:
 
 1. Add an entry to `registries/metrics.js`: `id`, `textKey` (the key in `summary_text`) and `reduce(rows)`, which
    returns the number from the course rows. The rows are the normalized ones (`platform/course-rows.js`), which
-   copy `verified_enrollment` out of `enrollment_modes` and turn missing numbers into 0. A field that is not
-   normalized there, such as `enrollment_modes.masters.count` for the Master's card, may be missing: read it safely,
-   or add it to the normalization (with a case in `course-rows-spec.js`). The number must equal the server's
+   copy `verified_enrollment` and `masters_enrollment` out of `enrollment_modes` and turn missing numbers into 0. A
+   field that is not normalized there may be missing: add it to the normalization (with a case in
+   `course-rows-spec.js`), so `reduce` stays a plain sum. The number must equal the server's
    `CourseSummariesPresenter.get_course_summary_metrics` for the same courses.
 2. Add the card's label and tooltip to `summary_text` in `CourseIndex.get_context_data`
    (`courses/views/course_summaries.py`): the label with the same `_()` message as `courses/index.html`, so the
@@ -394,9 +394,10 @@ card shows "--" ("Data not available yet" for screen readers); as soon as one ro
 with no code change. Keep the field out of the numbers `course-rows.js` turns into 0. `SHOW_PENDING_COLUMNS` in
 `registries/columns.js` hides a pending card without data too, so set it to `false` before the release.
 
-**Layout.** The cards are a grid (`insights-summary-cards` in `insights-theme.css`): six in a row from 1200px, three
-from 600px, one below, never an uneven row. Narrower than those widths, a card can't fit its longest label word and a
-seven-digit number, so check them again if a card gets a longer label. Every card in a row is as tall as the tallest,
+**Layout.** The cards are a grid (`insights-summary-cards` in `insights-theme.css`): all of them in one row from 1200px,
+three in a row from 600px, one below. Six cards always make even rows. Five cards (Total Engagements hidden while it
+has no data and `SHOW_PENDING_COLUMNS` is off) are 3 + 2 between 600px and 1199px. Narrower than those widths, a card
+can't fit its longest label word and a seven-digit number, so check them again if a card gets a longer label. Every card in a row is as tall as the tallest,
 with the number at the same height in each. The help tooltips look like Insights' legacy tooltip (black, see-through):
 `insights-summary-tooltip`.
 

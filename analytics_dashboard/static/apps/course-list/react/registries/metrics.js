@@ -10,8 +10,8 @@ const sumOf = (rows, read) => rows.reduce((sum, row) => sum + read(row), 0);
  *   textKey: the key of its label and tooltip in `summary_text`. If the server sends no text for it, the whole
  *            summary section shows the error state, so add the text in the same change.
  *   reduce:  (rows) => number; computed from the course rows. The rows are the normalized ones
- *            (platform/course-rows.js): a field that is not normalized there, such as enrollment_modes.masters, may be
- *            missing, so read it safely or normalize it. For the whole list the number must equal the server's
+ *            (platform/course-rows.js): a field that is not normalized there may be missing, so normalize it there
+ *            (as verified_enrollment and masters_enrollment are). For the whole list the number must equal the server's
  *            CourseSummariesPresenter.get_course_summary_metrics (the fixture's `expected_summary`).
  *            The rows are the ones that match the search and the filters.
  *   pending: true for a card whose data the server may not send yet, with `field` the row field it reads. While no
@@ -53,10 +53,7 @@ export default [
   {
     id: 'mastersEnrollment',
     textKey: 'masters_enrollment',
-    // Not normalized: a course without Master's learners has no enrollment_modes.masters.
-    reduce: rows => sumOf(rows, (row) => {
-      const masters = row.enrollment_modes && row.enrollment_modes.masters;
-      return (masters && toNumber(masters.count)) || 0;
-    }),
+    // course-rows.js copies it out of enrollment_modes.masters.
+    reduce: rows => sumOf(rows, row => row.masters_enrollment),
   },
 ];

@@ -595,10 +595,12 @@ body {
 }
 
 /*
- * The summary cards: a grid of six cards in a row from 1200px, three from 600px and one below, so a row is never
- * uneven (five and one). Those are the widths from which every card still fits its longest label word and a
- * seven-digit number (measured in a browser): narrower, six or three columns would overflow. 16px between cards and
- * none at the row's edges, like the prototype; every card in a row is as tall as the tallest.
+ * The summary cards: a grid of all the cards in one row from 1200px, three in a row from 600px and one below. Those
+ * are the widths from which every card still fits its longest label word and a seven-digit number (measured in a
+ * browser): narrower, six or three columns would overflow. With six cards the rows are always even (6, 3 + 3 or one
+ * by one). With five (the pending Total Engagements card hidden by SHOW_PENDING_COLUMNS while it has no data), the
+ * cards are 3 + 2 from 600px to 1199px. 16px between cards and none at the row's edges, like the prototype; every
+ * card in a row is as tall as the tallest.
  */
 .insights-summary-cards {
   display: grid;

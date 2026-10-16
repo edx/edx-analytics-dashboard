@@ -4,6 +4,7 @@ import Backbone from 'backbone';
 import CourseModel from 'models/course-model';
 import { resetMonitoringForTests } from 'components/react/monitoring';
 import startReactPage from 'course-list/react/index';
+import { formatSummaryNumber } from 'course-list/react/platform/format';
 
 const fixture = require('course-list/react/spec/fixtures/course-list-rows.json');
 const card = require('course-list/react/spec/fixtures/total-enrollment-card.json');
@@ -64,20 +65,18 @@ describe('startReactPage', () => {
     start(modelWith({ course_list_json: fixture.rows }));
 
     const texts = selector => Array.prototype.map.call(root.querySelectorAll(selector), node => node.textContent);
+    // expected_summary is what the server's CourseSummariesPresenter computes for the same rows (checked by the
+    // Python presenter test), shown as the card formats it. The API sends no total_engagements yet: "--".
     const summary = fixture.expected_summary;
+    const shown = value => formatSummaryNumber(value).display;
     expect(texts('.insights-summary-label')).toEqual([
       'Total Enrollment', 'Current Enrollment', 'Total Engagements', 'Change in Last Week', 'Verified Enrollment',
       "Master's Enrollment",
     ]);
-    // expected_summary is what the server's CourseSummariesPresenter computes for the same rows. The API sends no
-    // total_engagements yet, so that card shows "--".
     expect(texts('.insights-summary-number')).toEqual([
-      '1,300', '240', '--Data not available yet', '3', '57', '4',
+      shown(summary.total_enrollment), shown(summary.current_enrollment), '--Data not available yet',
+      shown(summary.enrollment_change_7_days), shown(summary.verified_enrollment), shown(summary.masters_enrollment),
     ]);
-    expect([
-      summary.total_enrollment, summary.current_enrollment, summary.enrollment_change_7_days,
-      summary.verified_enrollment, summary.masters_enrollment,
-    ]).toEqual([1300, 240, 3, 57, 4]);
     expect(rum.addError).not.toHaveBeenCalled();
   });
 

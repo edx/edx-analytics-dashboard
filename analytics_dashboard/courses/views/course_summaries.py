@@ -75,9 +75,10 @@ class CourseIndex(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, TrackedV
             # Not read by the React page, which computes the summary cards from the course rows so they can follow
             # the filters. Kept so the page data stays as it was until all the cards are built.
             data['summary'] = summary
-            # The cards in the order of registries/metrics.js. The labels have the same message IDs as
-            # courses/index.html, so both versions of a card show the same translations. The tooltips are the
-            # prototype's: the React cards count only the courses that match the search and the filters.
+            # The cards in the order of registries/metrics.js. The labels of the five cards the legacy page also has
+            # use the same message IDs as courses/index.html, so both versions show the same translations; Total
+            # Engagements is new. The tooltips are new text (the prototype's), because the React cards count only the
+            # courses that match the search and the filters: they show in English until they are translated.
             data['summary_text'] = {
                 'total_enrollment': {
                     'label': _('Total Enrollment'),

@@ -11,28 +11,29 @@ export const PAGE_SIZE = 100;
 
 /**
  * Builds the selectors that turn the stored course rows and the user's query into what the page shows. The
- * registries (and whether pending columns and cards are shown) are parameters so specs can pass their own.
+ * registries, and showPending (whether pending columns and cards without data are shown; the page passes
+ * SHOW_PENDING_COLUMNS), are parameters so specs can pass their own.
  */
 export function createSelectors({
-  filters, metrics, columns, showPendingColumns,
+  filters, metrics, columns, showPending,
 }) {
   const selectRows = state => state.courses.rows;
   const selectSearch = state => state.query.search;
   const selectSelectedFilters = state => state.query.filters;
 
   // The filters of the registry with their options, which for Program and Course come from the page data. A filter
-  // waiting for data is left out until a row has it, unless showPending (by default, whether pending columns are
-  // shown: the same rule as the columns). Call it as selectFilters(state, showPending). There is one memoized selector
-  // per value of showPending, so callers passing different values don't make each other rebuild the lists.
-  const filtersSelector = showPending => createSelector(
+  // waiting for data is left out until a row has it, unless show (by default showPending: the same rule as the
+  // columns and cards). Call it as selectFilters(state, show). There is one memoized selector per value of show, so
+  // callers passing different values don't make each other rebuild the lists.
+  const filtersSelector = show => createSelector(
     [selectRows, state => state.courses.programs],
     (rows, programs) => resolveFilters({ rows, programs }, filters).filter(filter => (
-      !filter.pendingFields || showPending
+      !filter.pendingFields || show
       || rows.some(row => filter.pendingFields.some(field => !isEmpty(row[field])))
     )),
   );
   const filtersSelectors = { true: filtersSelector(true), false: filtersSelector(false) };
-  const selectFilters = (state, showPending = showPendingColumns) => filtersSelectors[Boolean(showPending)](state);
+  const selectFilters = (state, show = showPending) => filtersSelectors[Boolean(show)](state);
 
   // The course runs that match the search text and the filters. Searching: a course run matches when any word of the
   // text is part of its title or course ID, ignoring case.
@@ -49,17 +50,26 @@ export function createSelectors({
     (rows, search, selected) => rows.filter(matcher(search, selected)),
   );
 
+  // The ids of the pending metrics whose field some row has. It looks at every row, so filtering doesn't change it, and
+  // only when the rows change, not on every search or filter change.
+  const selectPendingMetricsWithData = createSelector(
+    [selectRows],
+    rows => metrics
+      .filter(metric => metric.pending && rows.some(row => !isEmpty(row[metric.field])))
+      .map(metric => metric.id),
+  );
+
   // One entry per metric of the registry, with its value computed from the filtered rows: the cards follow the filters.
-  // A pending metric whose field no row has yet (looking at every row, so filtering doesn't change it) has the value
-  // null, and is listed only if pending entries are shown, like a pending column.
+  // A pending metric without data has the value null, and is listed only if pending entries are shown, like a pending
+  // column.
   const selectSummaryMetrics = createSelector(
-    [selectRows, selectFilteredRows],
-    (allRows, rows) => metrics
+    [selectFilteredRows, selectPendingMetricsWithData],
+    (rows, withData) => metrics
       .map((metric) => {
-        const hasData = !metric.pending || allRows.some(row => !isEmpty(row[metric.field]));
+        const hasData = !metric.pending || withData.indexOf(metric.id) !== -1;
         return { id: metric.id, textKey: metric.textKey, value: hasData ? metric.reduce(rows) : null };
       })
-      .filter(entry => entry.value !== null || showPendingColumns),
+      .filter(entry => entry.value !== null || showPending),
   );
 
   // All the rows in the order of the sort. Numbers compare as numbers (a value that isn't one counts as empty), dates
@@ -128,7 +138,7 @@ export function createSelectors({
         ...column,
         hasData: !column.pending || rows.some(row => !isEmpty(row[column.id])),
       }))
-      .filter(column => column.hasData || showPendingColumns),
+      .filter(column => column.hasData || showPending),
   );
 
   // The columns the table shows: Course Name, and the available columns ticked in the Columns menu (until the user
@@ -169,5 +179,5 @@ export const {
   filters: filterRegistry,
   metrics: metricRegistry,
   columns: columnRegistry,
-  showPendingColumns: SHOW_PENDING_COLUMNS,
+  showPending: SHOW_PENDING_COLUMNS,
 });

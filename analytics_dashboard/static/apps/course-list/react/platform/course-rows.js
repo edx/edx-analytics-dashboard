@@ -11,7 +11,8 @@ const asNumber = value => (typeof value === 'number' && Number.isFinite(value) ?
  * @param {Object} raw - One course run of course_list_json (it has a course_id).
  * @param {Object[]} programs - programs_json: { program_id, course_ids }.
  * @returns {Object} The row as the React page stores it:
- *   - verified_enrollment is copied from enrollment_modes.verified.count (the table is flat);
+ *   - verified_enrollment and masters_enrollment are copied from enrollment_modes.verified.count and
+ *     enrollment_modes.masters.count (the table and the summary cards read flat rows);
  *   - an empty availability becomes 'unknown';
  *   - program_ids lists the programs the course belongs to, and program their titles, joined with ", " ('' when
  *     none; programs_json is only sent when the enable_course_filters switch is on);
@@ -25,8 +26,12 @@ export function normalizeCourseRow(raw, programs = []) {
   STRING_FIELDS.forEach((field) => {
     row[field] = typeof raw[field] === 'string' ? raw[field] : '';
   });
-  const verified = raw.enrollment_modes && raw.enrollment_modes.verified;
-  row.verified_enrollment = verified ? asNumber(verified.count) : 0;
+  const modeCount = (mode) => {
+    const counts = raw.enrollment_modes && raw.enrollment_modes[mode];
+    return counts ? asNumber(counts.count) : 0;
+  };
+  row.verified_enrollment = modeCount('verified');
+  row.masters_enrollment = modeCount('masters');
   row.availability = typeof raw.availability === 'string' && raw.availability !== '' ? raw.availability : 'unknown';
   const coursePrograms = programs.filter(program => (
     program && Array.isArray(program.course_ids) && program.course_ids.indexOf(raw.course_id) !== -1

@@ -12,12 +12,14 @@ const NOT_AVAILABLE = 'Data not available yet';
  * A summary card of the course list: a big number, its label, and a help icon that shows a tooltip.
  * Built with Paragon, like the micro-frontends. The number is formatted like the legacy card
  * (templates/summary_point.html): thousands separators, and cut to 13 characters with the full number in the title.
- * A null value is a card whose data the server doesn't send yet: it shows "--", as the course table does.
+ * A null (or missing) value is a card whose data the server doesn't send yet: it shows "--", as the course table does.
  */
 export default function SummaryCard({
   value, label, tooltip, tooltipId, onTooltipShown,
 }) {
-  const { full, display } = value === null ? { full: NOT_AVAILABLE } : formatSummaryNumber(value);
+  // A missing value counts as not available too, so the card stays right if defaultProps is ignored (React 19).
+  const missing = value === null || value === undefined;
+  const { full, display } = missing ? { full: NOT_AVAILABLE } : formatSummaryNumber(value);
 
   return (
     <Card className="w-100 insights-summary-card">
@@ -43,7 +45,7 @@ export default function SummaryCard({
           </OverlayTrigger>
         </div>
         <div className="h2 insights-summary-number" title={full}>
-          {value === null ? (
+          {missing ? (
             <>
               <span aria-hidden="true">--</span>
               <span className="sr-only">{NOT_AVAILABLE}</span>

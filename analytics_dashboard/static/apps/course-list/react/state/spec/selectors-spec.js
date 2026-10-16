@@ -25,7 +25,7 @@ describe('selectors', () => {
     },
   ];
   const selectors = createSelectors({
-    filters, metrics, columns, showPendingColumns: true,
+    filters, metrics, columns, showPending: true,
   });
   const { selectFilteredRows, selectSummaryMetrics } = selectors;
   const stateWith = (rows, query = {}, visibleColumns = null) => ({
@@ -75,9 +75,9 @@ describe('selectors', () => {
           reduce: rows => rows.reduce((sum, row) => sum + (row.total_engagements || 0), 0),
         },
       ];
-      const pendingValue = (showPendingColumns, rows, query) => {
+      const pendingValue = (showPending, rows, query) => {
         const select = createSelectors({
-          filters, metrics: withPending, columns, showPendingColumns,
+          filters, metrics: withPending, columns, showPending,
         }).selectSummaryMetrics;
         const entry = select(stateWith(rows, query)).find(metric => metric.id === 'engagements');
         return entry ? entry.value : 'not listed';
@@ -286,7 +286,7 @@ describe('selectors', () => {
 
     it('leaves out pending columns without data when they are not shown', () => {
       const released = createSelectors({
-        filters, metrics, columns, showPendingColumns: false,
+        filters, metrics, columns, showPending: false,
       });
 
       expect(ids(stateWith([{ course_id: 'a' }]), undefined, released)).not.toContain('b2b_count:false');
@@ -301,13 +301,13 @@ describe('selectors', () => {
         id: 'segment', options: [{ value: 'b2b', label: 'B2B' }], pendingFields: ['b2b_count'], matches: () => true,
       },
     ];
-    const filterIds = (rows, showPendingColumns) => createSelectors({
-      filters: segmentFilters, metrics, columns, showPendingColumns,
+    const filterIds = (rows, showPending) => createSelectors({
+      filters: segmentFilters, metrics, columns, showPending,
     }).selectFilters(stateWith(rows)).map(filter => filter.id);
 
-    it('keeps one cached list per showPending value, so callers passing different ones don\'t rebuild it', () => {
+    it('keeps one cached list per show value, so callers passing different ones don\'t rebuild it', () => {
       const { selectFilters } = createSelectors({
-        filters: segmentFilters, metrics, columns, showPendingColumns: false,
+        filters: segmentFilters, metrics, columns, showPending: false,
       });
       const state = stateWith([{ course_id: 'a' }]);
       const shown = selectFilters(state, true);

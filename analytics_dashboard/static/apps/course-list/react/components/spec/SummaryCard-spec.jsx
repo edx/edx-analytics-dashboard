@@ -93,6 +93,23 @@ describe('SummaryCard', () => {
     expect(element.querySelector('.h4').textContent).toBe('Total Engagements');
   });
 
+  it('shows "--" when it is given no value, not a made-up 0', () => {
+    act(() => {
+      root.render(
+        <ParagonProvider>
+          <SummaryCard
+            label="Total Engagements"
+            tooltip="Help."
+            tooltipId="summary-tooltip-test"
+            onTooltipShown={onTooltipShown}
+          />
+        </ParagonProvider>,
+      );
+    });
+
+    expect(element.querySelector('.h2 [aria-hidden="true"]').textContent).toBe('--');
+  });
+
   it('shows the label', () => {
     renderCard({ value: card.cases[0].value });
 
