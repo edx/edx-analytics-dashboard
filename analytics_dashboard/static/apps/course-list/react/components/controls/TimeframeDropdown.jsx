@@ -25,14 +25,13 @@ export const today = (now = new Date()) => `${now.getFullYear()}-${pad(now.getMo
 export default function TimeframeDropdown({ value, onChange }) {
   const { range, from, to } = value;
   const choose = next => onChange(next === 'custom' ? { range: 'custom', from, to } : { range: next, from: '', to: '' });
-  // min and max only limit the date picker: a typed date can still contradict the other one. Then the date just set
-  // wins and the other is cleared, so From is never after To.
-  const setDate = (field, date) => {
-    const next = { ...value, [field]: date };
-    if (next.from && next.to && next.from > next.to) {
-      next[field === 'from' ? 'to' : 'from'] = '';
+  // min and max only limit the date picker: a typed date can still contradict the other one. Then, once the user
+  // leaves the field, the date they set wins and the other is cleared, so From is never after To. Not on every change:
+  // while a year is typed, the browser reports each digit as a whole date (0002-03-01, 0020-03-01, ...).
+  const settleDate = (field) => {
+    if (from && to && from > to) {
+      onChange({ ...value, [field === 'from' ? 'to' : 'from']: '' });
     }
-    onChange(next);
   };
   const dateField = (field, label, props) => (
     <Form.Group controlId={`timeframe-${field}`} className="insights-timeframe-date">
@@ -42,7 +41,8 @@ export default function TimeframeDropdown({ value, onChange }) {
         className={value[field] ? '' : 'is-empty'}
         value={value[field]}
         max={today()}
-        onChange={event => setDate(field, event.target.value)}
+        onChange={event => onChange({ ...value, [field]: event.target.value })}
+        onBlur={() => settleDate(field)}
         {...props}
       />
     </Form.Group>

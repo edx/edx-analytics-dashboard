@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Form, Icon, IconButton } from '@openedx/paragon';
 import { Close, Search } from '@openedx/paragon/icons';
@@ -8,14 +9,17 @@ const MAX_SEARCH_LENGTH = 200;
 /**
  * A search box as in the prototype: a Paragon Form.Control with a search icon on the left and, when clearable and
  * there is text, a button that clears it. It is the "Find a course" box of the filter bar, and the search of the long
- * filter menus. It reports every change of the text; onSubmit is called when Enter is pressed.
+ * filter menus. It reports every change of the text; onSubmit is called when Enter is pressed. Clearing puts the focus
+ * back in the box (the clear button goes away). landmark makes it the page's search landmark (role="search"): only
+ * the bar's is, so an open menu doesn't add a second one.
  */
 export default function SearchBox({
-  value, onChange, onSubmit, label, clearable, className,
+  value, onChange, onSubmit, label, clearable, className, landmark,
 }) {
+  const input = useRef(null);
   return (
     <Form
-      role="search"
+      role={landmark ? 'search' : undefined}
       className={`insights-search-box ${className}`.trim()}
       onSubmit={(event) => {
         event.preventDefault();
@@ -23,6 +27,7 @@ export default function SearchBox({
       }}
     >
       <Form.Control
+        ref={input}
         type="search"
         value={value}
         placeholder={label}
@@ -37,7 +42,12 @@ export default function SearchBox({
             alt="Clear search"
             size="inline"
             className="insights-search-clear"
-            onClick={() => onChange('')}
+            onClick={() => {
+              onChange('');
+              if (input.current) {
+                input.current.focus();
+              }
+            }}
           />
         ) : null}
       />
@@ -52,6 +62,7 @@ SearchBox.propTypes = {
   label: PropTypes.string,
   clearable: PropTypes.bool,
   className: PropTypes.string,
+  landmark: PropTypes.bool,
 };
 
 SearchBox.defaultProps = {
@@ -59,4 +70,5 @@ SearchBox.defaultProps = {
   label: 'Find a course',
   clearable: true,
   className: '',
+  landmark: true,
 };

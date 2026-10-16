@@ -256,17 +256,25 @@ describe('ControlsSection', () => {
       expect(store.getState().query.timeframe).toEqual({ range: 'custom', from: '2026-01-01', to: '' });
       expect(dates()[1].getAttribute('min')).toBe('2026-01-01');
 
-      // A typed date that contradicts the other one wins, and clears the other.
+      // A typed date that contradicts the other one wins once the field is left, and clears the other. While a year
+      // is typed, the browser reports each digit as a whole date: nothing is cleared then.
       const typeDate = (index, date) => act(() => {
         dates()[index].value = date;
         fire(dates()[index], 'input');
       });
-      typeDate(1, '2026-03-01');
+      const leave = index => act(() => fire(dates()[index], 'focusout'));
+      ['0002-03-01', '0020-03-01', '0202-03-01', '2026-03-01'].forEach(date => typeDate(1, date));
       expect(store.getState().query.timeframe).toEqual({ range: 'custom', from: '2026-01-01', to: '2026-03-01' });
+      leave(1);
+      expect(store.getState().query.timeframe).toEqual({ range: 'custom', from: '2026-01-01', to: '2026-03-01' });
+
       typeDate(0, '2026-04-01');
+      expect(store.getState().query.timeframe.to).toBe('2026-03-01');
+      leave(0);
       expect(store.getState().query.timeframe).toEqual({ range: 'custom', from: '2026-04-01', to: '' });
-      typeDate(1, '2026-05-01');
+
       typeDate(1, '2026-02-01');
+      leave(1);
       expect(store.getState().query.timeframe).toEqual({ range: 'custom', from: '', to: '2026-02-01' });
     });
   });
@@ -282,6 +290,17 @@ describe('ControlsSection', () => {
     expect(store.getState().query.search).toBe('');
     expect(searchInput().value).toBe('');
     expect(clear()).toBeNull();
+    // The button is gone, so the focus goes back to the box rather than to the page.
+    expect(document.activeElement).toBe(searchInput());
+  });
+
+  it('is the only search landmark, also with a searchable menu open', () => {
+    render();
+    loadCourses();
+    act(() => element.querySelector('#courses-toggle').click());
+
+    expect(element.querySelectorAll('[role="search"]').length).toBe(1);
+    expect(element.querySelector('[role="search"] input').getAttribute('aria-label')).toBe('Find a course');
   });
 
   it('stores the search text as it is typed, and reports a search when Enter is pressed', () => {

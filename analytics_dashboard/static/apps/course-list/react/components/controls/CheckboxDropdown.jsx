@@ -68,6 +68,7 @@ export default function CheckboxDropdown({
           onChange={setSearch}
           label={searchLabel}
           clearable={false}
+          landmark={false}
           className="insights-checkbox-menu-search"
         />
       )}
