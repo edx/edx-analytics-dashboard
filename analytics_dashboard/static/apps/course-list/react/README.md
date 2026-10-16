@@ -82,7 +82,7 @@ What each layer may import:
 
 | Layer | May import |
 |---|---|
-| `react/state/` | `@reduxjs/toolkit` and other `react/state/` modules. No Backbone, jQuery, `gettext` or `utils/*` |
+| `react/state/` | `@reduxjs/toolkit`, `moment` (dates in `values.js`, for sorting) and other `react/state/` modules, and the registries. No Backbone, jQuery, `gettext` or `utils/*`, and nothing from `react/platform/` |
 | `react/components/`, `react/widgets/` | `react`, `react-redux`, `react-intl`, `prop-types`, `@openedx/paragon`, `react/state/`, `react/components/`, `react/platform/`. **Not** jQuery, Backbone, underscore, `utils/*`, `gettext` or `components/react/*`: ESLint enforces this, so the code stays copyable into the MFE |
 | `react/platform/`, `components/react/`, `app/react-loader.js` | Anything: Backbone models, jQuery, `utils/*`, the global `gettext`, `window.DD_RUM` |
 
@@ -442,14 +442,18 @@ Back button, a bookmark and a shared link show the same view, and old links stil
 ```
 
 - **The key of a filter is its `id`** in `registries/filters.js` (the legacy keys: `availability`, `pacing_type`,
-  `program_ids`), so a new filter needs no address code. `sortKey` is a column `id`; `cols` is new (the legacy page had
-  no Columns menu).
+  `program_ids`), so a new filter needs no address code. Until the Pacing and Program filters exist, those two keys in
+  an old link are ignored; the search, Availability filter, sort and page of an old link work. Filters in the address
+  are read only with the `enable_course_filters` switch on, as the legacy page offered them only then. `sortKey` is a
+  column `id`; `cols` is new (the legacy page had no Columns menu).
 - The address is read on start and when it changes by itself (the user edits it, follows a link or uses Back), and
-  written with `history.replaceState` whenever the view changes. The page written is the one shown, so a page past the
-  end becomes the last page.
+  written with `history.replaceState` once the view has stopped changing for a moment (browsers limit how often a page
+  may rewrite its address). The page written is the one shown, so a page past the end becomes the last page. An
+  address that isn't ours (anything but nothing or `#?...`, such as the header skip link's `#content`) is ignored, so it
+  can't reset the view. If the address can't be written, it is left as it is.
 - **Everything read from the address is checked** (anyone can edit it): unknown parameters and values are left out, as
   the legacy page did; a sort by a column that isn't shown (pending, turned off by a waffle switch, or not ticked in
-  `cols`) is ignored. A `page` that isn't a whole number from 1 makes the address **invalid**: the address is left as it
+  `cols`) is ignored; one by a pending column is accepted once that column has data. A `page` that isn't a whole number from 1 makes the address **invalid**: the address is left as it
   is and the legacy "Invalid Parameters" message replaces the table, until the user changes something or follows its
   link back to the plain list.
 - The React page also sends the legacy page view (`insights_home`) once, when it starts (`trackPageView`).

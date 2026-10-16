@@ -1,7 +1,7 @@
 import columnRegistry from 'course-list/react/registries/columns';
 import filterRegistry from 'course-list/react/registries/filters';
 import { queryRestored } from 'course-list/react/state/query-slice';
-import { selectCurrentPage } from 'course-list/react/state/selectors';
+import { selectAvailableColumns, selectCurrentPage } from 'course-list/react/state/selectors';
 import { viewRestored } from 'course-list/react/state/view-slice';
 
 /**
@@ -25,6 +25,9 @@ import { viewRestored } from 'course-list/react/state/view-slice';
  */
 
 const MAX_SEARCH_LENGTH = 200;
+// How long the address waits for the view to stop changing before it is rewritten (browsers limit how often a page may
+// rewrite its address: Safari throws after about 100 times in 30 seconds, which fast typing could reach).
+const WRITE_DELAY = 200;
 
 function decode(text) {
   try {
@@ -59,13 +62,13 @@ function readParams(hash) {
 const isEnabled = (column, switches) => !column.enabled || column.enabled(switches);
 
 /**
- * The columns of the registry a sort in the address can name: the ones that exist for this page and that are shown
- * (Course Name; the ticked ones from `cols`, or the ones that start visible), without pending ones. A sort by a column
- * that isn't shown would leave the rows in an order nothing explains.
+ * The columns of the registry a sort in the address can name: the ones that exist for this page, have data and are
+ * shown (Course Name; the ticked ones from `cols`, or the ones that start visible). A sort by a column that isn't shown
+ * would leave the rows in an order nothing explains.
  */
-function sortableColumnIds(columns, switches, visibleColumns) {
+function sortableColumnIds(columns, switches, visibleColumns, dataColumnIds) {
   return columns
-    .filter(column => isEnabled(column, switches) && !column.pending)
+    .filter(column => isEnabled(column, switches) && dataColumnIds.indexOf(column.id) !== -1)
     .filter((column) => {
       if (column.alwaysVisible) {
         return true;
@@ -78,12 +81,19 @@ function sortableColumnIds(columns, switches, visibleColumns) {
 /**
  * Reads an address hash.
  * @param {string} hash - window.location.hash.
- * @param {Object} [options] - { switches, columns, filters }: the page's waffle switches ({ passingUsersEnabled,
- *   filtersEnabled }) and the registries (the real ones by default).
+ * @param {Object} [options] - { switches, columns, filters, dataColumnIds }: the page's waffle switches
+ *   ({ passingUsersEnabled, filtersEnabled }), the registries (the real ones by default) and the ids of the columns
+ *   that have data (by default the ones that aren't pending). Filters are read only with the filters switch on, as the
+ *   legacy page offered them only then.
  * @returns {{ query: Object, visibleColumns: (string[]|null), invalid: boolean }} The query to restore (only the
  *   parts the address has), the ticked columns (null when it has none) and whether it has an invalid parameter.
  */
-export function parseHash(hash, { switches = {}, columns = columnRegistry, filters = filterRegistry } = {}) {
+export function parseHash(hash, {
+  switches = {},
+  columns = columnRegistry,
+  filters = filterRegistry,
+  dataColumnIds = columns.filter(column => !column.pending).map(column => column.id),
+} = {}) {
   const params = readParams(hash);
   if (params === null) {
     return { query: {}, visibleColumns: null, invalid: true };
@@ -92,12 +102,13 @@ export function parseHash(hash, { switches = {}, columns = columnRegistry, filte
   let invalid = false;
 
   if (typeof params.text_search === 'string' && params.text_search.trim() !== '') {
-    query.search = params.text_search.slice(0, MAX_SEARCH_LENGTH);
+    // Cut by whole characters: cutting in the middle of an emoji leaves half of it, which can't be written back.
+    query.search = Array.from(params.text_search).slice(0, MAX_SEARCH_LENGTH).join('');
   }
 
   const selected = {};
   filters.forEach((filter) => {
-    if (typeof params[filter.id] === 'string') {
+    if (switches.filtersEnabled && typeof params[filter.id] === 'string') {
       const allowed = Array.isArray(filter.options) && filter.options.length
         ? filter.options.map(option => option.value) : null;
       const values = params[filter.id].split(',')
@@ -119,7 +130,7 @@ export function parseHash(hash, { switches = {}, columns = columnRegistry, filte
   }
 
   if (typeof params.sortKey === 'string'
-    && sortableColumnIds(columns, switches, visibleColumns).indexOf(params.sortKey) !== -1) {
+    && sortableColumnIds(columns, switches, visibleColumns, dataColumnIds).indexOf(params.sortKey) !== -1) {
     query.sort = { key: params.sortKey, dir: params.order === 'desc' ? 'desc' : 'asc' };
   }
 
@@ -158,58 +169,87 @@ export function buildHash({ query, visibleColumns }, { filters = filterRegistry 
 /**
  * Keeps the store and the page's address in step. On start, and whenever the address changes by itself (the user edits
  * it, follows a link, or uses Back), the address is read into the store; whenever the store changes, the address is
- * rewritten (history.replaceState, so the history doesn't fill with every keystroke). Returns a function that stops it.
- * While the address is invalid it is left as it is, with the message shown, until the user changes something.
+ * rewritten (history.replaceState, so the history doesn't fill with every keystroke), once the view has stopped
+ * changing for a moment. Returns a function that stops it. While the address is invalid it is left as it is, with the
+ * message shown, until the user changes something.
+ *
+ * An address that is not the course list's (nothing, or "#?..." as written here) is not ours to read: the header's skip
+ * link, for one, sets the hash to "#content", which must not reset the view.
  *
  * @param {Object} store - The course list store.
- * @param {Object} [options] - { switches } the page's waffle switches; `win` the window (for tests).
+ * @param {Object} [options] - { switches } the page's waffle switches; `win` the window and `delay` the wait before
+ *   the address is rewritten (for tests).
  */
-export default function connectUrlStateToStore(store, { switches = {}, win = window } = {}) {
+export default function connectUrlStateToStore(store, { switches = {}, win = window, delay = WRITE_DELAY } = {}) {
   let restoredQuery = null;
+  let restoredColumns = null;
   let restoring = false;
+  let timer = null;
 
   const restore = () => {
-    const { query, visibleColumns, invalid } = parseHash(win.location.hash, { switches });
+    const state = store.getState();
+    const dataColumnIds = selectAvailableColumns(state, switches)
+      .filter(column => column.hasData)
+      .map(column => column.id);
+    const { query, visibleColumns, invalid } = parseHash(win.location.hash, { switches, dataColumnIds });
     // The two dispatches are one change: the address isn't rewritten in between.
     restoring = true;
     store.dispatch(queryRestored(query));
     store.dispatch(viewRestored({ visibleColumns, invalid }));
     restoring = false;
     restoredQuery = store.getState().query;
+    restoredColumns = store.getState().view.visibleColumns;
   };
 
   const write = () => {
-    if (restoring) {
-      return;
-    }
+    timer = null;
     const state = store.getState();
     if (state.view.urlInvalid) {
-      if (state.query === restoredQuery) {
-        return;
-      }
-      // The user changed something: the address is theirs to rewrite now, and the message goes away.
-      store.dispatch(viewRestored({ visibleColumns: state.view.visibleColumns, invalid: false }));
       return;
     }
     // The page written is the one shown: a page past the end is the last one. Before the course rows are loaded there
     // is no last page to know, so the page is written as it is.
     const page = state.courses.status === 'ready' ? selectCurrentPage(state) : state.query.page;
-    const query = { ...state.query, page };
-    const next = buildHash({ query, visibleColumns: state.view.visibleColumns });
-    if (next !== win.location.hash) {
-      win.history.replaceState(win.history.state, '', `${win.location.pathname}${win.location.search}${next}`);
+    try {
+      const next = buildHash({ query: { ...state.query, page }, visibleColumns: state.view.visibleColumns });
+      if (next !== win.location.hash) {
+        win.history.replaceState(win.history.state, '', `${win.location.pathname}${win.location.search}${next}`);
+      }
+    } catch (error) {
+      // The address couldn't be written (text that can't be encoded, or the browser limiting how often a page may
+      // rewrite it). The view still works, so the address is left as it is rather than breaking the page.
     }
   };
 
+  const onStoreChange = () => {
+    if (restoring) {
+      return;
+    }
+    const state = store.getState();
+    if (state.view.urlInvalid
+      && (state.query !== restoredQuery || state.view.visibleColumns !== restoredColumns)) {
+      // The user changed something: the address is theirs to rewrite now, and the message goes away.
+      store.dispatch(viewRestored({ visibleColumns: state.view.visibleColumns, invalid: false }));
+    }
+    clearTimeout(timer);
+    timer = setTimeout(write, delay);
+  };
+
   const onHashChange = () => {
+    const { hash } = win.location;
+    if (hash !== '' && hash !== '#' && hash.indexOf('#?') !== 0) {
+      return;
+    }
     restore();
     write();
   };
+
   restore();
-  const unsubscribe = store.subscribe(write);
+  const unsubscribe = store.subscribe(onStoreChange);
   win.addEventListener('hashchange', onHashChange);
   write();
   return () => {
+    clearTimeout(timer);
     unsubscribe();
     win.removeEventListener('hashchange', onHashChange);
   };

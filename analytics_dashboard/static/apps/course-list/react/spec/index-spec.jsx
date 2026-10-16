@@ -156,6 +156,7 @@ describe('startReactPage', () => {
   });
 
   it('shows the view in the address of the page, and keeps the address up to date', () => {
+    jasmine.clock().install();
     window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#?text_search=bio&sortKey=cumulative_count&order=desc`);
     start(modelWith({ course_list_json: fixture.rows }));
 
@@ -169,6 +170,9 @@ describe('startReactPage', () => {
       node => node.textContent.indexOf('Start Date') === 0,
     );
     act(() => header.click());
+    // The address is rewritten once the view has stopped changing for a moment.
+    jasmine.clock().tick(250);
     expect(window.location.hash).toBe('#?text_search=bio&sortKey=start_date&order=asc&page=1');
+    jasmine.clock().uninstall();
   });
 });
