@@ -1,0 +1,70 @@
+{
+  "rows": [
+    {
+      "course_id": "course-v1:Edx+Algebra+2024",
+      "catalog_course_title": "Algebra I",
+      "start_date": "2024-01-10T00:00:00Z",
+      "end_date": "2024-06-10T00:00:00Z",
+      "pacing_type": "instructor_paced",
+      "availability": "Current",
+      "count": 120,
+      "cumulative_count": 300,
+      "count_change_7_days": 5,
+      "passing_users": 12,
+      "enrollment_modes": { "verified": { "count": 40, "cumulative_count": 90, "count_change_7_days": 1 } }
+    },
+    {
+      "course_id": "course-v1:Edx+Biology+2023",
+      "catalog_course_title": "Biology",
+      "start_date": "2023-02-01T00:00:00Z",
+      "end_date": "2023-07-01T00:00:00Z",
+      "pacing_type": "self_paced",
+      "availability": "Archived",
+      "count": 50,
+      "cumulative_count": 900,
+      "count_change_7_days": -2,
+      "passing_users": 30,
+      "enrollment_modes": { "verified": { "count": 10, "cumulative_count": 200, "count_change_7_days": 0 } }
+    },
+    {
+      "course_id": "course-v1:Edx+Chemistry+2025",
+      "catalog_course_title": "Chemistry",
+      "start_date": null,
+      "end_date": null,
+      "pacing_type": "self_paced",
+      "availability": "Upcoming",
+      "count": 0,
+      "cumulative_count": 0,
+      "count_change_7_days": 0,
+      "passing_users": 0,
+      "enrollment_modes": { "verified": { "count": 0, "cumulative_count": 0, "count_change_7_days": 0 } }
+    },
+    {
+      "course_id": "course-v1:Edx+Drawing+2024",
+      "catalog_course_title": "drawing basics",
+      "start_date": "2024-03-01T00:00:00Z",
+      "end_date": "2024-12-01T00:00:00Z",
+      "pacing_type": "instructor_paced",
+      "availability": "",
+      "count": 70,
+      "cumulative_count": 100,
+      "count_change_7_days": 0,
+      "passing_users": 3,
+      "enrollment_modes": {
+        "verified": { "count": 7, "cumulative_count": 9, "count_change_7_days": 0 },
+        "masters": { "count": 4, "cumulative_count": 5, "count_change_7_days": 0 }
+      }
+    }
+  ],
+  "programs": [
+    { "program_id": "program-a", "program_title": "Program A", "course_ids": ["course-v1:Edx+Algebra+2024", "course-v1:Edx+Biology+2023"] },
+    { "program_id": "program-b", "program_title": "Program B", "course_ids": ["course-v1:Edx+Algebra+2024"] }
+  ],
+  "expected_summary": {
+    "total_enrollment": 1300,
+    "current_enrollment": 240,
+    "enrollment_change_7_days": 3,
+    "verified_enrollment": 57,
+    "masters_enrollment": 4
+  }
+}

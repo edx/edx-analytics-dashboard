@@ -1,0 +1,26 @@
+{
+  "total_enrollment": {
+    "label": "Total Enrollment",
+    "tooltip": "Total enrollments in the courses matching your filters."
+  },
+  "current_enrollment": {
+    "label": "Current Enrollment",
+    "tooltip": "Current enrollments in the courses matching your filters."
+  },
+  "total_engagements": {
+    "label": "Total Engagements",
+    "tooltip": "Active learners in the courses matching your filters."
+  },
+  "enrollment_change_7_days": {
+    "label": "Change in Last Week",
+    "tooltip": "Change in enrollment last week in the courses matching your filters."
+  },
+  "verified_enrollment": {
+    "label": "Verified Enrollment",
+    "tooltip": "Verified enrollments in the courses matching your filters."
+  },
+  "masters_enrollment": {
+    "label": "Master's Enrollment",
+    "tooltip": "Master's enrollments in the courses matching your filters."
+  }
+}

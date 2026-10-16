@@ -47,3 +47,702 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 body {
   background-color: transparent;
 }
+
+/*
+ * The course list page: its sections and their headings, and the placeholders that mark where a developer's
+ * component goes. Heading sizes follow the mockup.
+ */
+.insights-page-section {
+  margin-bottom: 30px;
+}
+
+.insights-section-heading {
+  margin-bottom: 15px;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.insights-placeholder {
+  padding: 24px;
+  border: 2px dashed #D4D2CF; /* $gray-l2 */
+  color: #8B857F; /* $gray */
+  text-align: center;
+}
+
+/*
+ * The filter bar, as in the prototype (its values are measured from it): a white box with the search box and the
+ * dropdowns 8px apart, 14px text, controls 34px high. The controls are Paragon's (Dropdown, Button, Form.Control,
+ * Form.Checkbox, Form.Radio), themed through Paragon's own custom properties to the prototype's look.
+ */
+.insights-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 4px;
+  padding: 10px 12px;
+  border: 1px solid #D4D2CF; /* $gray-l2 */
+  border-radius: 3px;
+  background-color: #FFFFFF;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+}
+
+.insights-controls .insights-search-box {
+  flex: 0 1 230px;
+  min-width: 220px;
+}
+
+/*
+ * Insights' default button, as in the prototype: the dropdowns' toggles, Columns and Download CSV, all Paragon's
+ * neutral outline-secondary button. Paragon reads every colour and size from these properties: white with a #CCC
+ * border and #333 text, grey (#E6E6E6, #ADADAD border) on hover and while open or pressed. 34px high with text only,
+ * 38px with a 24px icon, as in the prototype.
+ */
+.insights-default-button {
+  --pgn-btn-color: #333333;
+  --pgn-btn-bg: #FFFFFF;
+  --pgn-btn-border-color: #CCCCCC;
+  --pgn-btn-hover-color: #333333;
+  --pgn-btn-hover-bg: #E6E6E6;
+  --pgn-btn-hover-border-color: #ADADAD;
+  --pgn-btn-active-color: #333333;
+  --pgn-btn-active-bg: #E6E6E6;
+  --pgn-btn-active-border-color: #ADADAD;
+  --pgn-btn-focus-color: #333333;
+  --pgn-btn-focus-bg: #FFFFFF;
+  --pgn-btn-focus-border-color: #CCCCCC;
+  --pgn-spacing-btn-padding-y-base: 6px;
+  --pgn-spacing-btn-padding-x-base: 12px;
+  --pgn-typography-btn-font-size-base: 14px;
+  --pgn-typography-btn-line-height-base: 20px;
+  --pgn-typography-btn-font-weight: 400;
+  --pgn-size-btn-border-radius-base: 2px;
+  --pgn-size-btn-border-width: 1px;
+  white-space: nowrap;
+}
+
+/* Focused while open, it stays grey. */
+.show > .insights-default-button {
+  --pgn-btn-focus-bg: #E6E6E6;
+  --pgn-btn-focus-border-color: #ADADAD;
+}
+
+/* The prototype's focus is a 2px dotted outline, not Paragon's ring (drawn in ::before), and the caret is
+   ArrowDropDown, not the dropdown's own (drawn in ::after). */
+.insights-default-button::before,
+.insights-default-button::after {
+  display: none;
+}
+
+.btn.insights-default-button:focus,
+.btn.insights-default-button:focus-visible {
+  outline: 2px dotted #000000;
+  outline-offset: 0;
+}
+
+/* A 24px icon before the label in #414141, 4px from it (Columns, Download CSV). */
+.insights-default-button .btn-icon-before {
+  width: 24px;
+  height: 24px;
+  margin: 0 4px 0 0;
+  color: #414141;
+}
+
+/* The caret: Paragon's ArrowDropDown, sized so its triangle is the prototype's (8px wide, 4px after the label). */
+.insights-default-button .btn-icon-after {
+  width: 20px;
+  height: 20px;
+  margin: 0 -6px 0 -2px;
+}
+
+/*
+ * The search boxes (the bar's and the menus'): Paragon's Form.Control, 34px high with a light border, a grey search
+ * icon on the left and, for the bar's, a clear button on the right. Paragon leaves room for 44px decorators; these
+ * are 16px, as in the prototype.
+ */
+.insights-search-box {
+  margin: 0;
+}
+
+.insights-search-box .pgn__form-control-decorator-group {
+  width: 100%;
+  margin: 0;
+}
+
+.insights-search-box .form-control {
+  height: 34px;
+  padding: 6px 26px 6px 27px;
+  border: 1px solid #CCCCCC;
+  border-radius: 2px;
+  background-color: #FFFFFF;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  color: #333333;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.insights-search-box .pgn__form-control-decorator-group.has-leading-element .form-control {
+  padding-left: 27px;
+}
+
+.insights-search-box .pgn__form-control-decorator-group.has-trailing-element .form-control {
+  padding-right: 26px;
+}
+
+/* The search boxes draw their own clear button: the browser's (Chrome, Safari) is hidden, so only one shows. */
+.insights-search-box .form-control::-webkit-search-cancel-button {
+  display: none;
+  -webkit-appearance: none;
+}
+
+.insights-search-box .form-control::placeholder {
+  color: #8B857F; /* $gray */
+  opacity: 1;
+}
+
+.insights-search-box .pgn__form-control-decorator-group .pgn__form-control-decorator {
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: auto;
+  height: 34px;
+  padding: 0;
+}
+
+.insights-search-box .pgn__form-control-decorator-leading {
+  left: 8px;
+}
+
+.insights-search-box .pgn__form-control-decorator-trailing {
+  right: 4px;
+}
+
+.insights-search-icon {
+  width: 15px;
+  height: 15px;
+  color: #A0A0A0;
+}
+
+.insights-search-clear {
+  color: #414141;
+}
+
+.insights-search-clear:hover {
+  color: #000000;
+}
+
+/*
+ * The menu of a dropdown: the prototype's panel, 260px to 340px wide, with a shadow. Its checkboxes and radios are
+ * Paragon's, themed through Paragon's properties to look like the browser's own, which the prototype shows: 13px,
+ * a #767676 border, and when checked the browser's blue (#0075FF) with a white check or dot.
+ */
+.insights-checkbox-menu {
+  --pgn-size-form-control-indicator-base: 13px;
+  --pgn-size-form-control-indicator-border-width: 1px;
+  --pgn-color-form-control-indicator-border: #767676;
+  --pgn-color-form-control-indicator-bg-base: #FFFFFF;
+  --pgn-color-form-control-indicator-checked-border-base: #0075FF;
+  --pgn-size-form-control-border-checkbox-indicator-radius: 2px;
+  --pgn-spacing-form-control-gutter: 4px;
+  --pgn-other-content-form-control-checkbox-indicator-icon-checked-base: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 13 13'%3E%3Crect width='13' height='13' fill='%230075FF'/%3E%3Cpath d='M3 6.6l2.4 2.4L10 4.3' fill='none' stroke='%23FFFFFF' stroke-width='1.8'/%3E%3C/svg%3E");
+  --pgn-other-content-form-control-radio-indicator-icon-checked-base: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11'%3E%3Ccircle cx='5.5' cy='5.5' r='3.5' fill='%230075FF'/%3E%3C/svg%3E");
+  min-width: 260px;
+  max-width: 340px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #D4D2CF; /* $gray-l2 */
+  border-radius: 0;
+  background-color: #FFFFFF;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.18);
+  color: #000000;
+  font-size: 14px;
+}
+
+.insights-checkbox-menu .insights-checkbox-menu-search {
+  margin-bottom: 8px;
+}
+
+/* The long lists of the searchable menus (Program, Course) scroll under their search box. */
+.insights-checkbox-menu-searchable .insights-checkbox-menu-options {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+/* One option per line, 21px high and 4px apart; a label too long for the menu is cut off with an ellipsis (the full
+   text is its hover title). Insights makes every label bold: these aren't. */
+.insights-checkbox-menu .insights-menu-option {
+  display: flex;
+  align-items: center;
+  min-height: 21px;
+  margin: 0 0 4px;
+  padding: 0;
+}
+
+.insights-checkbox-menu .insights-menu-option > div {
+  min-width: 0;
+}
+
+.insights-checkbox-menu .insights-menu-option .pgn__form-label {
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  color: #000000;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  /* The prototype's text sits on the box's baseline, 1px below the centre of the line. */
+  position: relative;
+  top: 1px;
+}
+
+/* Centred on the line, without Bootstrap 3's 4px top margin on inputs. As the browser's own, a click shows no focus
+   ring (Paragon draws one in ::before); the keyboard gets the browser's. */
+.insights-checkbox-menu .insights-menu-option input {
+  flex: none;
+  margin: 0 4px 0 0;
+}
+
+.insights-checkbox-menu .insights-menu-option input:focus::before {
+  display: none;
+}
+
+/* Paragon puts a grey halo around a hovered or focused box: the browser's has none. */
+.insights-checkbox-menu .insights-menu-option input,
+.insights-checkbox-menu .insights-menu-option input:hover,
+.insights-checkbox-menu .insights-menu-option input:focus {
+  box-shadow: none;
+}
+
+/* Paragon darkens a focused box's border; the browser's keeps its own. */
+.insights-checkbox-menu .insights-menu-option input:focus {
+  border-color: var(--pgn-color-form-control-indicator-border);
+}
+
+.insights-checkbox-menu .insights-menu-option input:checked:focus {
+  border-color: var(--pgn-color-form-control-indicator-checked-border-base);
+}
+
+.insights-checkbox-menu .insights-menu-option input:focus-visible {
+  outline: auto 1px -webkit-focus-ring-color;
+}
+
+/* The radios of the Timeframe menu are a Paragon Form.RadioSet: no space of its own around them, and the dates sit
+   6px under the last one, as in the prototype (where the margins collapse). */
+.insights-timeframe-menu .pgn__form-control-set {
+  margin: 0;
+}
+
+.insights-timeframe-menu .pgn__form-control-set .insights-menu-option:last-child {
+  margin-bottom: 0;
+}
+
+.insights-menu-note {
+  padding-top: 4px;
+  color: #8A8F8F;
+  font-size: 85%;
+}
+
+/* The From and To dates of a Custom timeframe (Paragon Form.Group, Form.Label and Form.Control). */
+.insights-timeframe-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #D9D9D9;
+}
+
+.insights-timeframe-dates .insights-timeframe-date {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+}
+
+.insights-timeframe-dates .pgn__form-label {
+  margin: 0;
+  color: #000000;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* The date fields are 150px, at the right of the menu. */
+.insights-timeframe-dates .pgn__form-control-decorator-group {
+  flex: none;
+  width: auto;
+  margin: 0;
+}
+
+.insights-timeframe-dates .form-control {
+  width: 150px;
+  height: 30px;
+  padding: 2px 6px;
+  border: 1px solid #CCCCCC;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  color: #333333;
+  font-size: 13px;
+}
+
+/* Paragon puts the className of Form.Control on its wrapper. */
+.insights-timeframe-dates .is-empty .form-control {
+  color: #767676;
+}
+
+/* The row between the filter bar and the table: the count on the left, Columns and Download CSV on the right. */
+.insights-results-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  /* 10px under the filter bar, as in the prototype. */
+  margin: 10px 0 8px;
+  /* The prototype's 14px base, so the count is 11.9px as there. */
+  font-size: 14px;
+}
+
+.insights-result-count {
+  font-size: 0.85em;
+  line-height: normal;
+  color: #414141;
+}
+
+.insights-results-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/*
+ * The course table (Paragon DataTable, with its table drawn by CourseTable), styled like the prototype: 14px text, a
+ * white header in weight 600 with a line under it, rows separated by a 1px line, every other row tinted, numbers
+ * right-aligned, the course link blue with the course ID under it. All values are set here, so the look doesn't
+ * depend on Insights' global table styles.
+ */
+/* DataTable's layout is a flex row: without this its main column grows to the table's width and the page scrolls
+   sideways, instead of the table scrolling inside its box. */
+.insights-course-table .pgn__data-table-layout-main {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Paragon forces a scrollbar on this wrapper at 1400px and below, which would be an empty one here: the table scrolls
+   in its own box. */
+.insights-course-table .pgn__data-table-layout-wrapper {
+  overflow: visible;
+}
+
+/*
+ * The table scrolls inside its box (as in the prototype, 660px high), so its header can stay at the top (LP-1189) and
+ * the Course Name column at the left when it scrolls sideways. Sticky cells need an opaque background: the cells
+ * already have one.
+ */
+.insights-table-scroll {
+  /* Positioned, so the hidden screen-reader text of the cells (absolutely positioned) stays inside the box and doesn't
+     make the page itself scroll sideways. */
+  position: relative;
+  max-height: 660px;
+  overflow: auto;
+  border: 1px solid #D4D2CF; /* $gray-l2 */
+  border-radius: 3px;
+}
+
+.insights-data-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 20px;
+  color: #000000;
+}
+
+.insights-data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 8px 10px;
+  border: 0;
+  background-color: #FFFFFF;
+  box-shadow: inset 0 -1px 0 #D4D2CF;
+  font-weight: 600;
+  text-align: left;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+/* Cells stay on one line at full width and the table scrolls sideways; Course Name wraps within 280-300px. */
+.insights-data-table tbody td,
+.insights-data-table tbody th {
+  padding: 8px 10px;
+  border: 0;
+  border-top: 1px solid #DDDDDD;
+  background-color: #FFFFFF;
+  font-weight: 400;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.insights-data-table tbody tr:nth-child(odd) td,
+.insights-data-table tbody tr:nth-child(odd) th {
+  background-color: #F9F9F9;
+}
+
+.insights-data-table .insights-cell-number {
+  text-align: right;
+}
+
+/* The first column: the header cell, and Course Name, which is the header of its row. */
+.insights-data-table thead th:first-child,
+.insights-data-table tbody th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 280px;
+  max-width: 300px;
+  white-space: normal;
+  box-shadow: 1px 0 0 #CFCDCA;
+}
+
+.insights-data-table thead th:first-child {
+  z-index: 3;
+  box-shadow: inset 0 -1px 0 #D4D2CF, 1px 0 0 #CFCDCA;
+}
+
+/* On a phone the fixed Course Name column leaves room for the others. */
+@media (max-width: 575.98px) {
+  .insights-data-table thead th:first-child,
+  .insights-data-table tbody th:first-child {
+    min-width: 160px;
+    max-width: 200px;
+  }
+}
+
+/* The results get focus after a page change (for keyboard and screen-reader users); no outline on the whole box. */
+.insights-results-table:focus {
+  outline: none;
+}
+
+/* The header label is a button, so sorting works from the keyboard; it looks like the header text. */
+.insights-data-table .insights-sort-button,
+.insights-data-table .insights-header-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.insights-data-table .insights-sort-button {
+  cursor: pointer;
+}
+
+.insights-data-table .insights-sort-button:focus,
+.insights-data-table .insights-header-label:focus {
+  outline: 2px solid #0075B4;
+  outline-offset: 2px;
+}
+
+.insights-data-table .insights-sort-icon {
+  margin-left: 2px;
+}
+
+.insights-data-table .insights-sort-icon-idle {
+  opacity: 0.5;
+}
+
+.insights-table-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 12px 0;
+}
+
+.insights-data-table .insights-course-link {
+  display: block;
+  color: #0075B4;
+}
+
+.insights-data-table .insights-course-title,
+.insights-data-table .insights-course-id {
+  display: block;
+}
+
+.insights-data-table .insights-course-id {
+  color: #414141;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.insights-loading-state,
+.insights-empty-state {
+  padding: 24px 0;
+}
+
+/*
+ * The summary cards: a grid of all the cards in one row from 1200px, three in a row from 600px and one below. Those
+ * are the widths from which every card still fits its longest label word and a seven-digit number (measured in a
+ * browser): narrower, six or three columns would overflow. With six cards the rows are always even (6, 3 + 3 or one
+ * by one). With five (the pending Total Engagements card hidden by SHOW_PENDING_COLUMNS while it has no data), the
+ * cards are 3 + 2 from 600px to 1199px. 16px between cards and none at the row's edges, like the prototype; every
+ * card in a row is as tall as the tallest.
+ */
+.insights-summary-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: 16px;
+  margin-top: 24px;
+}
+
+@media (min-width: 600px) {
+  .insights-summary-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .insights-summary-cards {
+    /* SummarySection sets the count, so five cards (a pending card hidden) also fill the row. */
+    grid-template-columns: repeat(var(--insights-summary-count, 6), minmax(0, 1fr));
+  }
+}
+
+.insights-summary-col {
+  display: flex;
+}
+
+/*
+ * The summary card looks like the legacy .summary-point card (_base.scss): 1px #D4D2CF border, 3px corners, drawn at
+ * 95% size and growing to full size on hover, with the number turning blue; an 18px label and a number in weight 500
+ * (30px, smaller with six cards in a row, as in the prototype), at the same height in every card of a row; the help
+ * icon, like the legacy .ico-tooltip, light grey and 18px, blue on hover. Paragon's icon button takes its colours from
+ * the --btn-icon-* custom properties.
+ */
+.insights-summary-card {
+  border: 1px solid #D4D2CF; /* $gray-l2 */
+  border-radius: 3px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+  /* Insights' own CSS gives every .card a 20px padding (like .slat and .well), which would reach this card. */
+  padding: 0;
+  transform: scale(0.95);
+  transition: all 0.5s ease-in-out;
+}
+
+.insights-summary-card:hover {
+  box-shadow: 0 1px 1px rgba(0, 117, 180, 0.5);
+  transform: scale(1);
+}
+
+.insights-summary-card .insights-summary-card-section {
+  padding: 30px 16px;
+}
+
+.insights-summary-card .insights-summary-number {
+  margin: 0 0 10px;
+  font-size: clamp(20px, 5vw, 30px);
+  font-weight: 500;
+  line-height: 1.1;
+  transition: color 0.5s ease-in-out;
+}
+
+.insights-summary-card:hover .insights-summary-number {
+  color: #0075B4; /* $brand-primary */
+}
+
+/* Six cards in a row (see .insights-summary-cards): the prototype's size, which follows the screen width. */
+@media (min-width: 1200px) {
+  .insights-summary-card .insights-summary-number {
+    font-size: clamp(18px, 2.3vw, 30px);
+  }
+}
+
+.insights-summary-card .insights-summary-label {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 19.8px;
+}
+
+.insights-summary-card .insights-summary-help {
+  top: 7px;
+  right: 15px;
+}
+
+.insights-summary-card .insights-help-icon.btn-icon {
+  --btn-icon-color: #D4D2CF; /* $gray-lighter */
+  --btn-icon-bg-color: transparent;
+  --btn-icon-hover-color: #0075B4; /* $brand-primary */
+  --btn-icon-hover-bg-color: transparent;
+  --btn-icon-active-bg-color: transparent;
+  --btn-icon-active-color: #0075B4;
+  width: 18px;
+  height: 18px;
+}
+
+.insights-summary-card .insights-help-icon.btn-icon .pgn__icon.btn-icon__icon {
+  width: 18px;
+  height: 18px;
+}
+
+/*
+ * The summary cards' tooltips look like Insights' legacy tooltip (the pattern library's .tooltip-inner, shown at
+ * 90%): a black background you can see through, with light text. Paragon draws its tooltip from these variables.
+ * The arrow's is set too: :root defines it from the background colour there, so it wouldn't follow.
+ */
+.tooltip.insights-summary-tooltip {
+  --pgn-other-tooltip-opacity: 0.9;
+  --pgn-color-tooltip-bg-base: hsla(0, 0%, 4%, 0.75);
+  --pgn-color-tooltip-arrow-base: hsla(0, 0%, 4%, 0.75);
+  --pgn-color-tooltip-text: #FAFAFA;
+}
+
+/*
+ * Insights' error alert (.alert.alert-error) is styled by the global CSS of the pattern library. Inside this
+ * scope Paragon's own .alert rule would replace its border, background and shadow (it makes them transparent),
+ * and its body text and heading rules change the text size, colour and title, so they are restored here. Only
+ * the error alert is restored, so Paragon's own Alert components keep their look. The values are the pattern
+ * library's, in px (Insights' root font size is 14px).
+ */
+.alert.alert-error {
+  margin-bottom: 0;
+  padding: 17.5px;
+  border: 1px solid #CB0712;
+  border-radius: 0;
+  background-color: #FFF;
+  box-shadow: inset 0 0 0 3.5px #FEECED;
+  color: #000;
+  font-size: 14px;
+  line-height: normal;
+  text-align: start;
+}
+
+/* Paragon has its own .alert .alert-icon rule: a fixed 24px square with a margin. */
+.alert-error .alert-icon {
+  width: auto;
+  height: auto;
+  margin-inline-end: 0;
+  color: #FFF;
+}
+
+.alert-error .alert-title {
+  margin: -8.75px 0 8.75px;
+  font-size: 15.75px;
+  font-weight: 600;
+  line-height: 25.2px;
+}

@@ -72,12 +72,41 @@ class CourseIndex(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, TrackedV
         if react_enabled:
             # Only sent when the flag is on, so the flag-off page data stays exactly as it was.
             data['enable_react_course_list'] = True
+            # Not read by the React page, which computes the summary cards from the course rows so they can follow
+            # the filters. Kept so the page data stays as it was until all the cards are built.
             data['summary'] = summary
+            # The cards in the order of registries/metrics.js. The labels of the five cards the legacy page also has
+            # use the same message IDs as courses/index.html, so both versions show the same translations; Total
+            # Engagements is new. The tooltips are new text (the prototype's), because the React cards count only the
+            # courses that match the search and the filters: they show in English until they are translated.
             data['summary_text'] = {
                 'total_enrollment': {
-                    # Same message IDs as courses/index.html, so both versions of the card show the same translations.
                     'label': _('Total Enrollment'),
-                    'tooltip': _('Total enrollments across all of your courses.'),
+                    # Translators: The help text of a summary card. The filters are those of the course list below it.
+                    'tooltip': _('Total enrollments in the courses matching your filters.'),
+                },
+                'current_enrollment': {
+                    'label': _('Current Enrollment'),
+                    'tooltip': _('Current enrollments in the courses matching your filters.'),
+                },
+                # Only on the React page: the API doesn't send the data yet, so the card shows "--".
+                'total_engagements': {
+                    # Translators: This is a label to identify the number of learners active in all of the
+                    # instructor's courses.
+                    'label': _('Total Engagements'),
+                    'tooltip': _('Active learners in the courses matching your filters.'),
+                },
+                'enrollment_change_7_days': {
+                    'label': _('Change in Last Week'),
+                    'tooltip': _('Change in enrollment last week in the courses matching your filters.'),
+                },
+                'verified_enrollment': {
+                    'label': _('Verified Enrollment'),
+                    'tooltip': _('Verified enrollments in the courses matching your filters.'),
+                },
+                'masters_enrollment': {
+                    'label': _("Master's Enrollment"),
+                    'tooltip': _("Master's enrollments in the courses matching your filters."),
                 },
             }
 

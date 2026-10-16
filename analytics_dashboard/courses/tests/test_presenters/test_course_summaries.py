@@ -1,4 +1,6 @@
+import json
 import unittest.mock as mock
+from pathlib import Path
 
 from analyticsclient.client import Client
 from ddt import data, ddt, unpack
@@ -11,6 +13,13 @@ from analytics_dashboard.courses.tests import utils
 from analytics_dashboard.courses.tests.utils import CourseSamples
 
 _ANOTHER_DEPRECATED_COURSE_ID = 'another/course/id'
+
+# The course rows of the React course list's tests, with the summary numbers the server must compute for them. The
+# JavaScript specs compute the summary cards from the same rows and compare them with the same numbers.
+COURSE_LIST_ROWS_FIXTURE = (
+    Path(__file__).resolve().parents[3]
+    / 'static' / 'apps' / 'course-list' / 'react' / 'spec' / 'fixtures' / 'course-list-rows.json'
+)
 
 
 @ddt
@@ -247,6 +256,12 @@ class CourseSummariesPresenterTests(TestCase):
             summaries, last_updated = presenter.get_course_summaries()
             self.assertListEqual(summaries, [])
             self.assertIsNone(last_updated)
+
+    def test_get_course_summary_metrics_matches_the_react_fixture(self):
+        """ The React page computes the summary cards from the course rows; it must give the server's numbers. """
+        fixture = json.loads(COURSE_LIST_ROWS_FIXTURE.read_text(encoding='utf-8'))
+        presenter = CourseSummariesPresenter(Client('base_url'))
+        self.assertEqual(presenter.get_course_summary_metrics(fixture['rows']), fixture['expected_summary'])
 
     def test_get_course_summary_metrics(self):
         presenter = CourseSummariesPresenter(Client('base_url'))

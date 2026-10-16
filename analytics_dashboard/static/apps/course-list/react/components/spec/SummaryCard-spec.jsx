@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
-import $ from 'jquery';
 
+import ParagonProvider from 'components/react/paragon/ParagonProvider';
 import SummaryCard from 'course-list/react/components/SummaryCard';
 
 const axe = require('axe-core');
@@ -10,87 +10,154 @@ const card = require('course-list/react/spec/fixtures/total-enrollment-card.json
 describe('SummaryCard', () => {
   let element;
   let root;
+  let onTooltipShown;
 
-  // TotalEnrollmentWidget passes 0 for a loaded null value, like the template's default_if_none:0.
+  // The page gives the card a number. A null value of the shared fixture is shown as 0, like the template's
+  // default_if_none:0, so the spec passes 0 for it.
   const renderCard = ({ value, label = card.label, tooltip = card.tooltip }) => {
     act(() => {
-      root.render(<SummaryCard value={value === null ? 0 : value} label={label} tooltip={tooltip} />);
+      root.render(
+        <ParagonProvider>
+          <SummaryCard
+            value={value === null ? 0 : value}
+            label={label}
+            tooltip={tooltip}
+            tooltipId="summary-tooltip-test"
+            onTooltipShown={onTooltipShown}
+          />
+        </ParagonProvider>,
+      );
     });
   };
 
-  const icon = () => element.querySelector('.summary-point-help .has-tooltip');
+  const helpButton = () => element.querySelector('button');
+  // Only Paragon's tooltips: other specs can leave legacy Bootstrap 3 tooltips (.tooltip) in the body.
+  const tooltips = () => document.querySelectorAll('.tooltip[class*="bs-tooltip-"]');
+
+  // PhantomJS has no MouseEvent constructor, so events are created the old way. They bubble, which is how
+  // React receives them.
+  const fire = (target, type) => {
+    const event = document.createEvent('Event');
+    event.initEvent(type, true, true);
+    act(() => {
+      target.dispatchEvent(event);
+    });
+  };
 
   beforeEach(() => {
     setFixtures('<div id="summary-card"></div>');
     element = document.getElementById('summary-card');
     root = createRoot(element);
+    onTooltipShown = jasmine.createSpy('onTooltipShown');
   });
 
   afterEach(() => {
     act(() => root.unmount());
   });
 
+  it('is a Paragon card inside the paragon-styles scope', () => {
+    renderCard({ value: card.cases[0].value });
+
+    expect(element.querySelector('.paragon-styles .pgn__card')).not.toBeNull();
+  });
+
   card.cases.forEach(({ value, title, display }) => {
-    it(`renders the legacy summary_point.html structure for ${value}`, () => {
+    it(`shows ${value} formatted like the legacy card, with the full number in the title`, () => {
       renderCard({ value });
 
-      expect(element.children.length).toBe(1);
-      const point = element.firstElementChild;
-      expect(point.className).toBe('summary-point text-center');
-      expect(point.children.length).toBe(1);
-      const wrapper = point.firstElementChild;
-      expect(wrapper.className).toBe('summary-point-wrapper');
-      expect(Array.from(wrapper.children).map(child => child.className)).toEqual([
-        'summary-point-number', 'summary-point-label', 'summary-point-help',
-      ]);
-
-      const number = wrapper.querySelector('.summary-point-number');
-      expect(number.getAttribute('title')).toBe(title);
+      const number = element.querySelector('.h2');
       expect(number.textContent).toBe(display);
-      expect(wrapper.querySelector('.summary-point-label').textContent).toBe(card.label);
-
-      const help = wrapper.querySelector('.summary-point-help');
-      expect(help.children.length).toBe(2);
-      expect(help.firstElementChild.className).toBe('sr-only');
-      expect(help.firstElementChild.textContent).toBe(card.tooltip);
+      expect(number.getAttribute('title')).toBe(title);
     });
   });
 
-  it('renders the tooltip icon with the legacy attributes', () => {
-    renderCard({ value: card.cases[0].value });
+  it('shows "--" for a card whose data is not available yet, and tells screen readers why', () => {
+    act(() => {
+      root.render(
+        <ParagonProvider>
+          <SummaryCard
+            value={null}
+            label="Total Engagements"
+            tooltip="Active learners in the courses matching your filters."
+            tooltipId="summary-tooltip-test"
+            onTooltipShown={onTooltipShown}
+          />
+        </ParagonProvider>,
+      );
+    });
 
-    expect(icon().tagName).toBe('SPAN');
-    expect(icon().className).toBe('ico ico-tooltip fa fa-info-circle has-tooltip');
-    expect(icon().getAttribute('data-toggle')).toBe('tooltip');
-    expect(icon().getAttribute('data-placement')).toBe('top');
-    expect(icon().getAttribute('data-track-event')).toBe('edx.bi.tooltip.displayed');
-    expect(icon().getAttribute('data-track-title')).toBe(card.label);
-    expect(icon().getAttribute('data-track-category')).toBe('summary');
-    expect(icon().getAttribute('data-track-type')).toBe('tooltip');
-    expect(icon().getAttribute('aria-hidden')).toBe('true');
-    expect(icon().textContent).toBe('');
-    // Bootstrap moves the title into data-original-title when it activates the tooltip, as it does for the
-    // server-rendered card.
-    expect(icon().getAttribute('data-original-title')).toBe(card.tooltip);
+    const number = element.querySelector('.h2');
+    expect(number.querySelector('[aria-hidden="true"]').textContent).toBe('--');
+    expect(number.querySelector('.sr-only').textContent).toBe('Data not available yet');
+    expect(number.getAttribute('title')).toBe('Data not available yet');
+    expect(element.querySelector('.h4').textContent).toBe('Total Engagements');
   });
 
-  it('activates the Bootstrap tooltip after mounting and destroys it after unmounting', () => {
-    renderCard({ value: card.cases[0].value });
-    const tooltipIcon = icon();
+  it('shows "--" when it is given no value, not a made-up 0', () => {
+    act(() => {
+      root.render(
+        <ParagonProvider>
+          <SummaryCard
+            label="Total Engagements"
+            tooltip="Help."
+            tooltipId="summary-tooltip-test"
+            onTooltipShown={onTooltipShown}
+          />
+        </ParagonProvider>,
+      );
+    });
 
-    expect($(tooltipIcon).data('bs.tooltip')).toBeDefined();
+    expect(element.querySelector('.h2 [aria-hidden="true"]').textContent).toBe('--');
+  });
+
+  it('shows the label', () => {
+    renderCard({ value: card.cases[0].value });
+
+    expect(element.querySelector('.h4').textContent).toBe(card.label);
+  });
+
+  it('gives screen readers the description without opening the tooltip, like the legacy card', () => {
+    renderCard({ value: card.cases[0].value });
+
+    const hidden = element.querySelector('.sr-only');
+    expect(hidden.textContent).toBe(card.tooltip);
+    expect(tooltips().length).toBe(0);
+  });
+
+  it('has a help button that screen readers can name', () => {
+    renderCard({ value: card.cases[0].value });
+
+    expect(helpButton().getAttribute('aria-label')).toBe(`${card.label} help`);
+  });
+
+  it('shows the tooltip text when the help button gets focus or hover, and tells the caller', () => {
+    renderCard({ value: card.cases[0].value });
+    expect(tooltips().length).toBe(0);
+
+    fire(helpButton(), 'mouseover');
+
+    expect(tooltips().length).toBe(1);
+    expect(tooltips()[0].textContent).toBe(card.tooltip);
+    expect(onTooltipShown).toHaveBeenCalledWith(card.label);
+  });
+
+  it('marks its tooltip for the legacy see-through look', () => {
+    renderCard({ value: card.cases[0].value });
+
+    fire(helpButton(), 'mouseover');
+
+    expect(tooltips()[0].classList.contains('insights-summary-tooltip')).toBe(true);
+  });
+
+  it('removes the tooltip when the card is removed', () => {
+    renderCard({ value: card.cases[0].value });
+    fire(helpButton(), 'mouseover');
+    expect(tooltips().length).toBe(1);
 
     act(() => root.unmount());
+    root = createRoot(element);
 
-    expect($(tooltipIcon).data('bs.tooltip')).toBeUndefined();
-  });
-
-  it('updates the tooltip when its text changes', () => {
-    renderCard({ value: card.cases[0].value });
-    renderCard({ value: card.cases[0].value, tooltip: 'New help text' });
-
-    expect(icon().getAttribute('data-original-title')).toBe('New help text');
-    expect($(icon()).data('bs.tooltip')).toBeDefined();
+    expect(tooltips().length).toBe(0);
   });
 
   it('does not violate the axe-core ruleset', (done) => {

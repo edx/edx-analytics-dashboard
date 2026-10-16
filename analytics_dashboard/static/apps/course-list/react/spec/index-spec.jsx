@@ -1,69 +1,33 @@
 import { act } from 'react';
-import $ from 'jquery';
+import Backbone from 'backbone';
 
 import CourseModel from 'models/course-model';
 import { resetMonitoringForTests } from 'components/react/monitoring';
-import ignoreExpectedErrors from 'components/react/spec/ignore-expected-errors';
-import startReactWidgets from 'course-list/react/index';
+import startReactPage from 'course-list/react/index';
+import { formatSummaryNumber } from 'course-list/react/platform/format';
 
+const fixture = require('course-list/react/spec/fixtures/course-list-rows.json');
 const card = require('course-list/react/spec/fixtures/total-enrollment-card.json');
+// The text of every summary card, as the server sends it.
+const TEXT = require('course-list/react/spec/fixtures/summary-text.json');
 
-const WRAPPER_CLASS = 'col col-12 sm-col-12 md-col-3';
-
-// Same markup as templates/summary_point.html renders, without the whitespace between tags.
-const serverCard = ({ title, display }) => '<div class="summary-point text-center">'
-  + '<div class="summary-point-wrapper">'
-  + `<div class="summary-point-number" title="${title}">${display}</div>`
-  + `<div class="summary-point-label">${card.label}</div>`
-  + '<div class="summary-point-help">'
-  + `<span class="sr-only">${card.tooltip}</span>`
-  + `<span data-toggle="tooltip" data-placement="top" title="${card.tooltip}"`
-  + ' data-track-event="edx.bi.tooltip.displayed"'
-  + ` data-track-title="${card.label}"`
-  + ' data-track-category="summary"'
-  + ' data-track-type="tooltip"'
-  + ' class="ico ico-tooltip fa fa-info-circle has-tooltip" aria-hidden="true"></span>'
-  + '</div></div></div>';
-
-// mountReact restores the HTML in a microtask scheduled during React's commit; these run after it.
-const afterRestore = (assertions, done) => {
-  Promise.resolve()
-    .then(() => Promise.resolve())
-    .then(() => {
-      assertions();
-      done();
-    })
-    .catch(done.fail);
-};
-
-describe('startReactWidgets', () => {
-  const [first, second] = card.cases;
-  const summaryText = { total_enrollment: { label: card.label, tooltip: card.tooltip } };
-  const summary = value => ({
-    total_enrollment: value,
-    current_enrollment: 101,
-    enrollment_change_7_days: 202,
-    verified_enrollment: 303,
-    masters_enrollment: 404,
-  });
+describe('startReactPage', () => {
   let originalRum;
   let rum;
-  let restoreOnError;
-  let wrapper;
+  let root;
+  let trackingModel;
 
-  const setServerPage = (cardHtml) => {
-    setFixtures(
-      `<div class="${WRAPPER_CLASS}" data-stat-type="total_enrollment" data-react-widget="total-enrollment">`
-      + `${cardHtml}</div>`,
-    );
-    wrapper = document.querySelector('[data-react-widget="total-enrollment"]');
-    // On the page, load/init-tooltips.js activates the server-rendered tooltips before React mounts.
-    $(wrapper).find('.has-tooltip').tooltip();
+  // The page model as the server builds it: the course rows, the programs and the text of the summary cards.
+  const modelWith = attributes => new CourseModel({ summary_text: TEXT, ...attributes });
+  const start = (courseModel) => {
+    act(() => {
+      startReactPage({ courseModel, trackingModel });
+    });
   };
-  const number = () => wrapper.querySelector('.summary-point-number');
+  // Only Paragon's tooltips: other specs can leave legacy Bootstrap 3 tooltips (.tooltip) in the body.
+  const tooltips = () => document.querySelectorAll('.tooltip[class*="bs-tooltip-"]');
 
   beforeEach(() => {
-    restoreOnError = ignoreExpectedErrors(['Total enrollment data is not available.']);
     resetMonitoringForTests();
     originalRum = window.DD_RUM;
     rum = {
@@ -73,95 +37,154 @@ describe('startReactWidgets', () => {
     window.DD_RUM = rum;
     // React and the monitoring adapter log caught errors to the console in development builds.
     spyOn(console, 'error');
-    setServerPage(serverCard(first));
+    trackingModel = new Backbone.Model();
+    setFixtures('<div id="course-list-react-root"><div class="loading-container">Loading</div></div>');
+    root = document.getElementById('course-list-react-root');
   });
 
   afterEach(() => {
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
     window.DD_RUM = originalRum;
-    restoreOnError();
+    Array.prototype.forEach.call(tooltips(), (tooltip) => {
+      tooltip.parentNode.removeChild(tooltip);
+    });
   });
 
-  it('replaces the server-rendered card with the React card inside the same wrapper', () => {
-    const courseModel = new CourseModel({ summary: summary(first.value), summary_text: summaryText });
-    const serverText = wrapper.textContent;
-    const serverNumber = number();
+  it('draws the page inside the Paragon scope, in place of the spinner', () => {
+    start(modelWith({ course_list_json: fixture.rows, programs_json: fixture.programs }));
 
-    act(() => {
-      startReactWidgets({ courseModel });
-    });
-
-    expect(wrapper.className).toBe(WRAPPER_CLASS);
-    expect(wrapper.getAttribute('data-stat-type')).toBe('total_enrollment');
-    expect(wrapper.children.length).toBe(1);
-    expect(number()).not.toBe(serverNumber);
-    expect(wrapper.textContent).toBe(serverText);
-    expect(number().getAttribute('title')).toBe(first.title);
-    expect($(wrapper).find('.has-tooltip').data('bs.tooltip')).toBeDefined();
-    expect(wrapper.getAttribute('data-react-rendered')).toBe('total-enrollment');
-    expect(wrapper.hasAttribute('data-react-fallback')).toBe(false);
-    expect(rum.addError).not.toHaveBeenCalled();
-    expect(rum.addAction).not.toHaveBeenCalled();
-  });
-
-  it('updates the card when the page model gets a new valid value', () => {
-    const courseModel = new CourseModel({ summary: summary(first.value), summary_text: summaryText });
-    act(() => {
-      startReactWidgets({ courseModel });
-    });
-
-    act(() => {
-      courseModel.set('summary', summary(second.value));
-    });
-
-    expect(number().textContent).toBe(second.display);
-    expect(number().getAttribute('title')).toBe(second.title);
+    expect(root.querySelector('.loading-container')).toBeNull();
+    expect(root.querySelector('.paragon-styles')).not.toBeNull();
+    expect(Array.prototype.map.call(root.querySelectorAll('h2'), node => node.textContent))
+      .toEqual(['Performance summary', 'Courses']);
+    expect(root.getAttribute('data-react-rendered')).toBe('course-list');
     expect(rum.addError).not.toHaveBeenCalled();
   });
 
-  it('keeps the latest valid value when the page model gets an invalid one', () => {
-    const courseModel = new CourseModel({ summary: summary(first.value), summary_text: summaryText });
-    act(() => {
-      startReactWidgets({ courseModel });
-    });
-    act(() => {
-      courseModel.set('summary', summary(second.value));
-    });
+  it('shows the summary cards with the server\'s totals of the course rows and the text from the page data', () => {
+    start(modelWith({ course_list_json: fixture.rows }));
 
-    act(() => {
-      courseModel.set('summary', summary('3,378,149'));
-    });
-
-    expect(number().textContent).toBe(second.display);
-    expect(rum.addError).toHaveBeenCalledTimes(1);
-    expect(rum.addError.calls.argsFor(0)[1]['insights.react.failure_type']).toBe('invalid_update');
+    const texts = selector => Array.prototype.map.call(root.querySelectorAll(selector), node => node.textContent);
+    // expected_summary is what the server's CourseSummariesPresenter computes for the same rows (checked by the
+    // Python presenter test), shown as the card formats it. The API sends no total_engagements yet: "--".
+    const summary = fixture.expected_summary;
+    const shown = value => formatSummaryNumber(value).display;
+    expect(texts('.insights-summary-label')).toEqual([
+      'Total Enrollment', 'Current Enrollment', 'Total Engagements', 'Change in Last Week', 'Verified Enrollment',
+      "Master's Enrollment",
+    ]);
+    expect(texts('.insights-summary-number')).toEqual([
+      shown(summary.total_enrollment), shown(summary.current_enrollment), '--Data not available yet',
+      shown(summary.enrollment_change_7_days), shown(summary.verified_enrollment), shown(summary.masters_enrollment),
+    ]);
+    expect(rum.addError).not.toHaveBeenCalled();
   });
 
-  it('leaves the server-rendered card in place when the page has no summary data', (done) => {
-    const courseModel = new CourseModel({});
-    const serverHtml = wrapper.innerHTML;
-
-    act(() => {
-      startReactWidgets({ courseModel });
-    });
-
-    afterRestore(() => {
-      expect(wrapper.innerHTML).toBe(serverHtml);
-      expect(wrapper.className).toBe(WRAPPER_CLASS);
-      expect(wrapper.hasAttribute('data-react-rendered')).toBe(false);
-      expect(wrapper.getAttribute('data-react-fallback')).toBe('total-enrollment');
-    }, done);
-  });
-
-  it('does nothing when the page has no Total Enrollment card', () => {
-    setFixtures('<div class="course-list-app-container"></div>');
-    const courseModel = new CourseModel({ summary: summary(first.value), summary_text: summaryText });
+  it('returns the store, filled from the page model', () => {
     let store;
-
     act(() => {
-      store = startReactWidgets({ courseModel });
+      store = startReactPage({ courseModel: modelWith({ course_list_json: fixture.rows }) });
     });
 
-    expect(store.getState().summary.metrics.totalEnrollment).toBe(first.value);
-    expect(rum.addError).not.toHaveBeenCalled();
+    expect(store.getState().courses.status).toBe('ready');
+    expect(store.getState().courses.rows.length).toBe(4);
+    expect(store.getState().summary.text).toEqual(TEXT);
+  });
+
+  it('updates the page and the card when the page model changes', () => {
+    const courseModel = modelWith({});
+    start(courseModel);
+    expect(root.querySelector('.insights-empty-state-message')).not.toBeNull();
+    expect(root.querySelector('.insights-summary-number').textContent).toBe('0');
+
+    act(() => {
+      courseModel.set('course_list_json', fixture.rows);
+    });
+
+    expect(root.querySelector('.insights-empty-state-message')).toBeNull();
+    expect(root.querySelectorAll('.insights-course-table tbody tr').length).toBe(4);
+    expect(root.querySelector('.insights-summary-number').textContent).toBe('1,300');
+  });
+
+  [
+    ['no course list', {}],
+    ['an empty course list', { course_list_json: [] }],
+  ].forEach(([description, attributes]) => {
+    it(`shows the "no course data" message for ${description}`, () => {
+      start(modelWith(attributes));
+
+      expect(root.querySelector('.insights-empty-state-message').textContent)
+        .toBe('No course data is currently available for your course.');
+    });
+  });
+
+  it('sends the tooltip analytics event once, when the help tooltip is shown', () => {
+    const events = [];
+    trackingModel.on('segment:track', (...args) => events.push(args));
+    start(modelWith({ course_list_json: fixture.rows }));
+    const show = () => {
+      const event = document.createEvent('Event');
+      event.initEvent('mouseover', true, true);
+      act(() => {
+        root.querySelector('button').dispatchEvent(event);
+      });
+    };
+
+    show();
+    show();
+
+    expect(events).toEqual([
+      ['edx.bi.tooltip.displayed', { title: card.label, category: 'summary', type: 'tooltip' }],
+    ]);
+  });
+
+  it('puts Download CSV in the results toolbar and sends the legacy course link event', () => {
+    const events = [];
+    trackingModel.on('segment:track', (...args) => events.push(args));
+    start(modelWith({ course_list_json: fixture.rows, course_list_download_url: '/courses/csv/course_list/' }));
+
+    expect(root.querySelector('.insights-results-actions a').getAttribute('href')).toBe('/courses/csv/course_list/');
+    const link = root.querySelector('.insights-course-link');
+    act(() => {
+      link.addEventListener('click', event => event.preventDefault());
+      link.click();
+    });
+    expect(events.map(args => args[0])).toEqual(['edx.bi.ui.menu.navigated']);
+  });
+
+  it('throws when the page has no mount point', () => {
+    setFixtures('<div id="somewhere-else"></div>');
+
+    expect(() => startReactPage({ courseModel: modelWith({}) })).toThrowError(/course-list-react-root/);
+  });
+
+  it('sends the page view of the course list when it starts', () => {
+    const pageViews = jasmine.createSpy('pageViews');
+    trackingModel.on('segment:page', pageViews);
+    start(modelWith({ course_list_json: fixture.rows }));
+
+    expect(trackingModel.get('page').name).toBe('insights_home');
+    expect(pageViews).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the view in the address of the page, and keeps the address up to date', () => {
+    jasmine.clock().install();
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#?text_search=bio&sortKey=cumulative_count&order=desc`);
+    start(modelWith({ course_list_json: fixture.rows }));
+
+    expect(root.querySelector('input[type="search"]').value).toBe('bio');
+    expect(Array.prototype.map.call(root.querySelectorAll('.insights-course-title'), node => node.textContent))
+      .toEqual(['Biology']);
+    expect(root.querySelector('thead th[aria-sort="descending"]').textContent).toContain('Total Enrollment');
+
+    const header = Array.prototype.find.call(
+      root.querySelectorAll('thead th button'),
+      node => node.textContent.indexOf('Start Date') === 0,
+    );
+    act(() => header.click());
+    // The address is rewritten once the view has stopped changing for a moment.
+    jasmine.clock().tick(250);
+    expect(window.location.hash).toBe('#?text_search=bio&sortKey=start_date&order=asc&page=1');
+    jasmine.clock().uninstall();
   });
 });
