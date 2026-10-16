@@ -404,12 +404,16 @@ filters and columns is a server change.
 
 ### Adding a column (the table's columns are the sample)
 
-The table is Paragon `DataTable` in manual mode (`components/results/CourseTable.jsx`), the way the MFEs use it: the
-selectors filter, sort and page the rows (`selectSortedRows`, `selectPageRows`), and the table only draws the current
-page and reports header clicks. The sort and the page are in the `query` slice, the ticked columns in the `view`
-slice. A new search, filter or sort returns to page 1.
+The table is Paragon `DataTable` (`components/results/CourseTable.jsx`), which holds the columns and the rows, with the
+table markup drawn by `TableBody` from the state `DataTable` gives it (its own table can't mark Course Name as the row
+header, name the table or set `aria-sort`, which the legacy table did for screen readers). The selectors filter, sort
+and page the rows (`selectSortedRows`, `selectPageRows`); the table only draws the current page, has **no sort of its
+own** (it shows the `sort` from the `query` slice, so a sort changed from outside is followed) and reports header
+clicks. The sort and the page are in the `query` slice, the ticked columns in the `view` slice. A new search, filter or
+sort returns to page 1.
 
-To add a column, add one entry to `registries/columns.js`: `id` (the row field), `label` and `cell` (`'date'`,
+To add a column, add one entry to `registries/columns.js`: `id` (the row field), `label`, `tooltip` (the help text shown
+when the header is hovered or focused) and `cell` (`'date'`,
 `'number'`, `'percent'`, `'text'`, or `'courseName'` for Course Name only; number columns sort descending on the first click), and when needed
 `enabled(page)` for a waffle switch, `defaultVisible: false` to start unticked, or `pending: true` (below). If the
 field isn't in `course_list_json` as is, add it in `platform/course-rows.js` with a case in `course-rows-spec.js`, as

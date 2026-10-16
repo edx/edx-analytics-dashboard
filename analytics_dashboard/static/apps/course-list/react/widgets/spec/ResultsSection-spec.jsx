@@ -31,7 +31,11 @@ describe('ResultsSection', () => {
       store.dispatch(action);
     });
   };
-  const headers = () => Array.prototype.map.call(element.querySelectorAll('thead th'), th => th.textContent.trim());
+  // The label of each header, without the hidden "click to sort" text and the sort icon.
+  const headers = () => Array.prototype.map.call(
+    element.querySelectorAll('thead th'),
+    th => th.querySelector('button, .insights-header-label').childNodes[0].textContent.trim(),
+  );
   const titles = () => Array.prototype.map.call(
     element.querySelectorAll('.insights-course-title'),
     node => node.textContent,
@@ -87,7 +91,7 @@ describe('ResultsSection', () => {
     render();
 
     expect(headers()).toEqual([
-      'Course Name, sorted ascending', 'Start Date', 'End Date', 'Total Enrollment', 'Current Enrollment', 'Change Last Week',
+      'Course Name', 'Start Date', 'End Date', 'Total Enrollment', 'Current Enrollment', 'Change Last Week',
       'Verified Enrollment', 'Passing Learners', 'Program', 'Sales Model', 'Funding Model', 'B2B Enrollment',
       'B2C Enrollment', 'Subscription Enrollment', 'À la Carte Enrollment',
     ]);
@@ -249,7 +253,7 @@ describe('ResultsSection', () => {
 
       expect(headers()).not.toContain('Start Date');
       expect(headers()).toContain('Total Engagements');
-      expect(headers()[0]).toBe('Course Name, sorted ascending');
+      expect(element.querySelector('thead th').getAttribute('aria-sort')).toBe('ascending');
       expect(element.querySelectorAll('tbody tr').length).toBe(4);
       expect(element.querySelector('.insights-result-count').textContent).toBe('Course runs: 4');
       expect(props.onColumnsChange.calls.allArgs()).toEqual([['start_date', false], ['total_engagements', true]]);
@@ -269,7 +273,7 @@ describe('ResultsSection', () => {
 
       expect(store.getState().query.sort).toEqual({ key: 'catalog_course_title', dir: 'asc' });
       expect(titles()).toEqual(['Algebra I', 'Biology', 'Chemistry', 'drawing basics']);
-      expect(headers()[0]).toBe('Course Name, sorted ascending');
+      expect(element.querySelector('thead th').getAttribute('aria-sort')).toBe('ascending');
       expect(headers()).not.toContain('Current Enrollment');
     });
 

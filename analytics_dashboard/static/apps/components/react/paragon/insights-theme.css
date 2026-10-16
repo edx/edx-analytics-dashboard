@@ -130,9 +130,10 @@ body {
 }
 
 /*
- * The course table (Paragon DataTable), styled like the prototype: 14px text, a white header in weight 600 with a
- * line under it, rows separated by a 1px line, every other row tinted, numbers right-aligned, the course link blue
- * with the course ID under it. All values are set here, so the look doesn't depend on Insights' global table styles.
+ * The course table (Paragon DataTable, with its table drawn by CourseTable), styled like the prototype: 14px text, a
+ * white header in weight 600 with a line under it, rows separated by a 1px line, every other row tinted, numbers
+ * right-aligned, the course link blue with the course ID under it. All values are set here, so the look doesn't
+ * depend on Insights' global table styles.
  */
 /* DataTable's layout is a flex row: without this its main column grows to the table's width and the page scrolls
    sideways, instead of the table scrolling inside its box. */
@@ -152,32 +153,64 @@ body {
  * the Course Name column at the left when it scrolls sideways. Sticky cells need an opaque background: the cells
  * already have one.
  */
-.insights-course-table .pgn__data-table-container {
+.insights-table-scroll {
+  /* Positioned, so the hidden screen-reader text of the cells (absolutely positioned) stays inside the box and doesn't
+     make the page itself scroll sideways. */
+  position: relative;
   max-height: 660px;
   overflow: auto;
   border: 1px solid #D4D2CF; /* $gray-l2 */
   border-radius: 3px;
 }
 
-.insights-course-table .pgn__data-table thead th {
+.insights-data-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 20px;
+  color: #000000;
+}
+
+.insights-data-table thead th {
   position: sticky;
   top: 0;
   z-index: 2;
-}
-
-/*
- * Paragon caps every cell at 20vw and cuts the rest off (.pgn__data-table-cell-wrap), which on a phone leaves dates
- * unreadable. As in the prototype: Course Name wraps within 280-300px; the other cells stay on one line at full width
- * (the table scrolls sideways).
- */
-.insights-course-table .pgn__data-table .pgn__data-table-cell-wrap {
-  max-width: none;
-  overflow: visible;
+  padding: 8px 10px;
+  border: 0;
+  background-color: #FFFFFF;
+  box-shadow: inset 0 -1px 0 #D4D2CF;
+  font-weight: 600;
+  text-align: left;
+  vertical-align: bottom;
   white-space: nowrap;
 }
 
-.insights-course-table .pgn__data-table thead th:first-child,
-.insights-course-table .pgn__data-table tbody td:first-child {
+/* Cells stay on one line at full width and the table scrolls sideways; Course Name wraps within 280-300px. */
+.insights-data-table tbody td,
+.insights-data-table tbody th {
+  padding: 8px 10px;
+  border: 0;
+  border-top: 1px solid #DDDDDD;
+  background-color: #FFFFFF;
+  font-weight: 400;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.insights-data-table tbody tr:nth-child(odd) td,
+.insights-data-table tbody tr:nth-child(odd) th {
+  background-color: #F9F9F9;
+}
+
+.insights-data-table .insights-cell-number {
+  text-align: right;
+}
+
+/* The first column: the header cell, and Course Name, which is the header of its row. */
+.insights-data-table thead th:first-child,
+.insights-data-table tbody th:first-child {
   position: sticky;
   left: 0;
   z-index: 1;
@@ -187,15 +220,15 @@ body {
   box-shadow: 1px 0 0 #CFCDCA;
 }
 
-.insights-course-table .pgn__data-table thead th:first-child {
+.insights-data-table thead th:first-child {
   z-index: 3;
   box-shadow: inset 0 -1px 0 #D4D2CF, 1px 0 0 #CFCDCA;
 }
 
 /* On a phone the fixed Course Name column leaves room for the others. */
 @media (max-width: 575.98px) {
-  .insights-course-table .pgn__data-table thead th:first-child,
-  .insights-course-table .pgn__data-table tbody td:first-child {
+  .insights-data-table thead th:first-child,
+  .insights-data-table tbody th:first-child {
     min-width: 160px;
     max-width: 200px;
   }
@@ -206,51 +239,35 @@ body {
   outline: none;
 }
 
-.insights-course-table .pgn__data-table {
-  width: 100%;
-  margin: 0;
-  border-collapse: collapse;
-  font-size: 14px;
-  line-height: 20px;
-  color: #000000;
-}
-
-.insights-course-table .pgn__data-table thead th {
-  padding: 8px 10px;
-  border: 0;
-  background-color: #FFFFFF;
-  box-shadow: inset 0 -1px 0 #D4D2CF;
-  font-weight: 600;
-  text-align: left;
-  vertical-align: bottom;
-}
-
-.insights-course-table .pgn__data-table tbody td {
-  padding: 8px 10px;
-  border: 0;
-  border-top: 1px solid #DDDDDD;
-  background-color: #FFFFFF;
-  vertical-align: top;
-}
-
-.insights-course-table .pgn__data-table tbody tr:nth-child(odd) td {
-  background-color: #F9F9F9;
-}
-
 /* The header label is a button, so sorting works from the keyboard; it looks like the header text. */
-.insights-course-table .insights-sort-button {
+.insights-data-table .insights-sort-button,
+.insights-data-table .insights-header-label {
+  display: inline-flex;
+  align-items: center;
   padding: 0;
   border: 0;
   background: none;
   color: inherit;
   font: inherit;
   text-align: left;
+}
+
+.insights-data-table .insights-sort-button {
   cursor: pointer;
 }
 
-.insights-course-table .insights-sort-button:focus {
+.insights-data-table .insights-sort-button:focus,
+.insights-data-table .insights-header-label:focus {
   outline: 2px solid #0075B4;
   outline-offset: 2px;
+}
+
+.insights-data-table .insights-sort-icon {
+  margin-left: 2px;
+}
+
+.insights-data-table .insights-sort-icon-idle {
+  opacity: 0.5;
 }
 
 .insights-table-pagination {
@@ -262,21 +279,17 @@ body {
   margin: 12px 0;
 }
 
-.insights-course-table .pgn__data-table .insights-cell-number {
-  text-align: right;
-}
-
-.insights-course-table .insights-course-link {
+.insights-data-table .insights-course-link {
   display: block;
   color: #0075B4;
 }
 
-.insights-course-table .insights-course-title,
-.insights-course-table .insights-course-id {
+.insights-data-table .insights-course-title,
+.insights-data-table .insights-course-id {
   display: block;
 }
 
-.insights-course-table .insights-course-id {
+.insights-data-table .insights-course-id {
   color: #414141;
   white-space: normal;
   overflow-wrap: anywhere;

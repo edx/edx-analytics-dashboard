@@ -1,6 +1,9 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useContext, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { DataTable } from '@openedx/paragon';
+import {
+  DataTable, DataTableContext, Icon, OverlayTrigger, Tooltip,
+} from '@openedx/paragon';
+import { ArrowDropDown, ArrowDropUp, ArrowDropUpDown } from '@openedx/paragon/icons';
 
 import {
   formatCount, formatDate, formatPercent,
@@ -20,7 +23,7 @@ function Missing({ reason }) {
 Missing.propTypes = { reason: PropTypes.string };
 Missing.defaultProps = { reason: '' };
 
-// The cells. DataTable renders them with react-table's cell props; column is the DataTable column built below.
+// The cells. The table body renders them with react-table's cell props; column is the column built below.
 function PendingCell() {
   return <Missing reason="Data not available yet" />;
 }
@@ -72,58 +75,20 @@ ValueCell.defaultProps = { value: null };
 
 const FORMATS = { number: formatCount, percent: formatPercent, text: String };
 
-/**
- * A sortable header. DataTable sorts when the header cell is clicked, but the cell can't be reached with the keyboard,
- * so the label is a button: Enter or Space clicks it, and the click reaches the cell. The sort state is read out to
- * screen readers.
- */
-function SortableHeader({ column }) {
-  if (!column.canSort) {
-    return column.label;
-  }
-  let state = '';
-  if (column.isSorted) {
-    state = column.isSortedDesc ? ', sorted descending' : ', sorted ascending';
-  }
-  return (
-    <button type="button" className="insights-sort-button">
-      {column.label}
-      {state && <span className="sr-only">{state}</span>}
-    </button>
-  );
-}
-
-SortableHeader.propTypes = {
-  column: PropTypes.shape({
-    label: PropTypes.string,
-    canSort: PropTypes.bool,
-    isSorted: PropTypes.bool,
-    isSortedDesc: PropTypes.bool,
-  }).isRequired,
-};
-
-// DataTable keys each cell by `${column.Header}${row.id}`, so every column needs a Header whose text is unique.
-function headerFor(id) {
-  function Header(props) {
-    return <SortableHeader {...props} />;
-  }
-  Header.displayName = 'SortableHeader';
-  Header.toString = () => id;
-  return Header;
-}
-
-/** Builds the DataTable column for one entry of the columns registry (see registries/columns.js). */
+/** Builds the table column for one entry of the columns registry (see registries/columns.js). */
 function toTableColumn(column, onCourseOpen) {
   const numeric = isNumericCell(column.cell);
   const tableColumn = {
-    Header: headerFor(column.id),
+    Header: column.label,
     label: column.label,
+    tooltip: column.tooltip,
     id: column.id,
     accessor: column.id,
+    numeric,
+    // A column without data can't be sorted.
+    sortable: column.hasData,
+    cellKind: column.cell,
     cellClassName: numeric ? 'insights-cell-number' : undefined,
-    // Numbers sort descending on the first click, as decided for the new table; a column without data can't sort.
-    sortDescFirst: numeric,
-    disableSortBy: !column.hasData,
   };
   if (!column.hasData) {
     // A pending column whose data the server doesn't send yet.
@@ -140,15 +105,131 @@ function toTableColumn(column, onCourseOpen) {
   };
 }
 
-// react-table options: the caller sorts the rows, so the table must not reset or remove the sort by itself.
-const TABLE_OPTIONS = { autoResetSortBy: false, disableSortRemove: true, disableMultiSort: true };
+// The sort a click on a column's header asks for: the sorted column reverses; another column starts with its first
+// direction (numbers descending, the others ascending).
+function nextSort(column, sort) {
+  if (sort.key === column.id) {
+    return sort.dir === 'asc' ? 'desc' : 'asc';
+  }
+  return column.numeric ? 'desc' : 'asc';
+}
+
+function SortIcon({ sorted, dir }) {
+  if (!sorted) {
+    return <Icon src={ArrowDropUpDown} className="insights-sort-icon insights-sort-icon-idle" />;
+  }
+  return <Icon src={dir === 'desc' ? ArrowDropDown : ArrowDropUp} className="insights-sort-icon" />;
+}
+
+SortIcon.propTypes = {
+  sorted: PropTypes.bool.isRequired,
+  dir: PropTypes.string.isRequired,
+};
+
+// A header cell: the label with its help tooltip (on hover and on keyboard focus), as a button when the column sorts.
+function HeaderCell({ column, sort, onSortChange }) {
+  const sorted = column.sortable && sort.key === column.id;
+  let ariaSort;
+  if (column.sortable) {
+    ariaSort = 'none';
+    if (sorted) {
+      ariaSort = sort.dir === 'desc' ? 'descending' : 'ascending';
+    }
+  }
+  const tooltip = <Tooltip id={`course-table-tooltip-${column.id}`}>{column.tooltip}</Tooltip>;
+  const trigger = column.sortable ? (
+    <button
+      type="button"
+      className="insights-sort-button"
+      onClick={() => onSortChange(column.id, nextSort(column, sort))}
+    >
+      {column.label}
+      <SortIcon sorted={sorted} dir={sort.dir} />
+      {!sorted && <span className="sr-only"> click to sort</span>}
+    </button>
+  ) : (
+    // Without a button the label still has to be reachable by keyboard, so its tooltip can be read.
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+    <span className="insights-header-label" tabIndex={0}>{column.label}</span>
+  );
+
+  return (
+    <th scope="col" aria-sort={ariaSort} className={column.numeric ? 'insights-cell-number' : undefined}>
+      <OverlayTrigger placement="top" trigger={['hover', 'focus']} overlay={tooltip}>
+        {trigger}
+      </OverlayTrigger>
+    </th>
+  );
+}
+
+HeaderCell.propTypes = {
+  column: PropTypes.shape({
+    id: PropTypes.string,
+    label: PropTypes.string,
+    tooltip: PropTypes.string,
+    numeric: PropTypes.bool,
+    sortable: PropTypes.bool,
+  }).isRequired,
+  sort: PropTypes.shape({ key: PropTypes.string, dir: PropTypes.string }).isRequired,
+  onSortChange: PropTypes.func.isRequired,
+};
 
 /**
- * The course table: Paragon DataTable in manual sort mode, the way the Open edX MFEs use it. It shows the given rows
- * (one page, already filtered, sorted and paged by the caller) in the given columns. A header click calls
- * onSortChange(key, dir); the caller sorts and passes the new rows. onCourseOpen(row) is called when a course link is
- * clicked, for analytics. The table keeps the sort it starts with and follows the user's clicks; to change the sort
- * from outside, give the table a new `key`, so it starts again with the new sort.
+ * The table markup, drawn from the state DataTable gives it. DataTable's own table can't mark Course Name as the row
+ * header, name the table or say which column is sorted (aria-sort), which the legacy table did for screen readers.
+ */
+function TableBody({ sort, onSortChange }) {
+  const {
+    getTableProps, getTableBodyProps, prepareRow, rows, headerGroups,
+  } = useContext(DataTableContext);
+  const { headers } = headerGroups[0];
+
+  return (
+    <div className="insights-table-scroll">
+      <table {...getTableProps({ className: 'insights-data-table', role: undefined })}>
+        <caption className="sr-only">Course List</caption>
+        <thead>
+          <tr>
+            {headers.map(column => (
+              <HeaderCell key={column.id} column={column} sort={sort} onSortChange={onSortChange} />
+            ))}
+          </tr>
+        </thead>
+        <tbody {...getTableBodyProps({ role: undefined })}>
+          {rows.map((row) => {
+            prepareRow(row);
+            const { key: rowKey } = row.getRowProps();
+            return (
+              <tr key={rowKey}>
+                {row.cells.map((cell) => {
+                  const { key: cellKey } = cell.getCellProps();
+                  const className = cell.column.cellClassName;
+                  return cell.column.cellKind === 'courseName' ? (
+                    <th key={cellKey} scope="row" className={className}>{cell.render('Cell')}</th>
+                  ) : (
+                    <td key={cellKey} className={className}>{cell.render('Cell')}</td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+TableBody.propTypes = {
+  sort: PropTypes.shape({ key: PropTypes.string, dir: PropTypes.string }).isRequired,
+  onSortChange: PropTypes.func.isRequired,
+};
+
+/**
+ * The course table: Paragon DataTable, which holds the columns and the rows, with the markup drawn by TableBody. It
+ * shows the given rows (one page, already filtered, sorted and paged by the caller) in the given columns, and has no
+ * sort of its own: it shows the `sort` it is given, and a header click calls onSortChange(key, dir) so the caller
+ * sorts and passes the new rows (and the new `sort`). onCourseOpen(row) is called when a course link is clicked, for
+ * analytics.
  */
 export default function CourseTable({
   columns, rows, itemCount, sort, onSortChange, onCourseOpen,
@@ -157,29 +238,11 @@ export default function CourseTable({
     () => columns.map(column => toTableColumn(column, onCourseOpen)),
     [columns, onCourseOpen],
   );
-  // The table starts with the caller's sort; afterwards it reports the user's clicks through fetchData.
-  const [initialState] = useState(() => ({ sortBy: [{ id: sort.key, desc: sort.dir === 'desc' }] }));
-  const fetchData = useCallback(({ sortBy }) => {
-    const next = sortBy[0];
-    const dir = next && next.desc ? 'desc' : 'asc';
-    if (next && (next.id !== sort.key || dir !== sort.dir)) {
-      onSortChange(next.id, dir);
-    }
-  }, [sort, onSortChange]);
 
   return (
     <div className="insights-course-table">
-      <DataTable
-        columns={tableColumns}
-        data={rows}
-        itemCount={itemCount}
-        isSortable
-        manualSortBy
-        initialState={initialState}
-        initialTableOptions={TABLE_OPTIONS}
-        fetchData={fetchData}
-      >
-        <DataTable.Table />
+      <DataTable columns={tableColumns} data={rows} itemCount={itemCount}>
+        <TableBody sort={sort} onSortChange={onSortChange} />
       </DataTable>
     </div>
   );
@@ -190,6 +253,7 @@ CourseTable.propTypes = {
   columns: PropTypes.arrayOf(PropTypes.shape({
     id: PropTypes.string.isRequired,
     label: PropTypes.string.isRequired,
+    tooltip: PropTypes.string.isRequired,
     cell: PropTypes.string.isRequired,
     hasData: PropTypes.bool.isRequired,
   })).isRequired,

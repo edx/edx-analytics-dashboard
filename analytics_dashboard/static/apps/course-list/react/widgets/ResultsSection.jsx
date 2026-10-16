@@ -1,5 +1,5 @@
 import {
-  useCallback, useEffect, useMemo, useRef, useState,
+  useCallback, useEffect, useMemo, useRef,
 } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
@@ -53,12 +53,9 @@ export default function ResultsSection({
   const page = useSelector(selectCurrentPage);
   const pageCount = useSelector(selectPageCount);
   const table = useRef(null);
-  // The table follows the user's sort clicks by itself; when the sort changes for another reason (the sorted column is
-  // hidden), a new key makes it start again with the new sort.
-  const [tableKey, setTableKey] = useState(0);
   // The table scrolls inside its own box: a new sort or page starts at its top.
   const scrollTableToTop = () => {
-    const box = table.current && table.current.querySelector('.pgn__data-table-container');
+    const box = table.current && table.current.querySelector('.insights-table-scroll');
     if (box) {
       box.scrollTop = 0;
     }
@@ -93,7 +90,6 @@ export default function ResultsSection({
     if (hidden.indexOf(sort.key) !== -1) {
       // The rows must not stay in the order of a column that is no longer shown.
       dispatch(sortChanged(DEFAULT_SORT));
-      setTableKey(key => key + 1);
     }
     shown.forEach(id => onColumnsChange(id, true));
     hidden.forEach(id => onColumnsChange(id, false));
@@ -132,7 +128,6 @@ export default function ResultsSection({
       <>
         <div ref={table} tabIndex={-1} className="insights-results-table" role="region" aria-label="Course runs">
           <CourseTable
-            key={tableKey}
             columns={columns}
             rows={rows}
             itemCount={count}
