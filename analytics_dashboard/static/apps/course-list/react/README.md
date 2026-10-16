@@ -397,9 +397,9 @@ with no code change. Keep the field out of the numbers `course-rows.js` turns in
 **Layout.** The cards are a grid (`insights-summary-cards` in `insights-theme.css`): all of them in one row from 1200px,
 three in a row from 600px, one below. Six cards always make even rows. Five cards (Total Engagements hidden while it
 has no data and `SHOW_PENDING_COLUMNS` is off) are 3 + 2 between 600px and 1199px. Narrower than those widths, a card
-can't fit its longest label word and a seven-digit number, so check them again if a card gets a longer label. Every card in a row is as tall as the tallest,
-with the number at the same height in each. The help tooltips look like Insights' legacy tooltip (black, see-through):
-`insights-summary-tooltip`.
+can't fit its longest label word and a seven-digit number, so check them again if a card gets a longer label. Every
+card in a row is as tall as the tallest, with the number at the same height in each. The help tooltips look like
+Insights' legacy tooltip (black, see-through): `insights-summary-tooltip`.
 
 ### Adding a filter (Availability is the sample)
 
