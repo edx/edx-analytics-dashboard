@@ -148,6 +148,20 @@ describe('selectors', () => {
       expect(ids({ key: 'start_date', dir: 'desc' })).toEqual(['c-4', 'c-3', 'c-2', 'c-1']);
     });
 
+    it('sorts dates by the moment they mean, whatever format the API sent them in', () => {
+      const dates = [
+        { course_id: 'd-1', start_date: '2017-01-10T182754' },
+        { course_id: 'd-2', start_date: '2017-01-10T00:00:00Z' },
+        { course_id: 'd-3', start_date: '2016-12-31T235959' },
+        { course_id: 'd-4', start_date: '' },
+      ];
+      const order = dir => selectors.selectSortedRows(stateWith(dates, { sort: { key: 'start_date', dir } }))
+        .map(row => row.course_id);
+
+      expect(order('asc')).toEqual(['d-3', 'd-2', 'd-1', 'd-4']);
+      expect(order('desc')).toEqual(['d-1', 'd-2', 'd-3', 'd-4']);
+    });
+
     it('keeps course ID order for a column no row has', () => {
       expect(ids({ key: 'b2b_count', dir: 'desc' })).toEqual(['c-1', 'c-2', 'c-3', 'c-4']);
     });

@@ -410,7 +410,7 @@ page and reports header clicks. The sort and the page are in the `query` slice, 
 slice. A new search, filter or sort returns to page 1.
 
 To add a column, add one entry to `registries/columns.js`: `id` (the row field), `label` and `cell` (`'date'`,
-`'number'`, `'percent'` or `'text'`; number columns sort descending on the first click), and when needed
+`'number'`, `'percent'`, `'text'`, or `'courseName'` for Course Name only; number columns sort descending on the first click), and when needed
 `enabled(page)` for a waffle switch, `defaultVisible: false` to start unticked, or `pending: true` (below). If the
 field isn't in `course_list_json` as is, add it in `platform/course-rows.js` with a case in `course-rows-spec.js`, as
 the Program column does. The table, the Columns menu and the sorting pick the entry up; add its label to the order

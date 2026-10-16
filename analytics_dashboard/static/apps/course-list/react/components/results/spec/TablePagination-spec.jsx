@@ -41,11 +41,9 @@ describe('TablePagination', () => {
   });
 
   // Paragon shows the page numbers on wider screens and "Page x of y" on narrow ones (as in the test browser), so the
-  // specs use the buttons that both have: Previous and Next, the first and last page links (Paragon 23 gives both the
-  // class "previous").
-  const pageLinks = () => element.querySelectorAll('.pagination button.page-link');
-  const previous = () => pageLinks()[0];
-  const next = () => pageLinks()[pageLinks().length - 1];
+  // specs use the buttons that both have, found by their accessible names ("Previous, Page 1", "Next, Page 3").
+  const previous = () => element.querySelector('button[aria-label^="Previous"]');
+  const next = () => element.querySelector('button[aria-label^="Next"]');
 
   it('has First, Previous, Next and Last, with First and Previous disabled on the first page', () => {
     render(1, 3);

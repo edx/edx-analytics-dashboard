@@ -1,5 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit';
 
+import { dateValue } from 'course-list/react/platform/format';
 import columnRegistry, { SHOW_PENDING_COLUMNS } from 'course-list/react/registries/columns';
 import filterRegistry from 'course-list/react/registries/filters';
 import metricRegistry from 'course-list/react/registries/metrics';
@@ -44,23 +45,38 @@ export function createSelectors({
     })),
   );
 
-  // The filtered rows in the order of the sort. Numbers compare as numbers; text, including dates (ISO strings),
-  // compares ignoring case. Empty values are always last, whichever the direction. Ties are in course ID order.
+  // The filtered rows in the order of the sort. Numbers compare as numbers, dates by their moment (whatever format the
+  // API sent), text ignoring case. Empty values are always last, whichever the direction. Ties are in course ID order.
+  // The value to compare is worked out once per row, not on every comparison.
   const selectSortedRows = createSelector(
     [selectFilteredRows, state => state.query.sort],
     (rows, sort) => {
       const column = columns.find(entry => entry.id === sort.key);
-      const numeric = Boolean(column && NUMERIC_CELLS.indexOf(column.cell) !== -1);
+      const kind = column ? column.cell : 'text';
       const direction = sort.dir === 'desc' ? -1 : 1;
-      const compare = (a, b) => (numeric ? a - b : String(a).toLowerCase().localeCompare(String(b).toLowerCase()));
-      return rows.slice().sort((x, y) => {
-        const a = x[sort.key];
-        const b = y[sort.key];
-        if (isEmpty(a) || isEmpty(b)) {
-          return ((isEmpty(a) ? 1 : 0) - (isEmpty(b) ? 1 : 0)) || x.course_id.localeCompare(y.course_id);
+      const sortValue = (row) => {
+        const value = row[sort.key];
+        if (isEmpty(value)) {
+          return null;
         }
-        return (compare(a, b) * direction) || x.course_id.localeCompare(y.course_id);
-      });
+        if (kind === 'date') {
+          return dateValue(value);
+        }
+        return NUMERIC_CELLS.indexOf(kind) !== -1 ? value : String(value).toLowerCase();
+      };
+      const compare = kind === 'date' || NUMERIC_CELLS.indexOf(kind) !== -1
+        ? (a, b) => a - b
+        : (a, b) => a.localeCompare(b);
+      return rows
+        .map(row => ({ row, value: sortValue(row) }))
+        .sort((x, y) => {
+          if (x.value === null || y.value === null) {
+            return ((x.value === null ? 1 : 0) - (y.value === null ? 1 : 0))
+              || x.row.course_id.localeCompare(y.row.course_id);
+          }
+          return (compare(x.value, y.value) * direction) || x.row.course_id.localeCompare(y.row.course_id);
+        })
+        .map(item => item.row);
     },
   );
 

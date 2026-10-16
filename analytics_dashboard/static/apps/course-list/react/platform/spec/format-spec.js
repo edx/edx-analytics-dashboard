@@ -1,5 +1,5 @@
 import {
-  formatCount, formatDate, formatPercent, formatSummaryNumber,
+  dateValue, formatCount, formatDate, formatPercent, formatSummaryNumber,
 } from 'course-list/react/platform/format';
 
 const card = require('course-list/react/spec/fixtures/total-enrollment-card.json');
@@ -42,5 +42,12 @@ describe('table formatting', () => {
   it('formats a fraction as a whole percentage', () => {
     expect(formatPercent(0.256)).toBe('26%');
     expect(formatPercent(0)).toBe('0%');
+    expect(formatPercent('n/a')).toBe('');
+  });
+
+  it('gives the same sort value for the same moment in the API\'s formats, and null for no date', () => {
+    expect(dateValue('2017-01-10T000000')).toBe(dateValue('2017-01-10T00:00:00Z'));
+    expect(dateValue('2017-01-10T182754')).toBeGreaterThan(dateValue('2017-01-10T000000'));
+    expect(dateValue('not a date')).toBeNull();
   });
 });

@@ -36,7 +36,13 @@ export function formatDate(value) {
   return (language ? date.locale(language) : date).format('L');
 }
 
-/** Formats a fraction (0.25) as a whole percentage ("25%"). */
+/** The moment of a date as a number, for sorting (the API sends different formats for the same kind of date). */
+export function dateValue(value) {
+  const date = moment.utc(value, moment.defaultFormat);
+  return date.isValid() ? date.valueOf() : null;
+}
+
+/** Formats a fraction (0.25) as a whole percentage ("25%"); '' when the value isn't a number. */
 export function formatPercent(value) {
-  return `${formatCount(Math.round(value * 100))}%`;
+  return Number.isFinite(value) ? `${formatCount(Math.round(value * 100))}%` : '';
 }

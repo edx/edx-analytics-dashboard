@@ -51,6 +51,7 @@ describe('CourseTable', () => {
           <CourseTable
             columns={columns}
             rows={rows}
+            itemCount={rows.length}
             sort={sort}
             onSortChange={onSortChange}
             onCourseOpen={onCourseOpen}
@@ -123,7 +124,8 @@ describe('CourseTable', () => {
     expect(cells(1)[2].textContent).toBe('-5');
     expect(cells(0)[3].textContent).toBe('26%');
     expect(cells(0)[4].textContent).toBe('B2C');
-    expect(cells(1)[4].textContent).toBe('--');
+    expect(cells(1)[4].textContent).toBe('--Not available');
+    expect(cells(1)[4].querySelector('.sr-only').textContent).toBe('Not available');
   });
 
   it('shows "--" and "Data not available yet" in a pending column without data', () => {
@@ -139,6 +141,7 @@ describe('CourseTable', () => {
       render();
 
       expect(headerCell('Course Name').querySelector('button.insights-sort-button')).not.toBeNull();
+      expect(headerCell('Course Name').querySelector('button').getAttribute('title')).toBeNull();
       expect(headerCell('Course Name').querySelector('.sr-only').textContent).toBe(', sorted ascending');
       expect(headerCell('Current Enrollment').querySelector('button')).not.toBeNull();
       expect(headerCell('B2B Enrollment').querySelector('button')).toBeNull();
@@ -154,14 +157,20 @@ describe('CourseTable', () => {
       expect(onSortChange).toHaveBeenCalledWith('start_date', 'asc');
     });
 
-    it('reverses the sorted column, and never sorts a column without data', () => {
+    it('reverses the sorted column', () => {
       render();
 
       act(() => headerCell('Course Name').querySelector('button').click());
       expect(onSortChange).toHaveBeenCalledWith('catalog_course_title', 'desc');
+    });
 
-      onSortChange.calls.reset();
-      act(() => headerCell('B2B Enrollment').click());
+    it('does not sort a column without data: its header has no button and no sort handler', () => {
+      render();
+      const header = headerCell('B2B Enrollment');
+
+      expect(header.querySelector('button')).toBeNull();
+      expect(header.getAttribute('title')).toBeNull();
+      act(() => header.click());
       expect(onSortChange).not.toHaveBeenCalled();
     });
 

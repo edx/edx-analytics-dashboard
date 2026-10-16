@@ -272,7 +272,8 @@ body {
 
 .insights-course-table .insights-course-id {
   color: #414141;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .insights-loading-state,

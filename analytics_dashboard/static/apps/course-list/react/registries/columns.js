@@ -17,8 +17,9 @@ export const SHOW_PENDING_COLUMNS = true;
  *   enabled:        (page) => boolean; false when a waffle switch turns the column off (default: always on). page has
  *                   passingUsersEnabled and filtersEnabled.
  *   pending:        true for a column whose data the server may not send yet. Such a column shows "--" and can't be
- *                   sorted until a row has the field; it is listed only while SHOW_PENDING_COLUMNS is true. Its field
- *                   must stay absent when there is no data (platform/course-rows.js never fills it with 0).
+ *                   sorted until a row has the field; while no row has it, the column is listed only if
+ *                   SHOW_PENDING_COLUMNS is true (with data it is always listed). Its field must stay absent when
+ *                   there is no data (platform/course-rows.js never fills it with 0).
  */
 export default [
   {

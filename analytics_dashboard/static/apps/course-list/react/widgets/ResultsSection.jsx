@@ -1,4 +1,6 @@
-import { useCallback, useMemo, useRef } from 'react';
+import {
+  useCallback, useMemo, useRef, useState,
+} from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 import { ViewColumn } from '@openedx/paragon/icons';
@@ -11,7 +13,9 @@ import TablePagination from 'course-list/react/components/results/TablePaginatio
 import EmptyState from 'course-list/react/components/status/EmptyState';
 import LoadingState from 'course-list/react/components/status/LoadingState';
 import { selectStatus } from 'course-list/react/state/courses-slice';
-import { pageChanged, selectQuery, sortChanged } from 'course-list/react/state/query-slice';
+import {
+  DEFAULT_SORT, pageChanged, selectQuery, sortChanged,
+} from 'course-list/react/state/query-slice';
 import {
   selectAvailableColumns, selectCurrentPage, selectPageCount, selectPageRows, selectResultCount, selectVisibleColumns,
 } from 'course-list/react/state/selectors';
@@ -49,6 +53,9 @@ export default function ResultsSection({
   const page = useSelector(selectCurrentPage);
   const pageCount = useSelector(selectPageCount);
   const table = useRef(null);
+  // The table follows the user's sort clicks by itself; when the sort changes for another reason (the sorted column is
+  // hidden), a new key makes it start again with the new sort.
+  const [tableKey, setTableKey] = useState(0);
   // The table scrolls inside its own box: a new sort or page starts at its top.
   const scrollTableToTop = () => {
     const box = table.current && table.current.querySelector('.pgn__data-table-container');
@@ -75,6 +82,11 @@ export default function ResultsSection({
     const shown = ids.filter(id => shownIds.indexOf(id) === -1);
     const hidden = shownIds.filter(id => ids.indexOf(id) === -1);
     dispatch(columnsChanged(ids));
+    if (hidden.indexOf(sort.key) !== -1) {
+      // The rows must not stay in the order of a column that is no longer shown.
+      dispatch(sortChanged(DEFAULT_SORT));
+      setTableKey(key => key + 1);
+    }
     shown.forEach(id => onColumnsChange(id, true));
     hidden.forEach(id => onColumnsChange(id, false));
   };
@@ -114,10 +126,12 @@ export default function ResultsSection({
       </div>
       {count ? (
         <>
-          <div ref={table} tabIndex={-1} className="insights-results-table" aria-label="Course runs">
+          <div ref={table} tabIndex={-1} className="insights-results-table" role="region" aria-label="Course runs">
             <CourseTable
+              key={tableKey}
               columns={columns}
               rows={rows}
+              itemCount={count}
               sort={sort}
               onSortChange={changeSort}
               onCourseOpen={onCourseOpen}

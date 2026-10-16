@@ -88,7 +88,7 @@ describe('ResultsSection', () => {
       tr => tr.children[programIndex].textContent,
     );
 
-    expect(programs).toEqual(['Program A, Program B', 'Program A', '--', '--']);
+    expect(programs).toEqual(['Program A, Program B', 'Program A', '--Not available', '--Not available']);
   });
 
   it('leaves out the columns whose switch is off, and the link without a URL', () => {
@@ -162,7 +162,7 @@ describe('ResultsSection', () => {
       render();
 
       expect(element.querySelectorAll('tbody tr').length).toBe(100);
-      act(() => Array.prototype.slice.call(element.querySelectorAll('.pagination button.page-link'), -1)[0].click());
+      act(() => element.querySelector('button[aria-label^="Next"]').click());
 
       expect(store.getState().query.page).toBe(2);
       expect(titles()).toEqual(['Course 100', 'Course 101', 'Course 102', 'Course 103', 'Course 104']);
@@ -229,6 +229,37 @@ describe('ResultsSection', () => {
       expect(element.querySelectorAll('tbody tr').length).toBe(4);
       expect(element.querySelector('.insights-result-count').textContent).toBe('Course runs: 4');
       expect(props.onColumnsChange.calls.allArgs()).toEqual([['start_date', false], ['total_engagements', true]]);
+    });
+
+    it('goes back to the default sort when the sorted column is hidden, so no hidden order is left', () => {
+      render();
+      const sortButton = label => Array.prototype.find.call(
+        element.querySelectorAll('thead th button'),
+        node => node.textContent.indexOf(label) === 0,
+      );
+      act(() => sortButton('Current Enrollment').click());
+      expect(store.getState().query.sort).toEqual({ key: 'count', dir: 'desc' });
+
+      open();
+      act(() => box('Current Enrollment').click());
+
+      expect(store.getState().query.sort).toEqual({ key: 'catalog_course_title', dir: 'asc' });
+      expect(titles()).toEqual(['Algebra I', 'Biology', 'Chemistry', 'drawing basics']);
+      expect(headers()[0]).toBe('Course Name, sorted ascending');
+      expect(headers()).not.toContain('Current Enrollment');
+    });
+
+    it('keeps the sort when another column is hidden', () => {
+      render();
+      const sortButton = Array.prototype.find.call(
+        element.querySelectorAll('thead th button'),
+        node => node.textContent.indexOf('Current Enrollment') === 0,
+      );
+      act(() => sortButton.click());
+      open();
+      act(() => box('Start Date').click());
+
+      expect(store.getState().query.sort).toEqual({ key: 'count', dir: 'desc' });
     });
   });
 });

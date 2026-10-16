@@ -1,4 +1,4 @@
-import columns, { SHOW_PENDING_COLUMNS } from 'course-list/react/registries/columns';
+import columns from 'course-list/react/registries/columns';
 
 // Every entry that is added to the registry must have the keys the table reads (see the comment of the registry).
 describe('columns registry', () => {
@@ -42,9 +42,5 @@ describe('columns registry', () => {
     expect(byId('passing_users').enabled({ passingUsersEnabled: false })).toBe(false);
     expect(byId('program').enabled({ filtersEnabled: true })).toBe(true);
     expect(byId('program').enabled({ filtersEnabled: false })).toBe(false);
-  });
-
-  it('shows pending columns during development; set SHOW_PENDING_COLUMNS to false before the release', () => {
-    expect(typeof SHOW_PENDING_COLUMNS).toBe('boolean');
   });
 });

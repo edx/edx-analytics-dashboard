@@ -55,7 +55,7 @@ DateCell.defaultProps = { value: null };
 
 function ValueCell({ value, column }) {
   if (isEmpty(value)) {
-    return <Missing />;
+    return <Missing reason="Not available" />;
   }
   const text = column.format(value);
   // Text can be long (program titles): the full text is also a tooltip.
@@ -85,7 +85,7 @@ function SortableHeader({ column }) {
     state = column.isSortedDesc ? ', sorted descending' : ', sorted ascending';
   }
   return (
-    <button type="button" className="insights-sort-button" title={`Sort by ${column.label}`}>
+    <button type="button" className="insights-sort-button">
       {column.label}
       {state && <span className="sr-only">{state}</span>}
     </button>
@@ -146,10 +146,11 @@ const TABLE_OPTIONS = { autoResetSortBy: false, disableSortRemove: true, disable
  * The course table: Paragon DataTable in manual sort mode, the way the Open edX MFEs use it. It shows the given rows
  * (one page, already filtered, sorted and paged by the caller) in the given columns. A header click calls
  * onSortChange(key, dir); the caller sorts and passes the new rows. onCourseOpen(row) is called when a course link is
- * clicked, for analytics.
+ * clicked, for analytics. The table keeps the sort it starts with and follows the user's clicks; to change the sort
+ * from outside, give the table a new `key`, so it starts again with the new sort.
  */
 export default function CourseTable({
-  columns, rows, sort, onSortChange, onCourseOpen,
+  columns, rows, itemCount, sort, onSortChange, onCourseOpen,
 }) {
   const tableColumns = useMemo(
     () => columns.map(column => toTableColumn(column, onCourseOpen)),
@@ -170,7 +171,7 @@ export default function CourseTable({
       <DataTable
         columns={tableColumns}
         data={rows}
-        itemCount={rows.length}
+        itemCount={itemCount}
         isSortable
         manualSortBy
         initialState={initialState}
@@ -194,6 +195,8 @@ CourseTable.propTypes = {
   rows: PropTypes.arrayOf(PropTypes.shape({
     course_id: PropTypes.string.isRequired,
   })).isRequired,
+  // The number of course runs in all pages.
+  itemCount: PropTypes.number.isRequired,
   sort: PropTypes.shape({
     key: PropTypes.string.isRequired,
     dir: PropTypes.oneOf(['asc', 'desc']).isRequired,
