@@ -162,6 +162,32 @@ describe('selectors', () => {
       expect(order('desc')).toEqual(['d-1', 'd-2', 'd-3', 'd-4']);
     });
 
+    it('sorts a number sent as text as a number, and a value that is not a number as empty', () => {
+      const counts = [
+        { course_id: 'n-1', count: '12' },
+        { course_id: 'n-2', count: 100 },
+        { course_id: 'n-3', count: 'abc' },
+        { course_id: 'n-4', count: 5 },
+      ];
+      const order = dir => selectors.selectSortedRows(stateWith(counts, { sort: { key: 'count', dir } }))
+        .map(row => row.course_id);
+
+      expect(order('asc')).toEqual(['n-4', 'n-1', 'n-2', 'n-3']);
+      expect(order('desc')).toEqual(['n-2', 'n-1', 'n-4', 'n-3']);
+    });
+
+    it('does not sort again when only the search or the filters change', () => {
+      const state = stateWith(rows, { sort: { key: 'count', dir: 'desc' } });
+      selectors.selectSortedRows(state);
+      spyOn(Array.prototype, 'sort').and.callThrough();
+
+      const searched = { ...state, query: { ...state.query, search: 'chem' } };
+      const result = selectors.selectSortedRows(searched).map(row => row.course_id);
+
+      expect(result).toEqual(['c-4']);
+      expect(Array.prototype.sort).not.toHaveBeenCalled();
+    });
+
     it('keeps course ID order for a column no row has', () => {
       expect(ids({ key: 'b2b_count', dir: 'desc' })).toEqual(['c-1', 'c-2', 'c-3', 'c-4']);
     });

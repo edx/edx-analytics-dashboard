@@ -4,7 +4,7 @@ import { Provider } from 'react-redux';
 
 import ParagonProvider from 'components/react/paragon/ParagonProvider';
 import { normalizeCourseRows } from 'course-list/react/platform/course-rows';
-import { coursesLoaded } from 'course-list/react/state/courses-slice';
+import { coursesLoaded, coursesUnavailable } from 'course-list/react/state/courses-slice';
 import { filterChanged, searchChanged } from 'course-list/react/state/query-slice';
 import createCourseListStore from 'course-list/react/state/store';
 import ResultsSection from 'course-list/react/widgets/ResultsSection';
@@ -53,7 +53,20 @@ describe('ResultsSection', () => {
     element = document.getElementById('results-root');
     root = createRoot(element);
     store = createCourseListStore();
-    store.dispatch(coursesLoaded({ rows: normalizeCourseRows(fixture.rows, fixture.programs), programs: [] }));
+    // Every course run has the fields of the pending columns, so the columns shown don't depend on
+    // SHOW_PENDING_COLUMNS (a pending column without data is shown only while that setting is on).
+    const rows = normalizeCourseRows(fixture.rows, fixture.programs).map(row => ({
+      ...row,
+      total_engagements: 5,
+      engagement_rate: 0.5,
+      sales_model: 'B2C',
+      funding_model: 'Mixed',
+      b2b_count: 0,
+      b2c_count: 1,
+      subscription_count: 0,
+      alacarte_count: 1,
+    }));
+    store.dispatch(coursesLoaded({ rows, programs: [] }));
   });
 
   afterEach(() => {
@@ -171,6 +184,17 @@ describe('ResultsSection', () => {
       expect(document.activeElement).toBe(element.querySelector('.insights-results-table'));
     });
 
+    it('moves focus to the results after Previous and after Next onto the last page, where Paragon moves it itself', () => {
+      render();
+      act(() => element.querySelector('button[aria-label^="Next"]').click());
+      expect(document.activeElement).toBe(element.querySelector('.insights-results-table'));
+
+      element.querySelector('button[aria-label^="Previous"]').focus();
+      act(() => element.querySelector('button[aria-label^="Previous"]').click());
+      expect(store.getState().query.page).toBe(1);
+      expect(document.activeElement).toBe(element.querySelector('.insights-results-table'));
+    });
+
     it('sorts by a header click, starting again at the first page', () => {
       render();
       act(() => button('Last').click());
@@ -260,6 +284,56 @@ describe('ResultsSection', () => {
       act(() => box('Start Date').click());
 
       expect(store.getState().query.sort).toEqual({ key: 'count', dir: 'desc' });
+    });
+  });
+
+  describe('states without results', () => {
+    const toolbarLinks = () => element.querySelectorAll('.insights-results-actions a');
+
+    it('keeps Download CSV while the data is loading or unavailable', () => {
+      store = createCourseListStore();
+      render();
+      expect(element.querySelector('.insights-loading-state')).not.toBeNull();
+      expect(toolbarLinks().length).toBe(1);
+
+      dispatch(coursesUnavailable());
+      expect(element.querySelector('.insights-empty-state-message').textContent)
+        .toBe('No course data is currently available for your course.');
+      expect(toolbarLinks().length).toBe(1);
+    });
+
+    it('has no toolbar in those states without a download URL', () => {
+      store = createCourseListStore();
+      props.downloadUrl = '';
+      render();
+
+      expect(element.querySelector('.insights-results-toolbar')).toBeNull();
+    });
+
+    it('says there is no course data, not that nothing matched, when there is no search and no filter', () => {
+      dispatch(coursesLoaded({ rows: [], programs: [] }));
+      render();
+
+      expect(element.querySelector('.insights-empty-state-message').textContent)
+        .toBe('No course data is currently available for your course.');
+    });
+  });
+
+  describe('a value that is not what its column expects', () => {
+    it('shows "--" for it and keeps the table, the count and the Columns menu', () => {
+      const bad = normalizeCourseRows(fixture.rows).map(row => ({ ...row, count: 'abc' }));
+      dispatch(coursesLoaded({ rows: bad.map((row, index) => ({ ...row, count: index ? 'abc' : '12' })), programs: [] }));
+      render();
+      const index = headers().indexOf('Current Enrollment');
+      const cells = Array.prototype.map.call(
+        element.querySelectorAll('tbody tr'),
+        tr => tr.children[index].textContent,
+      );
+
+      expect(cells).toEqual(['12', '--Not available', '--Not available', '--Not available']);
+      expect(element.querySelector('.insights-result-count').textContent).toBe('Course runs: 4');
+      expect(element.querySelector('#columns-toggle')).not.toBeNull();
+      expect(element.querySelector('.alert-error')).toBeNull();
     });
   });
 });

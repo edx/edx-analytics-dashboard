@@ -141,6 +141,12 @@ body {
   flex: 1 1 auto;
 }
 
+/* Paragon forces a scrollbar on this wrapper at 1400px and below, which would be an empty one here: the table scrolls
+   in its own box. */
+.insights-course-table .pgn__data-table-layout-wrapper {
+  overflow: visible;
+}
+
 /*
  * The table scrolls inside its box (as in the prototype, 660px high), so its header can stay at the top (LP-1189) and
  * the Course Name column at the left when it scrolls sideways. Sticky cells need an opaque background: the cells

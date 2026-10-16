@@ -5,8 +5,7 @@ import { DataTable } from '@openedx/paragon';
 import {
   formatCount, formatDate, formatPercent,
 } from 'course-list/react/platform/format';
-
-const isEmpty = value => value === null || value === undefined || value === '';
+import { isEmpty, isNumericCell, toNumber } from 'course-list/react/state/values';
 
 // "--" with a reason for screen readers, as the legacy table shows a missing date.
 function Missing({ reason }) {
@@ -54,10 +53,12 @@ DateCell.propTypes = { value: PropTypes.string };
 DateCell.defaultProps = { value: null };
 
 function ValueCell({ value, column }) {
-  if (isEmpty(value)) {
+  // A number column shows a number: a value that isn't one (for example text the server sent by mistake) is "--".
+  const shown = isNumericCell(column.cellType) ? toNumber(value) : value;
+  if (isEmpty(shown)) {
     return <Missing reason="Not available" />;
   }
-  const text = column.format(value);
+  const text = column.format(shown);
   // Text can be long (program titles): the full text is also a tooltip.
   return column.cellType === 'text' ? <span title={text}>{text}</span> : text;
 }
@@ -113,7 +114,7 @@ function headerFor(id) {
 
 /** Builds the DataTable column for one entry of the columns registry (see registries/columns.js). */
 function toTableColumn(column, onCourseOpen) {
-  const numeric = column.cell === 'number' || column.cell === 'percent';
+  const numeric = isNumericCell(column.cell);
   const tableColumn = {
     Header: headerFor(column.id),
     label: column.label,

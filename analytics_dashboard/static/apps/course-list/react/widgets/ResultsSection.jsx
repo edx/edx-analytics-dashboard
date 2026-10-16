@@ -1,5 +1,5 @@
 import {
-  useCallback, useMemo, useRef, useState,
+  useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
@@ -68,13 +68,21 @@ export default function ResultsSection({
     scrollTableToTop();
     onSort(key, dir);
   }, [dispatch, onSort]);
+  // After a pager click, focus moves to the results, as the legacy pager does (the clicked First or Last button becomes
+  // disabled, and Paragon moves focus itself after a click). An effect runs after Paragon's own, so this one wins.
+  const focusResultsAfterPage = useRef(false);
+  useEffect(() => {
+    if (focusResultsAfterPage.current) {
+      focusResultsAfterPage.current = false;
+      if (table.current) {
+        table.current.focus();
+      }
+    }
+  }, [page]);
   const changePage = useCallback((target) => {
+    focusResultsAfterPage.current = true;
     dispatch(pageChanged(target));
     scrollTableToTop();
-    // As the legacy pager does, move focus to the results (the clicked First or Last button becomes disabled).
-    if (table.current) {
-      table.current.focus();
-    }
     onPage(target);
   }, [dispatch, onPage]);
   const changeColumns = (ids) => {
@@ -91,21 +99,58 @@ export default function ResultsSection({
     hidden.forEach(id => onColumnsChange(id, false));
   };
 
+  const downloadButton = downloadUrl ? <DownloadCsvButton url={downloadUrl} onClick={onDownload} /> : null;
+  // While there are no results to show, the Download CSV link stays, on its own in the toolbar.
+  const withDownload = state => (downloadButton ? (
+    <>
+      <div className="insights-results-toolbar">
+        <div className="insights-results-actions">{downloadButton}</div>
+      </div>
+      {state}
+    </>
+  ) : state);
   if (status === 'loading') {
-    return <LoadingState />;
+    return withDownload(<LoadingState />);
   }
   if (status === 'unavailable') {
-    return <EmptyState message={NO_DATA_MESSAGE} detail={NO_DATA_DETAIL} />;
+    return withDownload(<EmptyState message={NO_DATA_MESSAGE} detail={NO_DATA_DETAIL} />);
   }
   if (status === 'error') {
     // The course data is malformed. Throwing lets this section's boundary show the error state.
     throw new Error('Course data is not valid.');
   }
 
+  const hasCriteria = Boolean(search.trim()) || Object.keys(filters).length > 0;
   const suggestions = [
     search.trim() ? 'Try a different search.' : '',
     Object.keys(filters).length ? 'Try clearing the filters.' : '',
   ].filter(Boolean).join(' ');
+
+  let resultsBody;
+  if (count) {
+    resultsBody = (
+      <>
+        <div ref={table} tabIndex={-1} className="insights-results-table" role="region" aria-label="Course runs">
+          <CourseTable
+            key={tableKey}
+            columns={columns}
+            rows={rows}
+            itemCount={count}
+            sort={sort}
+            onSortChange={changeSort}
+            onCourseOpen={onCourseOpen}
+          />
+        </div>
+        <TablePagination page={page} pageCount={pageCount} onPageChange={changePage} />
+      </>
+    );
+  } else if (hasCriteria) {
+    resultsBody = <EmptyState message={NO_MATCH_MESSAGE} detail={suggestions} />;
+  } else {
+    // With no search and no filter, nothing matching means there are no course runs at all (for example the server
+    // sent rows without course IDs).
+    resultsBody = <EmptyState message={NO_DATA_MESSAGE} detail={NO_DATA_DETAIL} />;
+  }
 
   return (
     <>
@@ -121,25 +166,10 @@ export default function ResultsSection({
             selected={shownIds}
             onChange={changeColumns}
           />
-          {downloadUrl && <DownloadCsvButton url={downloadUrl} onClick={onDownload} />}
+          {downloadButton}
         </div>
       </div>
-      {count ? (
-        <>
-          <div ref={table} tabIndex={-1} className="insights-results-table" role="region" aria-label="Course runs">
-            <CourseTable
-              key={tableKey}
-              columns={columns}
-              rows={rows}
-              itemCount={count}
-              sort={sort}
-              onSortChange={changeSort}
-              onCourseOpen={onCourseOpen}
-            />
-          </div>
-          <TablePagination page={page} pageCount={pageCount} onPageChange={changePage} />
-        </>
-      ) : <EmptyState message={NO_MATCH_MESSAGE} detail={suggestions} />}
+      {resultsBody}
     </>
   );
 }
