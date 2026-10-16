@@ -18,11 +18,13 @@ describe('courses slice', () => {
   it('becomes unavailable, keeping what it has', () => {
     const state = reducer(undefined, coursesLoaded({ rows: [{ course_id: 'a' }], programs: [] }));
 
-    expect(reducer(state, coursesUnavailable())).toEqual({ rows: [{ course_id: 'a' }], programs: [], status: 'unavailable' });
+    expect(reducer(state, coursesUnavailable())).toEqual({ rows: [], programs: [], status: 'unavailable' });
   });
 
-  it('becomes an error, keeping what it has', () => {
-    expect(reducer(undefined, coursesFailed()).status).toBe('error');
+  it('becomes an error and drops the rows it had', () => {
+    const state = reducer(undefined, coursesLoaded({ rows: [{ course_id: 'a' }], programs: [{ program_id: 'p' }] }));
+
+    expect(reducer(state, coursesFailed())).toEqual({ rows: [], programs: [], status: 'error' });
   });
 
   it('selects its status from the store state', () => {

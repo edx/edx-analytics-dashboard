@@ -434,8 +434,8 @@ the course link (`edx.bi.ui.menu.navigated`), and `edx.bi.course_list.columns_ch
 
 ### The view in the address of the page (`platform/url-state.js`)
 
-The search, filters, sort, page and ticked columns are kept in the address, in the legacy page's format, so a reload, the
-Back button, a bookmark and a shared link show the same view, and old links still work:
+The search, filters, sort, page and ticked columns are kept in the address, in the legacy page's format, so a reload, a
+bookmark and a shared link show the same view, and old links still work:
 
 ```
 /courses/#?text_search=algebra&availability=Current,Upcoming&sortKey=count&order=desc&page=3&cols=start_date,count
@@ -446,7 +446,7 @@ Back button, a bookmark and a shared link show the same view, and old links stil
   an old link are ignored; the search, Availability filter, sort and page of an old link work. Filters in the address
   are read only with the `enable_course_filters` switch on, as the legacy page offered them only then. `sortKey` is a
   column `id`; `cols` is new (the legacy page had no Columns menu).
-- The address is read on start and when it changes by itself (the user edits it, follows a link or uses Back), and
+- The address is read on start and when it changes by itself (the user edits it or follows a link), and
   written with `history.replaceState` once the view has stopped changing for a moment (browsers limit how often a page
   may rewrite its address). The page written is the one shown, so a page past the end becomes the last page. An
   address that isn't ours (anything but nothing or `#?...`, such as the header skip link's `#content`) is ignored, so it

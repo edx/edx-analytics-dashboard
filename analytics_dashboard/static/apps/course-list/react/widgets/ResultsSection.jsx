@@ -79,11 +79,13 @@ export default function ResultsSection({
     }
   }, [page]);
   const changePage = useCallback((target) => {
-    focusResultsAfterPage.current = true;
+    // Only a click that changes the page is followed by the focus move: otherwise the flag would wait for a later page
+    // change (a filter, say) and take the focus then.
+    focusResultsAfterPage.current = target !== page;
     dispatch(pageChanged(target));
     scrollTableToTop();
     onPage(target);
-  }, [dispatch, onPage]);
+  }, [dispatch, onPage, page]);
   const changeColumns = (ids) => {
     // One box changes at a time: report which column was shown or hidden.
     const shown = ids.filter(id => shownIds.indexOf(id) === -1);

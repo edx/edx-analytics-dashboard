@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 // rows:     the course runs as the server sent them (only the valid ones)
 // programs: the programs as sent by the server (program_id, program_title, course_ids)
 // status:   'loading' until the page data is read, then 'ready'; 'unavailable' when the server sent no course data;
-//           'error' when the data is malformed.
+//           'error' when the data is malformed. Both leave no rows, so nothing from earlier data stays on the page.
 export const initialState = { rows: [], programs: [], status: 'loading' };
 
 const isObject = value => typeof value === 'object' && value !== null;
@@ -26,8 +26,8 @@ const coursesSlice = createSlice({
       programs: action.payload.programs,
       status: 'ready',
     }),
-    coursesUnavailable: state => ({ ...state, status: 'unavailable' }),
-    coursesFailed: state => ({ ...state, status: 'error' }),
+    coursesUnavailable: () => ({ rows: [], programs: [], status: 'unavailable' }),
+    coursesFailed: () => ({ rows: [], programs: [], status: 'error' }),
   },
 });
 

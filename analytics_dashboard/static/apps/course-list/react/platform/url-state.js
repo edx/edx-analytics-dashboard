@@ -5,8 +5,8 @@ import { selectAvailableColumns, selectCurrentPage } from 'course-list/react/sta
 import { viewRestored } from 'course-list/react/state/view-slice';
 
 /**
- * The search, filters, sort, page and columns of the course list, kept in the address of the page, so a reload, the
- * Back button, a bookmark and a shared link show the same view. The format is the legacy page's, so old links keep
+ * The search, filters, sort, page and columns of the course list, kept in the address of the page, so a reload, a
+ * bookmark and a shared link show the same view. The format is the legacy page's, so old links keep
  * working:
  *
  *   /courses/#?text_search=algebra&availability=Current,Upcoming&sortKey=count&order=desc&page=3&cols=start_date,count
@@ -168,8 +168,9 @@ export function buildHash({ query, visibleColumns }, { filters = filterRegistry 
 
 /**
  * Keeps the store and the page's address in step. On start, and whenever the address changes by itself (the user edits
- * it, follows a link, or uses Back), the address is read into the store; whenever the store changes, the address is
- * rewritten (history.replaceState, so the history doesn't fill with every keystroke), once the view has stopped
+ * it or follows a link), the address is read into the store; whenever the store changes, the address is
+ * rewritten (history.replaceState, so Back doesn't step through every search and page and the history doesn't fill up),
+ * once the view has stopped
  * changing for a moment. Returns a function that stops it. While the address is invalid it is left as it is, with the
  * message shown, until the user changes something.
  *

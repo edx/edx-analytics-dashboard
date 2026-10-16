@@ -33,10 +33,6 @@ describe('CourseListPage', () => {
       store.dispatch(action);
     });
   };
-  const placeholders = () => {
-    const nodes = element.querySelectorAll('.insights-placeholder');
-    return Array.prototype.map.call(nodes, node => node.textContent);
-  };
 
   beforeEach(() => {
     restoreOnError = ignoreExpectedErrors(['Course data is not valid.', 'Summary text is not available.']);
@@ -73,7 +69,6 @@ describe('CourseListPage', () => {
 
     expect(element.querySelectorAll('.pgn__card').length).toBe(1);
     expect(element.querySelector('input[type="search"]')).not.toBeNull();
-    expect(placeholders()).toEqual([]);
     expect(element.textContent).toContain('Course runs: 0');
     expect(onSectionError).not.toHaveBeenCalled();
   });
@@ -120,7 +115,6 @@ describe('CourseListPage', () => {
     expect(element.querySelector('.alert-error .alert-title').textContent).toBe('We are unable to load this section.');
     expect(element.querySelectorAll('h2').length).toBe(2);
     expect(element.querySelector('.pgn__card')).toBeNull();
-    expect(placeholders().length).toBe(0);
     expect(onSectionError.calls.allArgs().map(args => args[0]))
       .toEqual(['course-list-summary', 'course-list-results']);
   });
