@@ -141,6 +141,30 @@ class PermissionsTests(TestCase):
             expected_courses = [self.new_course_id]
             self.assertEqual(permissions.get_user_course_permissions(self.user), expected_courses)
 
+    @mock.patch('analytics_dashboard.courses.permissions.OAuthAPIClient')
+    def test_get_user_course_permissions_with_missing_course_list(self, mock_client):
+        """
+        Verify course permissions are refreshed when the course list is missing from the cache but its update time
+        is still there, and that the next lookup uses the repaired cache.
+        """
+        self._setup_mock_course_ids_responses_and_expects(mock_client, [self.course_id])
+        self.assertEqual(permissions.get_user_course_permissions(self.user), [self.course_id])
+
+        # Remove only the course list, as when the cache could not store it.
+        cache.delete(f'course_permissions_v2_{self.user.pk}')
+        self.assertIsNotNone(cache.get(f'course_permissions_updated_at_v2_{self.user.pk}'))
+
+        # The next lookup fetches the permissions from the LMS instead of returning no courses.
+        mock_client.reset_mock()
+        expected_calls = self._setup_mock_course_ids_responses_and_expects(mock_client, [self.new_course_id])
+        self.assertEqual(permissions.get_user_course_permissions(self.user), [self.new_course_id])
+        self.assertCountEqual(expected_calls, mock_client.mock_calls)
+
+        # The lookup after that reuses the repaired cache without calling the LMS.
+        mock_client.reset_mock()
+        self.assertEqual(permissions.get_user_course_permissions(self.user), [self.new_course_id])
+        self.assertFalse(mock_client.mock_calls)
+
     def _get_access_token_client_calls(self):
         return [
             mock.call.get_oauth_access_token(
