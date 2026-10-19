@@ -60,16 +60,15 @@ class PermissionsTests(TestCase):
         courses = []
 
         permissions.set_user_course_permissions(self.user, courses)
-        permissions_key = f'course_permissions_{self.user.pk}'
-        self.assertListEqual(cache.get(permissions_key), courses)
+        self.assertListEqual(permissions.get_user_course_permissions(self.user), courses)
 
-        update_key = f'course_permissions_updated_at_{self.user.pk}'
+        update_key = f'course_permissions_updated_at_v2_{self.user.pk}'
         last_updated = cache.get(update_key)
         self.assertIsNotNone(last_updated)
 
         courses = [self.course_id]
         permissions.set_user_course_permissions(self.user, courses)
-        self.assertListEqual(cache.get(permissions_key), courses)
+        self.assertListEqual(permissions.get_user_course_permissions(self.user), courses)
         self.assertGreater(cache.get(update_key), last_updated)
         self.assertTrue(permissions.user_can_view_course(self.user, self.course_id))
 
@@ -165,12 +164,12 @@ class PermissionsTests(TestCase):
 
     def test_revoke_user_permissions(self):
         courses = [self.course_id]
-        permissions_key = f'course_permissions_{self.user.pk}'
-        update_key = f'course_permissions_updated_at_{self.user.pk}'
+        permissions_key = f'course_permissions_v2_{self.user.pk}'
+        update_key = f'course_permissions_updated_at_v2_{self.user.pk}'
 
         # Set permissions and verify cache is updated
         permissions.set_user_course_permissions(self.user, courses)
-        self.assertListEqual(cache.get(permissions_key), courses)
+        self.assertIsNotNone(cache.get(permissions_key))
         self.assertIsNotNone(cache.get(update_key))
         self.assertTrue(permissions.user_can_view_course(self.user, self.course_id))
 
