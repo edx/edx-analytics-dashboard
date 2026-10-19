@@ -1,5 +1,7 @@
 import logging
+from contextlib import contextmanager
 
+from analyticsclient.exceptions import TimeoutError as AnalyticsTimeoutError
 from braces.views import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
@@ -8,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework_csv.renderers import CSVRenderer
 from waffle import switch_is_active
 
+from analytics_dashboard.core.exceptions import ServiceUnavailableError
 from analytics_dashboard.core.utils import remove_keys
 from analytics_dashboard.courses import permissions
 from analytics_dashboard.courses.presenters.course_summaries import CourseSummariesPresenter
@@ -24,6 +27,21 @@ from analytics_dashboard.courses.views.csv import DatetimeCSVResponseMixin
 from analytics_dashboard.courses.waffle import react_course_list_enabled
 
 logger = logging.getLogger(__name__)
+
+
+@contextmanager
+def _service_unavailable_on_timeout(user, courses):
+    """
+    Shows the 503 page instead of a 500 when an Analytics API call for the course list times out.
+    """
+    try:
+        yield
+    except AnalyticsTimeoutError as e:
+        logger.warning(
+            'The Analytics API timed out on the course list for user %s with %s courses: %s',
+            user.id, 'all' if courses is None else len(courses), e,
+        )
+        raise ServiceUnavailableError from e
 
 
 class CourseIndex(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, TrackedViewMixin, LastUpdatedView,
@@ -48,7 +66,8 @@ class CourseIndex(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, TrackedV
             raise PermissionDenied
 
         summaries_presenter = CourseSummariesPresenter(analytics_client=self.analytics_client)
-        summaries, last_updated = summaries_presenter.get_course_summaries(courses)
+        with _service_unavailable_on_timeout(user, courses):
+            summaries, last_updated = summaries_presenter.get_course_summaries(courses)
         summary = summaries_presenter.get_course_summary_metrics(summaries)
         react_enabled = react_course_list_enabled(self.request)
 
@@ -66,7 +85,8 @@ class CourseIndex(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, TrackedV
 
         if enable_course_filters:
             programs_presenter = ProgramsPresenter(analytics_client=self.analytics_client)
-            programs = programs_presenter.get_programs(course_ids=courses)
+            with _service_unavailable_on_timeout(user, courses):
+                programs = programs_presenter.get_programs(course_ids=courses)
             data['programs_json'] = programs
 
         if react_enabled:
@@ -117,7 +137,8 @@ class CourseIndexCSV(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, Datet
         enable_course_filters = switch_is_active('enable_course_filters')
 
         presenter = CourseSummariesPresenter(analytics_client=self.analytics_client)
-        summaries, _ = presenter.get_course_summaries(courses)
+        with _service_unavailable_on_timeout(user, courses):
+            summaries, _ = presenter.get_course_summaries(courses)
 
         if not summaries:
             # Instead of returning a useless blank CSV, return a 404 error
@@ -129,7 +150,8 @@ class CourseIndexCSV(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, Datet
         if enable_course_filters:
             # Add list of associated program IDs to each summary entry
             programs_presenter = ProgramsPresenter(analytics_client=self.analytics_client)
-            programs = programs_presenter.get_programs(course_ids=courses)
+            with _service_unavailable_on_timeout(user, courses):
+                programs = programs_presenter.get_programs(course_ids=courses)
             for summary in summaries:
                 summary_programs = [program for program in programs if summary['course_id'] in program['course_ids']]
                 summary['program_ids'] = ' | '.join([program['program_id'] for program in summary_programs])
