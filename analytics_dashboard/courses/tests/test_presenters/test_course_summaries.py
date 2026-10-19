@@ -264,6 +264,11 @@ class CourseSummariesPresenterTests(TestCase):
         }
         self.assertEqual(metrics, expected)
 
+    def test_filter_summaries_without_course_ids(self):
+        """ Without course IDs, every summary is kept. """
+        summaries = list(self._API_SUMMARIES.values())
+        self.assertListEqual(CourseSummariesPresenter.filter_summaries(summaries), summaries)
+
     def mock_summaries_api(self, client=None, timeouts=None):
         """ Returns a mock of the summaries API call that answers for the requested courses.
 
