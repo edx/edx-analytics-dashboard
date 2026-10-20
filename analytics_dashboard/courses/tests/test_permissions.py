@@ -1,4 +1,6 @@
 import unittest.mock as mock
+import zlib
+
 import ddt
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -60,16 +62,15 @@ class PermissionsTests(TestCase):
         courses = []
 
         permissions.set_user_course_permissions(self.user, courses)
-        permissions_key = f'course_permissions_{self.user.pk}'
-        self.assertListEqual(cache.get(permissions_key), courses)
+        self.assertListEqual(permissions.get_user_course_permissions(self.user), courses)
 
-        update_key = f'course_permissions_updated_at_{self.user.pk}'
+        update_key = f'course_permissions_updated_at_v2_{self.user.pk}'
         last_updated = cache.get(update_key)
         self.assertIsNotNone(last_updated)
 
         courses = [self.course_id]
         permissions.set_user_course_permissions(self.user, courses)
-        self.assertListEqual(cache.get(permissions_key), courses)
+        self.assertListEqual(permissions.get_user_course_permissions(self.user), courses)
         self.assertGreater(cache.get(update_key), last_updated)
         self.assertTrue(permissions.user_can_view_course(self.user, self.course_id))
 
@@ -142,6 +143,47 @@ class PermissionsTests(TestCase):
             expected_courses = [self.new_course_id]
             self.assertEqual(permissions.get_user_course_permissions(self.user), expected_courses)
 
+    @mock.patch('analytics_dashboard.courses.permissions.OAuthAPIClient')
+    def test_get_user_course_permissions_with_missing_course_list(self, mock_client):
+        """
+        Verify course permissions are refreshed when the course list is missing from the cache but its update time
+        is still there, and that the next lookup uses the repaired cache.
+        """
+        self._setup_mock_course_ids_responses_and_expects(mock_client, [self.course_id])
+        self.assertEqual(permissions.get_user_course_permissions(self.user), [self.course_id])
+
+        # Remove only the course list, as when the cache could not store it.
+        cache.delete(f'course_permissions_v2_{self.user.pk}')
+        self.assertIsNotNone(cache.get(f'course_permissions_updated_at_v2_{self.user.pk}'))
+
+        # The next lookup fetches the permissions from the LMS instead of returning no courses.
+        mock_client.reset_mock()
+        expected_calls = self._setup_mock_course_ids_responses_and_expects(mock_client, [self.new_course_id])
+        self.assertEqual(permissions.get_user_course_permissions(self.user), [self.new_course_id])
+        self.assertCountEqual(expected_calls, mock_client.mock_calls)
+
+        # The lookup after that reuses the repaired cache without calling the LMS.
+        mock_client.reset_mock()
+        self.assertEqual(permissions.get_user_course_permissions(self.user), [self.new_course_id])
+        self.assertFalse(mock_client.mock_calls)
+
+    @ddt.data(b'not compressed', ['course-v1:edX+DemoX+Demo_Course'], zlib.compress(b'\xff'))
+    @mock.patch('analytics_dashboard.courses.permissions.OAuthAPIClient')
+    def test_get_user_course_permissions_with_unreadable_course_list(self, cached_courses, mock_client):
+        """
+        Verify course permissions are refreshed when the cached course list cannot be read: bytes that are not
+        compressed, a value of the wrong type, or compressed bytes that are not UTF-8.
+        """
+        self._setup_mock_course_ids_responses_and_expects(mock_client, [self.course_id])
+        self.assertEqual(permissions.get_user_course_permissions(self.user), [self.course_id])
+
+        cache.set(f'course_permissions_v2_{self.user.pk}', cached_courses)
+
+        mock_client.reset_mock()
+        expected_calls = self._setup_mock_course_ids_responses_and_expects(mock_client, [self.new_course_id])
+        self.assertEqual(permissions.get_user_course_permissions(self.user), [self.new_course_id])
+        self.assertCountEqual(expected_calls, mock_client.mock_calls)
+
     def _get_access_token_client_calls(self):
         return [
             mock.call.get_oauth_access_token(
@@ -165,12 +207,12 @@ class PermissionsTests(TestCase):
 
     def test_revoke_user_permissions(self):
         courses = [self.course_id]
-        permissions_key = f'course_permissions_{self.user.pk}'
-        update_key = f'course_permissions_updated_at_{self.user.pk}'
+        permissions_key = f'course_permissions_v2_{self.user.pk}'
+        update_key = f'course_permissions_updated_at_v2_{self.user.pk}'
 
         # Set permissions and verify cache is updated
         permissions.set_user_course_permissions(self.user, courses)
-        self.assertListEqual(cache.get(permissions_key), courses)
+        self.assertIsNotNone(cache.get(permissions_key))
         self.assertIsNotNone(cache.get(update_key))
         self.assertTrue(permissions.user_can_view_course(self.user, self.course_id))
 

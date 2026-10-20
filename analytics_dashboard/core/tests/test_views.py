@@ -125,12 +125,12 @@ class LogoutViewTests(RedirectTestCaseMixin, UserTestCaseMixin, TestCase):
         user = self.user
         course_id = 'edX/DemoX/Demo_Course'
         courses = [course_id]
-        permissions_key = f'course_permissions_{user.pk}'
-        update_key = f'course_permissions_updated_at_{user.pk}'
+        permissions_key = f'course_permissions_v2_{user.pk}'
+        update_key = f'course_permissions_updated_at_v2_{user.pk}'
 
         # Set permissions and verify cache is updated
         set_user_course_permissions(user, courses)
-        self.assertListEqual(cache.get(permissions_key), courses)
+        self.assertIsNotNone(cache.get(permissions_key))
         self.assertIsNotNone(cache.get(update_key))
         self.assertTrue(user_can_view_course(user, course_id))
 

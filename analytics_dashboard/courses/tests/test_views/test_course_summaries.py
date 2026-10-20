@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 import unittest.mock as mock
+from analyticsclient.exceptions import TimeoutError as AnalyticsTimeoutError
 from ddt import data, ddt
 from django.test import TestCase
 from waffle.testutils import override_flag, override_switch
@@ -95,6 +96,27 @@ class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, T
     def test_get_with_permissions_error(self):
         response = self.client.get(self.path())
         self.assertIsPermissionsRetrievalFailedResponse(response)
+
+    @override_switch('enable_course_filters', active=True)
+    @data(SUMMARIES_METHOD, PROGRAMS_METHOD)
+    def test_get_with_analytics_api_timeout(self, timed_out_method):
+        """ A timeout of the summaries or programs call shows the 503 page, not a 500, and is logged. """
+        course_ids = [CourseSamples.DEMO_COURSE_ID]
+        patches = {
+            SUMMARIES_METHOD: mock.patch(SUMMARIES_METHOD, return_value=self.get_mock_data(course_ids)),
+            PROGRAMS_METHOD: mock.patch(PROGRAMS_METHOD, return_value=self.get_programs_mock_data(course_ids)),
+        }
+        patches[timed_out_method] = mock.patch(timed_out_method, side_effect=AnalyticsTimeoutError('timed out'))
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(mock.patch(PERMISSIONS_METHOD, return_value=course_ids))
+            for patch in patches.values():
+                stack.enter_context(patch)
+            with self.assertLogs('analytics_dashboard.courses.views.course_summaries', level='WARNING') as logs:
+                response = self.client.get(self.path())
+
+        self.assertEqual(response.status_code, 503)
+        self.assertTemplateUsed(response, '503.html')
+        self.assertIn(f'for user {self.user.id} with 1 courses', logs.output[0])
 
     def get_course_index(self, summary=None):
         """ Requests the course list page with the course data mocked, and optionally the summary metrics. """

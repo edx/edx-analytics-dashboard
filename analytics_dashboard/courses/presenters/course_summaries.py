@@ -3,6 +3,7 @@ from django.conf import settings
 from waffle import switch_is_active
 
 from analytics_dashboard.core.cache import get_source_aware_cache, set_source_aware_cache
+from analytics_dashboard.core.utils import sanitize_cache_key
 from analytics_dashboard.courses.presenters import BasePresenter
 
 
@@ -20,21 +21,43 @@ class CourseSummariesPresenter(BasePresenter):
             return all_summaries
         return [summary for summary in all_summaries if summary['course_id'] in course_ids]
 
+    def _get_cache_key(self, course_ids, exclude):
+        """Returns the cache key for the requested summaries, or None if they should not be cached.
+
+        The full list has one key. A set of course IDs gets a key built from the API URL (which includes the
+        API version), the excluded fields and the course IDs.
+        """
+        if course_ids is None:
+            return self.CACHE_KEY
+        if not course_ids:
+            return None
+        key = '|'.join([self.client.base_url, ','.join(sorted(exclude)), ','.join(sorted(set(course_ids)))])
+        return f'{self.CACHE_KEY}_{sanitize_cache_key(key)}'
+
     def _get_summaries(self, course_ids=None):
         """Returns list of course summaries.
 
-        If requesting full list and it's not cached or requesting a subset of course_summaries with the course_ids
-        parameter, summaries will be fetched from the analytics data API.
+        Summaries are read from the cache. If they are not cached, they are fetched from the analytics data API
+        and cached.
         """
+        exclude = ['programs']  # we make a separate call to the programs endpoint
+        if not switch_is_active('enable_course_passing'):
+            exclude.append('passing_users')
+        cache_key = self._get_cache_key(course_ids, exclude)
+
         summaries = None
-        if course_ids is None:
-            # we only cache the full list of summaries
-            summaries = get_source_aware_cache(self.CACHE_KEY, self.client)
+        if cache_key:
+            summaries = get_source_aware_cache(cache_key, self.client)
         if summaries is None:
-            exclude = ['programs']  # we make a separate call to the programs endpoint
-            if not switch_is_active('enable_course_passing'):
-                exclude.append('passing_users')
-            summaries = self.client.course_summaries().course_summaries(course_ids=course_ids, exclude=exclude)
+            timeout = self.client.timeout
+            if course_ids and settings.COURSE_SUMMARIES_API_TIMEOUT:
+                # The summaries of a user's courses can take longer than other calls, so they can have their own
+                # timeout. Views create a client for each request, so this does not change other requests' timeout.
+                self.client.timeout = settings.COURSE_SUMMARIES_API_TIMEOUT
+            try:
+                summaries = self.client.course_summaries().course_summaries(course_ids=course_ids, exclude=exclude)
+            finally:
+                self.client.timeout = timeout
             summaries = [
                 {
                     field: (
@@ -44,9 +67,9 @@ class CourseSummariesPresenter(BasePresenter):
                     for field, val in summary.items()
                 } for summary in summaries
             ]
-            if course_ids is None:
+            if cache_key:
                 set_source_aware_cache(
-                    self.CACHE_KEY,
+                    cache_key,
                     summaries,
                     self.client,
                     settings.COURSE_SUMMARIES_CACHE_TIMEOUT,

@@ -1,16 +1,20 @@
 import unittest.mock as mock
 
 from analyticsclient.client import Client
+from analyticsclient.exceptions import TimeoutError as AnalyticsTimeoutError
 from ddt import data, ddt, unpack
 from django.conf import settings
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import TestCase, override_settings
+from waffle.testutils import override_switch
 
+from analytics_dashboard.core.cache import get_source_aware_cache
 from analytics_dashboard.courses.presenters.course_summaries import CourseSummariesPresenter
 from analytics_dashboard.courses.tests import utils
 from analytics_dashboard.courses.tests.utils import CourseSamples
 
 _ANOTHER_DEPRECATED_COURSE_ID = 'another/course/id'
+SUMMARIES_API = 'analyticsclient.course_summaries.CourseSummaries.course_summaries'
 
 
 @ddt
@@ -259,3 +263,98 @@ class CourseSummariesPresenterTests(TestCase):
             'masters_enrollment': 1111,
         }
         self.assertEqual(metrics, expected)
+
+    def test_filter_summaries_without_course_ids(self):
+        """ Without course IDs, every summary is kept. """
+        summaries = list(self._API_SUMMARIES.values())
+        self.assertListEqual(CourseSummariesPresenter.filter_summaries(summaries), summaries)
+
+    def mock_summaries_api(self, client=None, timeouts=None):
+        """ Returns a mock of the summaries API call that answers for the requested courses.
+
+        If timeouts is a list, the client's timeout at the time of each call is appended to it.
+        """
+        def course_summaries(course_ids=None, **_kwargs):
+            if timeouts is not None:
+                timeouts.append(client.timeout)
+            return [self._API_SUMMARIES[course_id] for course_id in course_ids or self._API_SUMMARIES]
+        return mock.Mock(side_effect=course_summaries)
+
+    def test_course_set_summaries_cached(self):
+        """ The same course set, in any order and with duplicates, is fetched once and then read from the cache. """
+        cache.clear()
+        course_ids = [CourseSamples.DEMO_COURSE_ID, CourseSamples.DEPRECATED_DEMO_COURSE_ID]
+        api = self.mock_summaries_api()
+        with mock.patch(SUMMARIES_API, api):
+            presenter = CourseSummariesPresenter(Client('base_url'))
+            summaries, _last_updated = presenter.get_course_summaries(course_ids)
+            for same_courses in (list(reversed(course_ids)), course_ids + course_ids):
+                self.assertEqual(presenter.get_course_summaries(same_courses)[0], summaries)
+        api.assert_called_once()
+
+    def test_course_set_summaries_cached_separately(self):
+        """ A different course set, API URL or set of excluded fields gets its own cache entry. """
+        cache.clear()
+        api = self.mock_summaries_api()
+        with mock.patch(SUMMARIES_API, api):
+            with override_switch('enable_course_passing', active=False):
+                CourseSummariesPresenter(Client('base_url')).get_course_summaries([CourseSamples.DEMO_COURSE_ID])
+                CourseSummariesPresenter(Client('base_url')).get_course_summaries(
+                    [CourseSamples.DEPRECATED_DEMO_COURSE_ID]
+                )
+                CourseSummariesPresenter(Client('other_url')).get_course_summaries([CourseSamples.DEMO_COURSE_ID])
+            with override_switch('enable_course_passing', active=True):
+                CourseSummariesPresenter(Client('base_url')).get_course_summaries([CourseSamples.DEMO_COURSE_ID])
+        self.assertEqual(api.call_count, 4)
+
+    def test_empty_course_list_not_cached(self):
+        """ An empty list of course IDs is fetched every time, as before. """
+        cache.clear()
+        api = mock.Mock(return_value=[])
+        with mock.patch(SUMMARIES_API, api):
+            presenter = CourseSummariesPresenter(Client('base_url'))
+            presenter.get_course_summaries([])
+            presenter.get_course_summaries([])
+        self.assertEqual(api.call_count, 2)
+
+    @override_settings(COURSE_SUMMARIES_API_TIMEOUT=30)
+    def test_full_list_keeps_cache_key_and_timeout(self):
+        """ The full list keeps its shared cache key and the client's own timeout. """
+        cache.clear()
+        client = Client('base_url', timeout=10)
+        timeouts = []
+        with mock.patch(SUMMARIES_API, self.mock_summaries_api(client, timeouts)):
+            CourseSummariesPresenter(client).get_course_summaries()
+        self.assertEqual(timeouts, [10])
+        self.assertIsNotNone(get_source_aware_cache(CourseSummariesPresenter.CACHE_KEY, client))
+
+    @override_settings(COURSE_SUMMARIES_API_TIMEOUT=30)
+    def test_course_set_timeout(self):
+        """ The summaries of a course set use COURSE_SUMMARIES_API_TIMEOUT, then the client's timeout is restored. """
+        cache.clear()
+        client = Client('base_url', timeout=10)
+        timeouts = []
+        with mock.patch(SUMMARIES_API, self.mock_summaries_api(client, timeouts)):
+            CourseSummariesPresenter(client).get_course_summaries([CourseSamples.DEMO_COURSE_ID])
+        self.assertEqual(timeouts, [30])
+        self.assertEqual(client.timeout, 10)
+
+    @override_settings(COURSE_SUMMARIES_API_TIMEOUT=None)
+    def test_course_set_uses_client_timeout_without_setting(self):
+        """ Without COURSE_SUMMARIES_API_TIMEOUT, the summaries of a course set use the client's own timeout. """
+        cache.clear()
+        client = Client('base_url', timeout=25)
+        timeouts = []
+        with mock.patch(SUMMARIES_API, self.mock_summaries_api(client, timeouts)):
+            CourseSummariesPresenter(client).get_course_summaries([CourseSamples.DEMO_COURSE_ID])
+        self.assertEqual(timeouts, [25])
+
+    @override_settings(COURSE_SUMMARIES_API_TIMEOUT=30)
+    def test_course_set_timeout_restored_after_error(self):
+        """ The client's timeout is restored when the summaries call fails. """
+        cache.clear()
+        client = Client('base_url', timeout=10)
+        with mock.patch(SUMMARIES_API, mock.Mock(side_effect=AnalyticsTimeoutError)):
+            with self.assertRaises(AnalyticsTimeoutError):
+                CourseSummariesPresenter(client).get_course_summaries([CourseSamples.DEMO_COURSE_ID])
+        self.assertEqual(client.timeout, 10)

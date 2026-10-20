@@ -1,5 +1,6 @@
 import datetime
 import logging
+import zlib
 
 from auth_backends.backends import EdXOAuth2
 from django.conf import settings
@@ -16,14 +17,34 @@ logger = logging.getLogger(__name__)
 # the result to courses that the target user only has staff access to.
 ROLE_FOR_ALLOWED_COURSES = 'staff'
 
+# Part of the permission cache keys. Change it when the stored format changes, so that code running the old format
+# during a deployment never reads entries in the new one.
+COURSE_PERMISSIONS_CACHE_VERSION = 2
+
 
 def _get_course_permission_cache_keys(user):
     """
     Return the cache keys used for user-course permissions
     """
-    key_last_updated = f'course_permissions_updated_at_{user.id}'
-    key_courses = f'course_permissions_{user.id}'
+    key_last_updated = f'course_permissions_updated_at_v{COURSE_PERMISSIONS_CACHE_VERSION}_{user.id}'
+    key_courses = f'course_permissions_v{COURSE_PERMISSIONS_CACHE_VERSION}_{user.id}'
     return key_courses, key_last_updated
+
+
+def _compress_courses(courses):
+    """
+    Return the course IDs, sorted, as compressed bytes. A plain list of tens of thousands of course IDs is larger
+    than the memcached item size limit, so it would not be stored.
+    """
+    return zlib.compress('\n'.join(sorted(courses)).encode('utf-8'))
+
+
+def _decompress_courses(data):
+    """
+    Return the list of course IDs stored by _compress_courses.
+    """
+    text = zlib.decompress(data).decode('utf-8')
+    return text.split('\n') if text else []
 
 
 def _get_tracking_cache_key(user):
@@ -52,7 +73,7 @@ def set_user_course_permissions(user, courses):
 
     key_courses, key_last_updated = _get_course_permission_cache_keys(user)
 
-    data = {key_courses: courses, key_last_updated: datetime.datetime.utcnow()}
+    data = {key_courses: _compress_courses(courses), key_last_updated: datetime.datetime.utcnow()}
     cache.set_many(data, settings.COURSE_PERMISSIONS_TIMEOUT)
 
 
@@ -113,13 +134,20 @@ def get_user_course_permissions(user):
 
     # Check the cache for data
     values = cache.get_many(keys)
-    courses = values.get(key_courses, [])
+    courses = values.get(key_courses)
 
-    # If data is not in the cache, refresh the permissions and validate against the new data.
-    if not values.get(key_last_updated):
-        courses = _refresh_user_course_permissions(user)
+    # If data is not in the cache, refresh the permissions and validate against the new data. The course list can be
+    # missing while its last update time is cached (for example, if the cache could not store or kept only one of
+    # them), so a missing list also means a refresh rather than a user with no courses.
+    if courses is None or not values.get(key_last_updated):
+        return _refresh_user_course_permissions(user)
 
-    return courses
+    try:
+        return _decompress_courses(courses)
+    except (zlib.error, TypeError, ValueError):
+        # An unreadable cached list also means a refresh, rather than an error until the cache entry expires.
+        logger.warning('Could not read the cached course permissions of user %s, refreshing them.', user.id)
+        return _refresh_user_course_permissions(user)
 
 
 def user_can_view_course(user, course_id):

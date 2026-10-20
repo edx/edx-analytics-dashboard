@@ -1,6 +1,7 @@
 import unittest.mock as mock
 import urllib
 from analyticsclient.exceptions import NotFoundError
+from analyticsclient.exceptions import TimeoutError as AnalyticsTimeoutError
 from ddt import data, ddt
 from django.test import TestCase
 from django.urls import reverse
@@ -256,6 +257,21 @@ class CourseIndexCSVTests(ViewTestMixin, TestCase):
         with mock.patch(presenter_method,
                         return_value=(mocked_api_response, None)):
             self.assertIsValidCSV(csv_data)
+
+    @override_switch('enable_course_filters', active=True)
+    @data(
+        'analytics_dashboard.courses.presenters.course_summaries.CourseSummariesPresenter.get_course_summaries',
+        'analytics_dashboard.courses.presenters.programs.ProgramsPresenter.get_programs',
+    )
+    def test_response_with_analytics_api_timeout(self, timed_out_method):
+        """ A timeout of the summaries or programs call shows the 503 page, not a 500, and is logged. """
+        with mock.patch(timed_out_method, side_effect=AnalyticsTimeoutError('timed out')):
+            with self.assertLogs('analytics_dashboard.courses.views.course_summaries', level='WARNING') as logs:
+                response = self.client.get(self.path())
+
+        self.assertEqual(response.status_code, 503)
+        self.assertTemplateUsed(response, '503.html')
+        self.assertIn(f'for user {self.user.id} with 2 courses', logs.output[0])
 
     @override_switch('enable_course_filters', active=True)
     @override_switch('enable_course_passing', active=False)
