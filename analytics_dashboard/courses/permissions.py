@@ -142,7 +142,12 @@ def get_user_course_permissions(user):
     if courses is None or not values.get(key_last_updated):
         return _refresh_user_course_permissions(user)
 
-    return _decompress_courses(courses)
+    try:
+        return _decompress_courses(courses)
+    except (zlib.error, TypeError, ValueError):
+        # An unreadable cached list also means a refresh, rather than an error until the cache entry expires.
+        logger.warning('Could not read the cached course permissions of user %s, refreshing them.', user.id)
+        return _refresh_user_course_permissions(user)
 
 
 def user_can_view_course(user, course_id):

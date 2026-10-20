@@ -1,4 +1,6 @@
 import unittest.mock as mock
+import zlib
+
 import ddt
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -164,6 +166,23 @@ class PermissionsTests(TestCase):
         mock_client.reset_mock()
         self.assertEqual(permissions.get_user_course_permissions(self.user), [self.new_course_id])
         self.assertFalse(mock_client.mock_calls)
+
+    @ddt.data(b'not compressed', ['course-v1:edX+DemoX+Demo_Course'], zlib.compress(b'\xff'))
+    @mock.patch('analytics_dashboard.courses.permissions.OAuthAPIClient')
+    def test_get_user_course_permissions_with_unreadable_course_list(self, cached_courses, mock_client):
+        """
+        Verify course permissions are refreshed when the cached course list cannot be read: bytes that are not
+        compressed, a value of the wrong type, or compressed bytes that are not UTF-8.
+        """
+        self._setup_mock_course_ids_responses_and_expects(mock_client, [self.course_id])
+        self.assertEqual(permissions.get_user_course_permissions(self.user), [self.course_id])
+
+        cache.set(f'course_permissions_v2_{self.user.pk}', cached_courses)
+
+        mock_client.reset_mock()
+        expected_calls = self._setup_mock_course_ids_responses_and_expects(mock_client, [self.new_course_id])
+        self.assertEqual(permissions.get_user_course_permissions(self.user), [self.new_course_id])
+        self.assertCountEqual(expected_calls, mock_client.mock_calls)
 
     def _get_access_token_client_calls(self):
         return [
