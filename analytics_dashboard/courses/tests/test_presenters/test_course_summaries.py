@@ -339,6 +339,16 @@ class CourseSummariesPresenterTests(TestCase):
         self.assertEqual(timeouts, [30])
         self.assertEqual(client.timeout, 10)
 
+    @override_settings(COURSE_SUMMARIES_API_TIMEOUT=None)
+    def test_course_set_uses_client_timeout_without_setting(self):
+        """ Without COURSE_SUMMARIES_API_TIMEOUT, the summaries of a course set use the client's own timeout. """
+        cache.clear()
+        client = Client('base_url', timeout=25)
+        timeouts = []
+        with mock.patch(SUMMARIES_API, self.mock_summaries_api(client, timeouts)):
+            CourseSummariesPresenter(client).get_course_summaries([CourseSamples.DEMO_COURSE_ID])
+        self.assertEqual(timeouts, [25])
+
     @override_settings(COURSE_SUMMARIES_API_TIMEOUT=30)
     def test_course_set_timeout_restored_after_error(self):
         """ The client's timeout is restored when the summaries call fails. """

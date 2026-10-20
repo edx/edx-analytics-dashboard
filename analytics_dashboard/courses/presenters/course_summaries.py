@@ -50,8 +50,9 @@ class CourseSummariesPresenter(BasePresenter):
             summaries = get_source_aware_cache(cache_key, self.client)
         if summaries is None:
             timeout = self.client.timeout
-            if course_ids:
-                # The summaries of a user's courses can take longer than other calls, so they have their own timeout.
+            if course_ids and settings.COURSE_SUMMARIES_API_TIMEOUT:
+                # The summaries of a user's courses can take longer than other calls, so they can have their own
+                # timeout. Views create a client for each request, so this does not change other requests' timeout.
                 self.client.timeout = settings.COURSE_SUMMARIES_API_TIMEOUT
             try:
                 summaries = self.client.course_summaries().course_summaries(course_ids=course_ids, exclude=exclude)

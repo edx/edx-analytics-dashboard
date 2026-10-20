@@ -440,8 +440,8 @@ MODULE_PREVIEW_URL = 'http://127.0.0.1:8000/xblock'
 # configuration.
 ANALYTICS_API_DEFAULT_TIMEOUT = 10
 # Used instead of ANALYTICS_API_DEFAULT_TIMEOUT for the course summaries of a user's courses on the course list,
-# which can take longer than other Analytics API calls.
-COURSE_SUMMARIES_API_TIMEOUT = 10
+# which can take longer than other Analytics API calls. None keeps ANALYTICS_API_DEFAULT_TIMEOUT.
+COURSE_SUMMARIES_API_TIMEOUT = None
 LMS_DEFAULT_TIMEOUT = (3.05, 5)
 ########## END EXTERNAL SERVICE TIMEOUTS
 
