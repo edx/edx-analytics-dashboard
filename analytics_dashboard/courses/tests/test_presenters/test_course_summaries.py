@@ -1,6 +1,7 @@
 import unittest.mock as mock
 
 from analyticsclient.client import Client
+from analyticsclient.exceptions import NotFoundError
 from analyticsclient.exceptions import TimeoutError as AnalyticsTimeoutError
 from ddt import data, ddt, unpack
 from django.conf import settings
@@ -251,6 +252,20 @@ class CourseSummariesPresenterTests(TestCase):
             summaries, last_updated = presenter.get_course_summaries()
             self.assertListEqual(summaries, [])
             self.assertIsNone(last_updated)
+
+    @override_settings(COURSE_SUMMARIES_API_TIMEOUT=30)
+    @data(None, [CourseSamples.DEMO_COURSE_ID, CourseSamples.DEPRECATED_DEMO_COURSE_ID])
+    def test_summaries_not_found(self, course_ids):
+        """ A 404 from the API, when none of the courses has summaries, is an empty list that is not cached. """
+        cache.clear()
+        client = Client('base_url', timeout=10)
+        api = mock.Mock(side_effect=NotFoundError('not found'))
+        with mock.patch(SUMMARIES_API, api):
+            presenter = CourseSummariesPresenter(client)
+            self.assertEqual(presenter.get_course_summaries(course_ids), ([], None))
+            self.assertEqual(presenter.get_course_summaries(course_ids), ([], None))
+        self.assertEqual(api.call_count, 2)
+        self.assertEqual(client.timeout, 10)
 
     def test_get_course_summary_metrics(self):
         presenter = CourseSummariesPresenter(Client('base_url'))

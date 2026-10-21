@@ -3,8 +3,10 @@ import json
 from pathlib import Path
 
 import unittest.mock as mock
+from analyticsclient.exceptions import NotFoundError
 from analyticsclient.exceptions import TimeoutError as AnalyticsTimeoutError
 from ddt import data, ddt
+from django.core.cache import cache
 from django.test import TestCase
 from waffle.testutils import override_flag, override_switch
 
@@ -20,6 +22,7 @@ SUMMARIES_METHOD = \
 SUMMARY_METRICS_METHOD = \
     'analytics_dashboard.courses.presenters.course_summaries.CourseSummariesPresenter.get_course_summary_metrics'
 PROGRAMS_METHOD = 'analytics_dashboard.courses.presenters.programs.ProgramsPresenter.get_programs'
+SUMMARIES_API = 'analyticsclient.course_summaries.CourseSummaries.course_summaries'
 
 # Expected text of the Total Enrollment card. The React card's JavaScript tests read the same file, so the
 # server-rendered and React versions are held to the same expectations.
@@ -117,6 +120,18 @@ class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, T
         self.assertEqual(response.status_code, 503)
         self.assertTemplateUsed(response, '503.html')
         self.assertIn(f'for user {self.user.id} with 1 courses', logs.output[0])
+
+    def test_get_without_summaries(self):
+        """ A 404 from the API, when none of the courses has summaries, shows an empty course list, not a 500. """
+        cache.clear()
+        course_ids = [CourseSamples.DEMO_COURSE_ID]
+        with mock.patch(PERMISSIONS_METHOD, return_value=course_ids):
+            with mock.patch(SUMMARIES_API, side_effect=NotFoundError('not found')):
+                response = self.client.get(self.path())
+
+        self.assertEqual(response.status_code, 200)
+        page_data = json.loads(response.context['page_data'])
+        self.assertListEqual(page_data['course']['course_list_json'], [])
 
     def get_course_index(self, summary=None):
         """ Requests the course list page with the course data mocked, and optionally the summary metrics. """
