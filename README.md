@@ -30,7 +30,7 @@
 | analytics\_dashboard/courses/middleware.py                                 |       25 |        0 |        4 |        0 |    100% |           |
 | analytics\_dashboard/courses/permissions.py                                |       89 |        1 |       16 |        2 |     97% |99-\>104, 130 |
 | analytics\_dashboard/courses/presenters/\_\_init\_\_.py                    |      210 |       13 |       50 |        4 |     93% |77-\>91, 125, 130-\>159, 149-\>157, 231-233, 259, 265, 269, 303-308 |
-| analytics\_dashboard/courses/presenters/course\_summaries.py               |       67 |        0 |       22 |        0 |    100% |           |
+| analytics\_dashboard/courses/presenters/course\_summaries.py               |       70 |        0 |       22 |        0 |    100% |           |
 | analytics\_dashboard/courses/presenters/engagement.py                      |      182 |        4 |       66 |        9 |     95% |83, 96, 115, 120-\>exit, 128-\>121, 139-\>142, 149-\>152, 150-\>149, 171, 212-\>220 |
 | analytics\_dashboard/courses/presenters/enrollment.py                      |      264 |        4 |       76 |       11 |     96% |207-\>236, 295-\>301, 312, 348-\>355, 383, 384-\>378, 390-392, 455-\>463, 512-\>519, 541-\>548 |
 | analytics\_dashboard/courses/presenters/performance.py                     |      332 |       21 |      108 |       14 |     92% |55-58, 72, 160-162, 188-\>199, 232-233, 247-\>exit, 249-\>exit, 270-\>291, 274-\>280, 310-\>319, 319-\>exit, 367-\>366, 369, 411, 415, 423, 432-433, 438, 446, 449, 505-506, 521-\>523, 602-\>604 |
@@ -72,7 +72,7 @@
 | common/tests/\_\_init\_\_.py                                               |        0 |        0 |        0 |        0 |    100% |           |
 | common/tests/course\_fixtures.py                                           |       68 |        1 |        4 |        0 |     99% |        20 |
 | common/tests/factories.py                                                  |       73 |        0 |        6 |        0 |    100% |           |
-| **TOTAL**                                                                  | **3881** |  **259** |  **778** |   **84** | **92%** |           |
+| **TOTAL**                                                                  | **3884** |  **259** |  **778** |   **84** | **92%** |           |
 
 
 ## Setup coverage badge
