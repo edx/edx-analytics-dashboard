@@ -1,4 +1,5 @@
 from analyticsclient.constants import enrollment_modes
+from analyticsclient.exceptions import NotFoundError
 from django.conf import settings
 from waffle import switch_is_active
 
@@ -38,7 +39,7 @@ class CourseSummariesPresenter(BasePresenter):
         """Returns list of course summaries.
 
         Summaries are read from the cache. If they are not cached, they are fetched from the analytics data API
-        and cached.
+        and cached. If the API has no summaries for the courses, an empty list is returned and not cached.
         """
         exclude = ['programs']  # we make a separate call to the programs endpoint
         if not switch_is_active('enable_course_passing'):
@@ -56,6 +57,10 @@ class CourseSummariesPresenter(BasePresenter):
                 self.client.timeout = settings.COURSE_SUMMARIES_API_TIMEOUT
             try:
                 summaries = self.client.course_summaries().course_summaries(course_ids=course_ids, exclude=exclude)
+            except NotFoundError:
+                # The API returns a 404 when none of the courses has summaries yet, for example new courses. Not
+                # caching the empty list lets the courses show up as soon as their summaries exist.
+                return []
             finally:
                 self.client.timeout = timeout
             summaries = [
