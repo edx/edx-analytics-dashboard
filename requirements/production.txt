@@ -11,7 +11,7 @@ asgiref==3.9.2
     #   -r requirements/base.txt
     #   django
     #   django-countries
-certifi==2025.8.3
+certifi==2026.10.19
     # via
     #   -r requirements/base.txt
     #   requests

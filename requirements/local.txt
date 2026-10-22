@@ -24,7 +24,7 @@ cachetools==6.2.0
     # via
     #   -r requirements/tox.txt
     #   tox
-certifi==2025.8.3
+certifi==2026.10.19
     # via
     #   -r requirements/test.txt
     #   requests
@@ -259,7 +259,7 @@ path==16.16.0
     #   path-py
 path-py==12.5.0
     # via -r requirements/test.txt
-pip-tools==7.5.0
+pip-tools==7.6.2
     # via -r requirements/pip_tools.txt
 platformdirs==4.4.0
     # via

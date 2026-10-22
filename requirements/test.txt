@@ -16,7 +16,7 @@ astroid==3.3.11
     #   -r requirements/test.in
     #   pylint
     #   pylint-celery
-certifi==2025.8.3
+certifi==2026.10.19
     # via
     #   -r requirements/base.txt
     #   requests
