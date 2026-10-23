@@ -42,6 +42,15 @@ describe('ResultsSection', () => {
     node => node.textContent,
   );
   const downloadLink = () => element.querySelector('.insights-results-actions a');
+  // The parameters of the link of Download CSV, decoded.
+  const csvParams = () => {
+    const params = {};
+    downloadLink().getAttribute('href').split('?')[1].split('&').forEach((pair) => {
+      const [key, value] = pair.split('=');
+      params[decodeURIComponent(key)] = decodeURIComponent(value);
+    });
+    return params;
+  };
 
   beforeEach(() => {
     props = {
@@ -84,7 +93,7 @@ describe('ResultsSection', () => {
     expect(element.querySelector('.insights-result-count').textContent).toBe('Course runs: 4');
     expect(element.querySelector('.insights-result-count').getAttribute('aria-live')).toBe('polite');
     expect(downloadLink().textContent).toBe('Download CSV');
-    expect(downloadLink().getAttribute('href')).toBe('/courses/csv/');
+    expect(downloadLink().getAttribute('href').split('?')[0]).toBe('/courses/csv/');
     expect(titles()).toEqual(['Algebra I', 'Biology', 'Chemistry', 'drawing basics']);
   });
 
@@ -140,6 +149,47 @@ describe('ResultsSection', () => {
 
     dispatch(filterChanged({ id: 'availability', values: ['Upcoming'] }));
     expect(element.textContent).toContain('Try a different search. Try clearing the filters.');
+  });
+
+  describe('the Download CSV link', () => {
+    const DEFAULT_COLUMNS = 'start_date,end_date,cumulative_count,count,count_change_7_days,verified_enrollment,'
+      + 'passing_users,program,sales_model,funding_model,b2b_count,b2c_count,subscription_count,alacarte_count';
+
+    it('asks for the filtered file, with the columns shown', () => {
+      render();
+
+      expect(csvParams()).toEqual({ filtered: 'true', cols: DEFAULT_COLUMNS });
+    });
+
+    it('follows the search and the filters', () => {
+      render();
+      dispatch(searchChanged('biology'));
+      dispatch(filterChanged({ id: 'availability', values: ['Archived', 'Upcoming'] }));
+
+      expect(csvParams()).toEqual({
+        filtered: 'true', text_search: 'biology', availability: 'Archived,Upcoming', cols: DEFAULT_COLUMNS,
+      });
+    });
+
+    it('follows the Columns menu', () => {
+      render();
+      act(() => element.querySelector('#columns-toggle').click());
+      const startDate = Array.prototype.find.call(
+        element.querySelectorAll('.insights-checkbox-menu input[type="checkbox"]'),
+        input => input.parentNode.textContent.trim() === 'Start Date',
+      );
+      act(() => startDate.click());
+
+      expect(csvParams().cols).toBe(DEFAULT_COLUMNS.replace('start_date,', ''));
+    });
+
+    it('has no filters when the page offers none', () => {
+      props.filtersEnabled = false;
+      render();
+      dispatch(filterChanged({ id: 'availability', values: ['Archived'] }));
+
+      expect(csvParams().availability).toBeUndefined();
+    });
   });
 
   it('reports a click on Download CSV and on a course link', () => {

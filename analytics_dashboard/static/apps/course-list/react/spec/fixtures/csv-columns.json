@@ -1,0 +1,19 @@
+[
+  { "column": "catalog_course_title", "fields": ["catalog_course_title", "course_id"] },
+  { "column": "start_date", "fields": ["start_date"] },
+  { "column": "end_date", "fields": ["end_date"] },
+  { "column": "cumulative_count", "fields": ["cumulative_count"] },
+  { "column": "count", "fields": ["count"] },
+  { "column": "total_engagements", "fields": ["total_engagements"] },
+  { "column": "engagement_rate", "fields": ["engagement_rate"] },
+  { "column": "count_change_7_days", "fields": ["count_change_7_days"] },
+  { "column": "verified_enrollment", "fields": ["enrollment_modes.verified.count"] },
+  { "column": "passing_users", "fields": ["passing_users"] },
+  { "column": "program", "fields": ["program_titles", "program_ids"] },
+  { "column": "sales_model", "fields": ["sales_model"] },
+  { "column": "funding_model", "fields": ["funding_model"] },
+  { "column": "b2b_count", "fields": ["b2b_count"] },
+  { "column": "b2c_count", "fields": ["b2c_count"] },
+  { "column": "subscription_count", "fields": ["subscription_count"] },
+  { "column": "alacarte_count", "fields": ["alacarte_count"] }
+]

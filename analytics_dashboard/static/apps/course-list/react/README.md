@@ -444,9 +444,20 @@ Check those property names against Paragon's CSS when upgrading it: a renamed on
 look. The Columns and Download CSV icons are Material Symbols Sharp (`components/icons.jsx`), which Paragon doesn't
 have.
 
-The filter bar sends the legacy analytics events (`platform/tracking.js`, `createControlsTracker`). The Download CSV
-link goes to the server's `course_list_download_url` and always downloads the full list: making the CSV follow the
-filters and columns is a server change.
+The filter bar sends the legacy analytics events (`platform/tracking.js`, `createControlsTracker`).
+
+**Download CSV** has what the table shows: the course runs that match the search and the filters (all of them, not
+just the page on the screen) and only the columns shown in the Columns menu, Course Name always. `platform/csv-url.js`
+builds the link: `filtered=true`, the search, the filters and `cols`, with the address's own functions (`searchParams`,
+`filterParams` in `platform/url-state.js`). `CourseIndexCSV` filters with `CourseSummariesPresenter.filter_by_query`
+and picks the columns from its `column_fields`. The legacy page's link has no `filtered=true`, so its file is still the
+whole list. The file is in the server's order, not the table's sort, and has no Timeframe. The filters travel in the
+URL, so a very large Course selection can exceed the web server's URL length.
+
+When you add a filter, add its id to `FILTER_IDS` and a check to `filter_by_query` in the server, and a case to
+`spec/fixtures/course-list-filter-cases.json` (the JavaScript and Python specs run it). When you add a column, add it to
+`CourseIndexCSV.column_fields` and to `spec/fixtures/csv-columns.json`, in the order of `registries/columns.js` (a spec
+and a Python test fail if the two lists differ).
 
 ### Adding a column (the table's columns are the sample)
 

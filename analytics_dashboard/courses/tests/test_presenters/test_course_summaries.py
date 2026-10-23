@@ -21,6 +21,10 @@ COURSE_LIST_ROWS_FIXTURE = (
     / 'static' / 'apps' / 'course-list' / 'react' / 'spec' / 'fixtures' / 'course-list-rows.json'
 )
 
+# Course rows with searches and filters, and the course runs each must give. The JavaScript specs run the same cases
+# through the page's search and filters, so the table and the downloaded CSV show the same course runs.
+FILTER_CASES_FIXTURE = COURSE_LIST_ROWS_FIXTURE.with_name('course-list-filter-cases.json')
+
 
 @ddt
 class CourseSummariesPresenterTests(TestCase):
@@ -262,6 +266,78 @@ class CourseSummariesPresenterTests(TestCase):
         fixture = json.loads(COURSE_LIST_ROWS_FIXTURE.read_text(encoding='utf-8'))
         presenter = CourseSummariesPresenter(Client('base_url'))
         self.assertEqual(presenter.get_course_summary_metrics(fixture['rows']), fixture['expected_summary'])
+
+    def test_filter_by_query_gives_the_course_runs_of_the_react_cases(self):
+        """ The page's table and the CSV (filtered here) must show the same course runs for the same query. """
+        fixture = json.loads(FILTER_CASES_FIXTURE.read_text(encoding='utf-8'))
+        for case in fixture['cases']:
+            with self.subTest(case['name']):
+                summaries = CourseSummariesPresenter.filter_by_query(
+                    fixture['rows'], case['search'], case['filters'],
+                    CourseSummariesPresenter.programs_by_course(fixture['programs']),
+                )
+                self.assertEqual([summary['course_id'] for summary in summaries], case['course_ids'])
+
+    def test_filter_by_query_without_a_query_gives_every_summary_in_order(self):
+        summaries = [{'course_id': 'b'}, {'course_id': 'a'}]
+
+        self.assertEqual(CourseSummariesPresenter.filter_by_query(summaries), summaries)
+        self.assertEqual(CourseSummariesPresenter.filter_by_query(summaries, '', {}, {}), summaries)
+
+    def test_filter_by_query_ignores_a_filter_with_no_values_and_an_unknown_filter(self):
+        summaries = [{'course_id': 'a', 'availability': 'Current'}, {'course_id': 'b', 'availability': 'Archived'}]
+        filters = {'availability': [], 'colour': ['red']}
+
+        self.assertEqual(CourseSummariesPresenter.filter_by_query(summaries, '', filters), summaries)
+
+    def test_filter_by_query_copes_with_missing_and_null_fields(self):
+        """ The API may send null for a missing title; a summary with no learner fields has no learners. """
+        summaries = [{'course_id': 'a', 'catalog_course_title': None, 'catalog_course': None, 'availability': None}]
+
+        self.assertEqual(CourseSummariesPresenter.filter_by_query(summaries, 'a'), summaries)
+        unknown = {'availability': ['unknown']}
+        self.assertEqual(CourseSummariesPresenter.filter_by_query(summaries, '', unknown), summaries)
+        self.assertEqual(CourseSummariesPresenter.filter_by_query(summaries, '', {'courses': ['a']}), summaries)
+        self.assertEqual(CourseSummariesPresenter.filter_by_query(summaries, '', {'sales': ['b2b']}), [])
+        self.assertEqual(CourseSummariesPresenter.filter_by_query(summaries, '', {'program_ids': ['p']}, {}), [])
+
+    @data(
+        ({'b2b_count': 4}, True),
+        ({'b2b_count': 0}, False),
+        ({'b2b_count': -1}, False),
+        ({'b2b_count': None}, False),
+        ({}, False),
+    )
+    @unpack
+    def test_filter_by_query_sales_and_funding_need_learners_in_the_segment(self, summary, expected):
+        summary = {**summary, 'course_id': 'a'}
+        result = CourseSummariesPresenter.filter_by_query([summary], '', {'sales': ['b2b']})
+
+        self.assertEqual(result == [summary], expected)
+
+    def test_filter_by_query_sales_and_funding_read_only_their_own_segments(self):
+        """ A value that is not a segment of the filter matches nothing, and never reads another field. """
+        summaries = [{'course_id': 'a', 'cumulative_count': 50, 'b2b_count': 4, 'subscription_count': 3}]
+
+        for filters in ({'sales': ['cumulative']}, {'sales': ['subscription']}, {'funding': ['b2b']}):
+            with self.subTest(filters):
+                self.assertEqual(CourseSummariesPresenter.filter_by_query(summaries, '', filters), [])
+        sales = {'sales': ['cumulative', 'b2b']}
+        funding = {'funding': ['subscription']}
+        self.assertEqual(CourseSummariesPresenter.filter_by_query(summaries, '', sales), summaries)
+        self.assertEqual(CourseSummariesPresenter.filter_by_query(summaries, '', funding), summaries)
+
+    def test_programs_by_course(self):
+        programs = [
+            {'program_id': 'p1', 'course_ids': ['a', 'b', 'a']},
+            {'program_id': 'p2', 'course_ids': ['b']},
+            {'program_id': 'p3', 'course_ids': []},
+        ]
+
+        by_course = CourseSummariesPresenter.programs_by_course(programs)
+
+        self.assertEqual(by_course, {'a': [programs[0]], 'b': [programs[0], programs[1]]})
+        self.assertEqual(CourseSummariesPresenter.programs_by_course(None), {})
 
     def test_get_course_summary_metrics(self):
         presenter = CourseSummariesPresenter(Client('base_url'))

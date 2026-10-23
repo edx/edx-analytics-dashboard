@@ -167,29 +167,39 @@ export function parseHash(hash, {
   return { query, visibleColumns, invalid };
 }
 
+/** The [key, value] of the search, when there is one. Also used by the link of Download CSV (platform/csv-url.js). */
+export function searchParams(query) {
+  return query.search.trim() !== '' ? [['text_search', query.search]] : [];
+}
+
+/** The [key, value] of each filter that has selected values, in the order of the registry, as in the address. */
+export function filterParams(query, filters = filterRegistry) {
+  return filters
+    .filter(filter => query.filters[filter.id] && query.filters[filter.id].length)
+    .map(filter => [filter.id, query.filters[filter.id].join(',')]);
+}
+
+/** [key, value] pairs as a query string, encoded like the legacy page's. */
+export function encodeParams(params) {
+  return params.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
+}
+
 /**
  * The address hash for a query: search, filters (in the order of the registry), sort, page, and the ticked columns when
  * the user has chosen them. Values are encoded like the legacy page's.
  */
 export function buildHash({ query, visibleColumns }, { filters = filterRegistry } = {}) {
-  const params = [];
-  if (query.search.trim() !== '') {
-    params.push(['text_search', query.search]);
-  }
+  const params = [...searchParams(query)];
   if (query.timeframe && query.timeframe.range !== 'all') {
     params.push(['timeframe', query.timeframe.range]);
     ['from', 'to'].filter(field => query.timeframe[field]).forEach(field => params.push([field, query.timeframe[field]]));
   }
-  filters.forEach((filter) => {
-    if (query.filters[filter.id] && query.filters[filter.id].length) {
-      params.push([filter.id, query.filters[filter.id].join(',')]);
-    }
-  });
+  params.push(...filterParams(query, filters));
   params.push(['sortKey', query.sort.key], ['order', query.sort.dir], ['page', String(query.page)]);
   if (visibleColumns) {
     params.push(['cols', visibleColumns.join(',')]);
   }
-  return `#?${params.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&')}`;
+  return `#?${encodeParams(params)}`;
 }
 
 /**
