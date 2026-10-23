@@ -1,5 +1,8 @@
 import columns from 'course-list/react/registries/columns';
 
+// The CSV fields of each column; the server's CourseIndexCSV.column_fields holds the same list (checked by its test).
+const csvColumns = require('course-list/react/spec/fixtures/csv-columns.json');
+
 // Every entry that is added to the registry must have the keys the table reads (see the comment of the registry).
 describe('columns registry', () => {
   const CELLS = ['courseName', 'date', 'number', 'percent', 'text'];
@@ -12,6 +15,10 @@ describe('columns registry', () => {
     });
     const ids = columns.map(entry => entry.id);
     expect(ids.filter((id, index) => ids.indexOf(id) !== index)).toEqual([]);
+  });
+
+  it('has a CSV export for every column, in the order of the table, as the server maps them', () => {
+    expect(csvColumns.map(entry => entry.column)).toEqual(columns.map(entry => entry.id));
   });
 
   it('starts with Course Name, which is always visible', () => {

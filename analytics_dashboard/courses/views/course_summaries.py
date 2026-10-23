@@ -26,9 +26,10 @@ from analytics_dashboard.courses.waffle import react_course_list_enabled
 logger = logging.getLogger(__name__)
 
 # What the course list page may send in the link of its Download CSV button (see CourseIndexCSV): the longest search
-# text, the most values of one filter, and the ids of the filters that narrow the list (registries/filters.js).
+# text (the page's search box and address stop at the same length) and the ids of the filters that narrow the list
+# (registries/filters.js). The number of values of a filter is limited by the length of the URL, which the web server
+# enforces.
 MAX_SEARCH_LENGTH = 200
-MAX_FILTER_VALUES = 500
 FILTER_IDS = ('availability', 'pacing_type', 'program_ids', 'courses', 'sales', 'funding')
 
 
@@ -151,7 +152,8 @@ class CourseIndexCSV(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, Datet
     }
 
     # The columns of the course list table (static/apps/course-list/react/registries/columns.js), in its order, and the
-    # CSV fields each one exports. A column whose data the API doesn't send yet exports empty cells.
+    # CSV fields each one exports. The shared fixture spec/fixtures/csv-columns.json holds this list, so a column added
+    # to one side and not the other fails a test. A column whose data the API doesn't send yet exports empty cells.
     column_fields = [
         ('catalog_course_title', ['catalog_course_title', 'course_id']),
         ('start_date', ['start_date']),
@@ -185,7 +187,7 @@ class CourseIndexCSV(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, Datet
             for filter_id in FILTER_IDS:
                 values = [value for value in params.get(filter_id, '').split(',') if value]
                 if values:
-                    filters[filter_id] = values[:MAX_FILTER_VALUES]
+                    filters[filter_id] = values
         columns = params['cols'].split(',') if 'cols' in params else None
         return search, filters, columns
 
@@ -218,11 +220,12 @@ class CourseIndexCSV(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, Datet
         if enable_course_filters:
             programs_presenter = ProgramsPresenter(analytics_client=self.analytics_client)
             programs = programs_presenter.get_programs(course_ids=courses)
+        programs_by_course = presenter.programs_by_course(programs)
 
         header = None
         if self.request.GET.get('filtered') == 'true':
             search, filters, columns = self.get_page_query(enable_course_filters)
-            summaries = presenter.filter_by_query(summaries, search, filters, programs)
+            summaries = presenter.filter_by_query(summaries, search, filters, programs_by_course)
             if columns is not None:
                 header = self.get_header(columns)
 
@@ -232,7 +235,7 @@ class CourseIndexCSV(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, Datet
         if enable_course_filters:
             # Add list of associated program IDs to each summary entry
             for summary in summaries:
-                summary_programs = [program for program in programs if summary['course_id'] in program['course_ids']]
+                summary_programs = programs_by_course.get(summary['course_id'], [])
                 summary['program_ids'] = ' | '.join([program['program_id'] for program in summary_programs])
                 summary['program_titles'] = ' | '.join([program['program_title'] for program in summary_programs])
 

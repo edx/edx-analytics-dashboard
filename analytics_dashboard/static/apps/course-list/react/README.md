@@ -456,7 +456,8 @@ URL, so a very large Course selection can exceed the web server's URL length.
 
 When you add a filter, add its id to `FILTER_IDS` and a check to `filter_by_query` in the server, and a case to
 `spec/fixtures/course-list-filter-cases.json` (the JavaScript and Python specs run it). When you add a column, add it to
-`CourseIndexCSV.column_fields`, in the order of `registries/columns.js`.
+`CourseIndexCSV.column_fields` and to `spec/fixtures/csv-columns.json`, in the order of `registries/columns.js` (a spec
+and a Python test fail if the two lists differ).
 
 ### Adding a column (the table's columns are the sample)
 

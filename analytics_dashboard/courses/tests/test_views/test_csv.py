@@ -1,7 +1,9 @@
 import csv
 import io
+import json
 import unittest.mock as mock
 import urllib
+from pathlib import Path
 
 from analyticsclient.exceptions import NotFoundError
 from ddt import data, ddt
@@ -25,7 +27,7 @@ from analytics_dashboard.courses.tests.utils import (
     get_mock_course_summaries_csv,
     get_mock_programs,
 )
-from analytics_dashboard.courses.views.course_summaries import MAX_FILTER_VALUES
+from analytics_dashboard.courses.views.course_summaries import CourseIndexCSV
 
 
 @ddt
@@ -310,6 +312,12 @@ class CourseIndexCSVTests(ViewTestMixin, TestCase):
         self._test_csv([], '')
 
 
+# The CSV fields of each column of the course list table, shared with the React page's tests.
+CSV_COLUMNS_FIXTURE = (
+    Path(__file__).resolve().parents[3]
+    / 'static' / 'apps' / 'course-list' / 'react' / 'spec' / 'fixtures' / 'csv-columns.json'
+)
+
 PRESENTER_SUMMARIES = (
     'analytics_dashboard.courses.presenters.course_summaries.CourseSummariesPresenter.get_course_summaries'
 )
@@ -392,12 +400,17 @@ class CourseIndexCSVFilteredTests(ViewTestMixin, TestCase):
         self.assertEqual(self.course_ids({'filtered': 'true', 'courses': 'Edx+Biology', 'sales': 'b2b'}), [])
 
     @override_switch('enable_course_filters', active=True)
-    def test_only_the_first_values_of_a_filter_count(self):
-        within = ['x'] * (MAX_FILTER_VALUES - 1) + ['Edx+Biology']
-        over = ['x'] * MAX_FILTER_VALUES + ['Edx+Biology']
+    def test_a_long_list_of_values_is_not_cut(self):
+        """ Every selected value counts: the length of the URL is the only limit. """
+        values = ['x'] * 1000 + ['Edx+Biology']
 
-        self.assertEqual(self.course_ids({'filtered': 'true', 'courses': ','.join(within)}), [self.BIOLOGY])
-        self.assertEqual(self.course_ids({'filtered': 'true', 'courses': ','.join(over)}), [])
+        self.assertEqual(self.course_ids({'filtered': 'true', 'courses': ','.join(values)}), [self.BIOLOGY])
+
+    @override_switch('enable_course_filters', active=True)
+    def test_sales_and_funding_read_only_their_own_segments(self):
+        """ The mock summaries have a cumulative_count, but a value from the URL can't make the filter read it. """
+        self.assertEqual(self.course_ids({'filtered': 'true', 'sales': 'cumulative'}), [])
+        self.assertEqual(self.course_ids({'filtered': 'true', 'funding': 'b2b'}), [])
 
     @override_switch('enable_course_filters', active=True)
     def test_filters_by_program(self):
@@ -504,3 +517,12 @@ class CourseIndexCSVFilteredTests(ViewTestMixin, TestCase):
             response = self.client.get(self.path(), {'filtered': 'true', 'cols': 'count'})
 
         self.assertEqual(response.status_code, 404)
+
+    def test_the_columns_are_the_ones_the_react_page_exports(self):
+        """ CourseIndexCSV.column_fields and the React page's csv-columns.json list the same columns and fields. """
+        expected = json.loads(CSV_COLUMNS_FIXTURE.read_text(encoding='utf-8'))
+
+        self.assertEqual(
+            [{'column': column, 'fields': fields} for column, fields in CourseIndexCSV.column_fields],
+            expected,
+        )

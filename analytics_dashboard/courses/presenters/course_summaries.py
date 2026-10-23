@@ -20,14 +20,33 @@ class CourseSummariesPresenter(BasePresenter):
             return all_summaries
         return [summary for summary in all_summaries if summary['course_id'] in course_ids]
 
+    # The values of the Sales Model and Funding Model filters. Each reads the summary field `<value>_count`; only these
+    # names are read, so a value from a URL can't make the filter read another field.
+    SEGMENTS = {
+        'sales': ('b2b', 'b2c'),
+        'funding': ('subscription', 'alacarte'),
+    }
+
     @staticmethod
-    def _has_learners(summary, segment):
-        """ Whether the summary has learners in a segment (a value of the Sales Model or Funding Model filter). """
-        count = summary.get(f'{segment}_count')
-        return isinstance(count, (int, float)) and count > 0
+    def programs_by_course(programs):
+        """ Returns {course ID: [the programs the course belongs to]} from the API's programs, in their order. """
+        by_course = {}
+        for program in programs or []:
+            for course_id in set(program['course_ids']):
+                by_course.setdefault(course_id, []).append(program)
+        return by_course
 
     @classmethod
-    def filter_by_query(cls, summaries, search='', filters=None, programs=None):
+    def _has_learners(cls, summary, filter_id, values):
+        """ Whether the summary has learners in one of the selected segments of the Sales or Funding filter. """
+        for segment in cls.SEGMENTS[filter_id]:
+            count = summary.get(f'{segment}_count')
+            if segment in values and isinstance(count, (int, float)) and count > 0:
+                return True
+        return False
+
+    @classmethod
+    def filter_by_query(cls, summaries, search='', filters=None, programs_by_course=None):
         """
         Returns the summaries that match the search and the filters of the course list page, in their order.
 
@@ -36,25 +55,24 @@ class CourseSummariesPresenter(BasePresenter):
         - search: a summary matches when any word of the text is part of its title or course ID, ignoring case;
         - filters: {filter id: [selected values]}. The values of one filter are alternatives, the filters and the
           search narrow each other. A filter without values is not applied. The ids are availability (a missing one
-          is 'unknown'), pacing_type, program_ids (the programs the course belongs to, from `programs`), courses (the
-          catalog course, or the course ID when it has none), and sales and funding, which match a summary that has
-          learners in a selected segment (the value b2b reads b2b_count, and so on).
+          is 'unknown'), pacing_type, program_ids (the programs the course belongs to, from `programs_by_course`),
+          courses (the catalog course, or the course ID when it has none), and sales and funding, which match a
+          summary that has learners in a selected segment (see SEGMENTS; any other value matches nothing).
         """
         words = (search or '').lower().split()
-        selected = {key: values for key, values in (filters or {}).items() if values}
-        programs = programs or []
-
-        def program_ids_of(summary):
-            return [program['program_id'] for program in programs if summary['course_id'] in program['course_ids']]
+        selected = {key: set(values) for key, values in (filters or {}).items() if values}
+        programs_by_course = programs_by_course or {}
 
         # Each check says whether a summary matches the selected values of one filter.
         checks = {
             'availability': lambda summary, values: (summary.get('availability') or 'unknown') in values,
             'pacing_type': lambda summary, values: summary.get('pacing_type') in values,
-            'program_ids': lambda summary, values: any(program_id in values for program_id in program_ids_of(summary)),
+            'program_ids': lambda summary, values: any(
+                program['program_id'] in values for program in programs_by_course.get(summary['course_id'], [])
+            ),
             'courses': lambda summary, values: (summary.get('catalog_course') or summary['course_id']) in values,
-            'sales': lambda summary, values: any(cls._has_learners(summary, value) for value in values),
-            'funding': lambda summary, values: any(cls._has_learners(summary, value) for value in values),
+            'sales': lambda summary, values: cls._has_learners(summary, 'sales', values),
+            'funding': lambda summary, values: cls._has_learners(summary, 'funding', values),
         }
 
         def matches_filters(summary):
