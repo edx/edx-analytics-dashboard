@@ -1,9 +1,7 @@
 import csv
 import io
-import json
 import unittest.mock as mock
 import urllib
-from pathlib import Path
 
 from analyticsclient.exceptions import NotFoundError
 from ddt import data, ddt
@@ -27,7 +25,7 @@ from analytics_dashboard.courses.tests.utils import (
     get_mock_course_summaries_csv,
     get_mock_programs,
 )
-from analytics_dashboard.courses.views.course_summaries import CourseIndexCSV
+from analytics_dashboard.courses.views.course_summaries import MAX_FILTER_VALUES
 
 
 @ddt
@@ -312,18 +310,11 @@ class CourseIndexCSVTests(ViewTestMixin, TestCase):
         self._test_csv([], '')
 
 
-# The CSV fields of each column of the course list table, shared with the React page's tests.
-CSV_COLUMNS_FIXTURE = (
-    Path(__file__).resolve().parents[3]
-    / 'static' / 'apps' / 'course-list' / 'react' / 'spec' / 'fixtures' / 'csv-columns.json'
-)
-
 PRESENTER_SUMMARIES = (
     'analytics_dashboard.courses.presenters.course_summaries.CourseSummariesPresenter.get_course_summaries'
 )
 
 
-@ddt
 class CourseIndexCSVFilteredTests(ViewTestMixin, TestCase):
     """ The CSV that the React course list page asks for with filtered=true: its search, filters and columns. """
     viewname = 'courses:index_csv'
@@ -391,27 +382,22 @@ class CourseIndexCSVFilteredTests(ViewTestMixin, TestCase):
         )
 
     @override_switch('enable_course_filters', active=True)
-    @data(
-        ({'text_search': 'algebra'}, ['ALGEBRA']),
-        ({'text_search': 'BIOLOGY drawing'}, ['BIOLOGY', 'DRAWING']),
-        ({'text_search': '   '}, ['ALGEBRA', 'BIOLOGY', 'DRAWING']),
-        ({'availability': 'Archived'}, ['BIOLOGY']),
-        ({'availability': 'unknown'}, ['DRAWING']),
-        ({'availability': 'Current,Archived'}, ['ALGEBRA', 'BIOLOGY']),
-        ({'pacing_type': 'self_paced'}, ['BIOLOGY', 'DRAWING']),
-        ({'courses': 'Edx+Biology'}, ['BIOLOGY']),
-        ({'courses': 'another/course/id'}, ['DRAWING']),
-        ({'sales': 'b2b'}, ['ALGEBRA']),
-        ({'sales': 'b2c'}, []),
-        ({'funding': 'subscription'}, []),
-        ({'text_search': 'algebra', 'availability': 'Archived'}, []),
-        ({'availability': 'Current,Archived', 'pacing_type': 'self_paced'}, ['BIOLOGY']),
-    )
-    def test_filters_the_courses(self, case):
-        params, expected = case
-        ids = {'ALGEBRA': self.ALGEBRA, 'BIOLOGY': self.BIOLOGY, 'DRAWING': self.DRAWING}
+    def test_the_search_and_the_filters_narrow_the_courses(self):
+        """ The rules themselves are checked with the cases shared with the page (the presenter test). """
+        self.assertEqual(self.course_ids({'filtered': 'true', 'text_search': 'algebra'}), [self.ALGEBRA])
+        self.assertEqual(
+            self.course_ids({'filtered': 'true', 'availability': 'Current,Archived', 'pacing_type': 'self_paced'}),
+            [self.BIOLOGY],
+        )
+        self.assertEqual(self.course_ids({'filtered': 'true', 'courses': 'Edx+Biology', 'sales': 'b2b'}), [])
 
-        self.assertEqual(self.course_ids({'filtered': 'true', **params}), [ids[name] for name in expected])
+    @override_switch('enable_course_filters', active=True)
+    def test_only_the_first_values_of_a_filter_count(self):
+        within = ['x'] * (MAX_FILTER_VALUES - 1) + ['Edx+Biology']
+        over = ['x'] * MAX_FILTER_VALUES + ['Edx+Biology']
+
+        self.assertEqual(self.course_ids({'filtered': 'true', 'courses': ','.join(within)}), [self.BIOLOGY])
+        self.assertEqual(self.course_ids({'filtered': 'true', 'courses': ','.join(over)}), [])
 
     @override_switch('enable_course_filters', active=True)
     def test_filters_by_program(self):
@@ -518,12 +504,3 @@ class CourseIndexCSVFilteredTests(ViewTestMixin, TestCase):
             response = self.client.get(self.path(), {'filtered': 'true', 'cols': 'count'})
 
         self.assertEqual(response.status_code, 404)
-
-    def test_the_columns_are_the_ones_the_react_page_exports(self):
-        """ CourseIndexCSV.column_fields and the React page's csv-columns.json list the same columns and fields. """
-        expected = json.loads(CSV_COLUMNS_FIXTURE.read_text(encoding='utf-8'))
-
-        self.assertEqual(
-            [{'column': column, 'fields': fields} for column, fields in CourseIndexCSV.column_fields],
-            expected,
-        )

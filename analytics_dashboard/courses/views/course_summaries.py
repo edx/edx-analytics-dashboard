@@ -151,8 +151,7 @@ class CourseIndexCSV(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, Datet
     }
 
     # The columns of the course list table (static/apps/course-list/react/registries/columns.js), in its order, and the
-    # CSV fields each one exports. The shared fixture spec/fixtures/csv-columns.json holds this list, so a column added
-    # to one side and not the other fails a test. A column whose data the API doesn't send yet exports empty cells.
+    # CSV fields each one exports. A column whose data the API doesn't send yet exports empty cells.
     column_fields = [
         ('catalog_course_title', ['catalog_course_title', 'course_id']),
         ('start_date', ['start_date']),

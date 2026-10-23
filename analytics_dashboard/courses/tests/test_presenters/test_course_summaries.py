@@ -304,8 +304,6 @@ class CourseSummariesPresenterTests(TestCase):
         ({'b2b_count': 4}, True),
         ({'b2b_count': 0}, False),
         ({'b2b_count': -1}, False),
-        ({'b2b_count': '3'}, True),
-        ({'b2b_count': 'abc'}, False),
         ({'b2b_count': None}, False),
         ({}, False),
     )

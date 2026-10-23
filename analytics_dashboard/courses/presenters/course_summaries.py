@@ -23,10 +23,8 @@ class CourseSummariesPresenter(BasePresenter):
     @staticmethod
     def _has_learners(summary, segment):
         """ Whether the summary has learners in a segment (a value of the Sales Model or Funding Model filter). """
-        try:
-            return float(summary.get(f'{segment}_count')) > 0
-        except (TypeError, ValueError):
-            return False
+        count = summary.get(f'{segment}_count')
+        return isinstance(count, (int, float)) and count > 0
 
     @classmethod
     def filter_by_query(cls, summaries, search='', filters=None, programs=None):
