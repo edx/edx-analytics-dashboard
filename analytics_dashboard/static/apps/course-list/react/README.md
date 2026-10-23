@@ -444,9 +444,23 @@ Check those property names against Paragon's CSS when upgrading it: a renamed on
 look. The Columns and Download CSV icons are Material Symbols Sharp (`components/icons.jsx`), which Paragon doesn't
 have.
 
-The filter bar sends the legacy analytics events (`platform/tracking.js`, `createControlsTracker`). The Download CSV
-link goes to the server's `course_list_download_url` and always downloads the full list: making the CSV follow the
-filters and columns is a server change.
+The filter bar sends the legacy analytics events (`platform/tracking.js`, `createControlsTracker`).
+
+**Download CSV** has what the table shows: the course runs that match the search and the filters (all of them, not
+just the page on the screen) and only the columns shown in the Columns menu, Course Name always. `platform/csv-url.js`
+builds the link from the server's `course_list_download_url`: `filtered=true`, then the search, the filters and `cols`
+(the ids of the optional columns shown), using the same functions as the page's address (`searchParams`,
+`filterParams` in `platform/url-state.js`). The server (`CourseIndexCSV`, `courses/views/course_summaries.py`) filters
+with `CourseSummariesPresenter.filter_by_query` and picks the columns from its `column_fields` list. The legacy page's
+link has no `filtered=true`, so its file is still the whole list. The CSV is not sorted as the table is, and the
+Timeframe is not in it.
+
+When you add a filter, a column or change how the table searches, keep the server in step:
+- a filter: add its id to `FILTER_IDS` and a check to `filter_by_query`, and a case to
+  `spec/fixtures/course-list-filter-cases.json`. The JavaScript spec `state/spec/filter-cases-spec.js` and the Python
+  presenter test run those cases against the page and the server, so they fail if the two differ;
+- a column: add it to `CourseIndexCSV.column_fields` and to `spec/fixtures/csv-columns.json`, in the order of
+  `registries/columns.js`. A spec and a Python test fail if a column is missing or out of order.
 
 ### Adding a column (the table's columns are the sample)
 

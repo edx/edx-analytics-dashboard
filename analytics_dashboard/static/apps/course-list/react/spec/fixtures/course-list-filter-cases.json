@@ -1,0 +1,72 @@
+{
+  "rows": [
+    {
+      "course_id": "run-1",
+      "catalog_course": "Edx+Algebra",
+      "catalog_course_title": "Algebra I",
+      "pacing_type": "instructor_paced",
+      "availability": "Current",
+      "b2b_count": 4,
+      "b2c_count": 0,
+      "subscription_count": 4,
+      "alacarte_count": 0
+    },
+    {
+      "course_id": "run-2",
+      "catalog_course": "Edx+Algebra",
+      "catalog_course_title": "Algebra I",
+      "pacing_type": "self_paced",
+      "availability": "Upcoming",
+      "b2b_count": 0,
+      "b2c_count": 3,
+      "subscription_count": 0,
+      "alacarte_count": 3
+    },
+    {
+      "course_id": "run-3",
+      "catalog_course": "Edx+Biology",
+      "catalog_course_title": "Biology",
+      "pacing_type": "self_paced",
+      "availability": "Archived"
+    },
+    {
+      "course_id": "run-4",
+      "catalog_course_title": "drawing basics",
+      "pacing_type": "instructor_paced",
+      "availability": ""
+    },
+    {
+      "course_id": "run-5-chemistry",
+      "catalog_course": "Edx+Chemistry",
+      "catalog_course_title": "",
+      "pacing_type": "self_paced",
+      "availability": "Current"
+    }
+  ],
+  "programs": [
+    { "program_id": "program-a", "program_title": "Program A", "course_ids": ["run-1", "run-3"] },
+    { "program_id": "program-b", "program_title": "Program B", "course_ids": ["run-1", "run-2"] }
+  ],
+  "cases": [
+    { "name": "no search and no filter", "search": "", "filters": {}, "course_ids": ["run-1", "run-2", "run-3", "run-4", "run-5-chemistry"] },
+    { "name": "a search of spaces only", "search": "   ", "filters": {}, "course_ids": ["run-1", "run-2", "run-3", "run-4", "run-5-chemistry"] },
+    { "name": "search in the title, ignoring case", "search": "ALGEBRA", "filters": {}, "course_ids": ["run-1", "run-2"] },
+    { "name": "search matches any word", "search": "biology algebra", "filters": {}, "course_ids": ["run-1", "run-2", "run-3"] },
+    { "name": "search in the course ID", "search": "chemistry", "filters": {}, "course_ids": ["run-5-chemistry"] },
+    { "name": "search with no match", "search": "zzz", "filters": {}, "course_ids": [] },
+    { "name": "one availability", "search": "", "filters": { "availability": ["Current"] }, "course_ids": ["run-1", "run-5-chemistry"] },
+    { "name": "an empty availability is unknown", "search": "", "filters": { "availability": ["unknown"] }, "course_ids": ["run-4"] },
+    { "name": "two availabilities are alternatives", "search": "", "filters": { "availability": ["Archived", "Upcoming"] }, "course_ids": ["run-2", "run-3"] },
+    { "name": "pacing", "search": "", "filters": { "pacing_type": ["self_paced"] }, "course_ids": ["run-2", "run-3", "run-5-chemistry"] },
+    { "name": "one program", "search": "", "filters": { "program_ids": ["program-a"] }, "course_ids": ["run-1", "run-3"] },
+    { "name": "two programs are alternatives", "search": "", "filters": { "program_ids": ["program-a", "program-b"] }, "course_ids": ["run-1", "run-2", "run-3"] },
+    { "name": "a course takes all its runs", "search": "", "filters": { "courses": ["Edx+Algebra"] }, "course_ids": ["run-1", "run-2"] },
+    { "name": "a run with no catalog course is its own course", "search": "", "filters": { "courses": ["run-4"] }, "course_ids": ["run-4"] },
+    { "name": "sales: B2B learners", "search": "", "filters": { "sales": ["b2b"] }, "course_ids": ["run-1"] },
+    { "name": "sales: B2B or B2C learners", "search": "", "filters": { "sales": ["b2b", "b2c"] }, "course_ids": ["run-1", "run-2"] },
+    { "name": "funding: a la carte learners", "search": "", "filters": { "funding": ["alacarte"] }, "course_ids": ["run-2"] },
+    { "name": "funding: subscription learners", "search": "", "filters": { "funding": ["subscription"] }, "course_ids": ["run-1"] },
+    { "name": "a search and a filter narrow each other", "search": "algebra", "filters": { "availability": ["Upcoming"] }, "course_ids": ["run-2"] },
+    { "name": "two filters narrow each other", "search": "", "filters": { "program_ids": ["program-b"], "pacing_type": ["self_paced"] }, "course_ids": ["run-2"] }
+  ]
+}
