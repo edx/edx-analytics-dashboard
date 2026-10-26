@@ -143,7 +143,9 @@ describe('startReactPage', () => {
     trackingModel.on('segment:track', (...args) => events.push(args));
     start(modelWith({ course_list_json: fixture.rows, course_list_download_url: '/courses/csv/course_list/' }));
 
-    expect(root.querySelector('.insights-results-actions a').getAttribute('href')).toBe('/courses/csv/course_list/');
+    // The link asks the server for the file with what the table shows (platform/csv-url.js).
+    expect(root.querySelector('.insights-results-actions a').getAttribute('href'))
+      .toMatch(/^\/courses\/csv\/course_list\/\?filtered=true&/);
     const link = root.querySelector('.insights-course-link');
     act(() => {
       link.addEventListener('click', event => event.preventDefault());

@@ -13,6 +13,7 @@ import TablePagination from 'course-list/react/components/results/TablePaginatio
 import EmptyState from 'course-list/react/components/status/EmptyState';
 import InvalidParametersState from 'course-list/react/components/status/InvalidParametersState';
 import LoadingState from 'course-list/react/components/status/LoadingState';
+import buildCsvUrl from 'course-list/react/platform/csv-url';
 import { selectStatus } from 'course-list/react/state/courses-slice';
 import {
   DEFAULT_SORT, pageChanged, selectQuery, sortChanged,
@@ -97,7 +98,12 @@ export default function ResultsSection({
     hidden.forEach(id => onColumnsChange(id, false));
   };
 
-  const downloadButton = downloadUrl ? <DownloadCsvButton url={downloadUrl} onClick={onDownload} /> : null;
+  // The file has what the table shows: the courses that match the search and the filters, and the columns shown.
+  const csvUrl = useMemo(
+    () => (downloadUrl ? buildCsvUrl(downloadUrl, { query: { search, filters }, filtersEnabled, columns: shownIds }) : ''),
+    [downloadUrl, search, filters, filtersEnabled, shownIds],
+  );
+  const downloadButton = csvUrl ? <DownloadCsvButton url={csvUrl} onClick={onDownload} /> : null;
   // While there are no results to show, the Download CSV link stays, on its own in the toolbar.
   const withDownload = state => (downloadButton ? (
     <>
