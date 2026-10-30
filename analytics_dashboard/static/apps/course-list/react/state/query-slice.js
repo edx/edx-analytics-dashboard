@@ -43,11 +43,16 @@ const querySlice = createSlice({
     ),
     // payload: { range, from, to }.
     timeframeChanged: (state, action) => ({ ...state, timeframe: { ...DEFAULT_TIMEFRAME, ...action.payload } }),
+    // The Clear link of the applied filters: every filter and the timeframe go back to the start. The search and the
+    // sort are kept: they aren't filters, and have their own controls.
+    filtersCleared: state => ({
+      ...state, filters: {}, timeframe: DEFAULT_TIMEFRAME, page: 1,
+    }),
   },
 });
 
 export const {
-  searchChanged, filterChanged, sortChanged, pageChanged, queryRestored, timeframeChanged,
+  searchChanged, filterChanged, sortChanged, pageChanged, queryRestored, timeframeChanged, filtersCleared,
 } = querySlice.actions;
 export const selectQuery = state => state.query;
 

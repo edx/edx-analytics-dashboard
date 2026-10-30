@@ -21,7 +21,7 @@ The page's widgets and what each draws:
 |---|---|
 | `CourseListPage` | The two sections and their headings: *Performance summary* and *Courses* |
 | `SummarySection` | The summary cards: one for each entry of `registries/metrics.js` (the prototype's six: Total Enrollment, Current Enrollment, Total Engagements, Change in Last Week, Verified Enrollment and Master's Enrollment). **The sample of a card, a registry entry and the data path behind them** (section 15) |
-| `ControlsSection` | The filter bar: search box and one dropdown per entry of `registries/filters.js` |
+| `ControlsSection` | The filter bar: search box and one dropdown per entry of `registries/filters.js`; under it, the applied filters as chips (`AppliedFilters`) |
 | `ResultsSection` | A toolbar row (the course run count, the Columns menu, Download CSV), then the course table (Paragon `DataTable`, one column per entry of `registries/columns.js`) and its pager; or the loading, "no course data" and "no match" states. **The sample of a table column** (section 15) |
 
 Libraries, pinned exactly in `package.json`: `react` and `react-dom` 18.3.1, `@reduxjs/toolkit` 1.9.7,
@@ -444,7 +444,24 @@ Check those property names against Paragon's CSS when upgrading it: a renamed on
 look. The Columns and Download CSV icons are Material Symbols Sharp (`components/icons.jsx`), which Paragon doesn't
 have.
 
-The filter bar sends the legacy analytics events (`platform/tracking.js`, `createControlsTracker`).
+**The applied filters** (`components/controls/AppliedFilters.jsx`) are under the bar, as in the approved design (the
+prototype's proposal view): one chip per filter with a selection, `<Filter name>: <Selected values>` (one chip per
+filter, its values' labels joined by commas), in the bar's order: Timeframe first when it narrows anything (not All
+Time, nor Custom without dates; Custom shows `MM/DD/YYYY to MM/DD/YYYY`, formatted by `formatDate` like the table's dates, To being today when it isn't set), then the
+filters. As in the prototype, a chip is the bar's default button (Paragon's `outline-secondary` Button themed as
+`.insights-default-button`) with Paragon's `Close` icon after the text, and Clear is a `link` Button; the chips stay
+on one line, which scrolls sideways when they don't fit. `appliedFilterChips` in `ControlsSection` works them out from the `query` slice, so they follow every
+change made in a dropdown, and come back with the filters from the page's address. A filter waiting for data that the
+bar doesn't show still gets a chip when the address selects something in it, so it can be removed. Each chip is a
+button named `Remove filter <Filter name>: <Selected values>` that removes that filter (Timeframe goes back to All
+Time). Used from the keyboard, the focus then moves to the next chip, or to the search box once none is left; a mouse
+click moves no focus, as in the prototype, and the dotted focus outline shows only for the keyboard (`:focus-visible`). The **Clear** link
+(named `Clear all filters`) removes every filter and the timeframe (`filtersCleared`), keeping the search and the
+sort. The row isn't drawn when nothing is applied, nor when the filters aren't enabled. Its look is in the "applied
+filters" rules of `insights-theme.css`.
+
+The filter bar sends the legacy analytics events (`platform/tracking.js`, `createControlsTracker`). Removing a filter
+with a chip or with Clear sends the filter event with no values, as unticking its last value in the dropdown does.
 
 **Download CSV** has what the table shows: the course runs that match the search and the filters (all of them, not
 just the page on the screen) and only the columns shown in the Columns menu, Course Name always. `platform/csv-url.js`
