@@ -158,6 +158,69 @@ body {
 }
 
 /*
+ * The applied filters under the filter bar, as in the prototype's proposal view (the legacy page's active filters):
+ * 6px under the bar, one line of chips 10px apart that scrolls sideways when they don't fit. A chip is the default
+ * button above (white, #CCC border, #333 14px text, 34px high, 2px corners) with a ✖ after the text; Clear is the
+ * legacy link button (#2991C3, underlined and darker on hover), as high as the chips.
+ */
+.insights-applied-filters {
+  margin: 6px 0 0;
+  font-size: 14px;
+}
+
+.insights-applied-filters-list {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  margin: 0;
+  padding: 0 0 14px;
+  list-style: none;
+}
+
+.insights-applied-filters-list > li {
+  flex: none;
+}
+
+/* The ✖ is the size of the text, a space after it, as the legacy page's fa-times. */
+.insights-applied-filter .btn-icon-after {
+  width: 14px;
+  height: 14px;
+  margin: 0 0 0 4px;
+  color: #333333;
+}
+
+/* Its colours are the theme's link colours (--pgn-color-link-base and -hover above). */
+.btn.insights-applied-filters-clear {
+  --pgn-spacing-btn-padding-y-base: 6px;
+  --pgn-spacing-btn-padding-x-base: 12px;
+  --pgn-typography-btn-font-size-base: 14px;
+  --pgn-typography-btn-line-height-base: 20px;
+  --pgn-typography-btn-font-weight: 400;
+  --pgn-size-btn-border-width: 1px;
+}
+
+.btn.insights-applied-filters-clear:hover {
+  text-decoration: underline;
+}
+
+.btn.insights-applied-filters-clear::before {
+  display: none;
+}
+
+/* The dotted focus outline only for the keyboard: a chip or Clear that is clicked shows none, as in the prototype. */
+.btn.insights-applied-filters-clear:focus-visible {
+  outline: 2px dotted #000000;
+  outline-offset: 0;
+}
+
+.btn.insights-applied-filter:focus:not(:focus-visible),
+.btn.insights-applied-filters-clear:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/*
  * The search boxes (the bar's and the menus'): Paragon's Form.Control, 34px high with a light border, a grey search
  * icon on the left and, for the bar's, a clear button on the right. Paragon leaves room for 44px decorators; these
  * are 16px, as in the prototype.

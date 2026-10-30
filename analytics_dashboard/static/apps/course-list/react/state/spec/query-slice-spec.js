@@ -1,5 +1,5 @@
 import reducer, {
-  filterChanged, pageChanged, queryRestored, searchChanged, sortChanged, timeframeChanged,
+  filterChanged, filtersCleared, pageChanged, queryRestored, searchChanged, sortChanged, timeframeChanged,
 } from 'course-list/react/state/query-slice';
 
 describe('query slice', () => {
@@ -53,6 +53,20 @@ describe('query slice', () => {
 
     expect(reducer(onPage3, searchChanged('algebra')).page).toBe(1);
     expect(reducer(onPage3, filterChanged({ id: 'availability', values: ['Current'] })).page).toBe(1);
+  });
+
+  it('clears every filter and the timeframe, keeps the search and the sort, and starts again at the first page', () => {
+    const filtered = {
+      search: 'bio',
+      filters: { availability: ['Current'], program_ids: ['program-a'] },
+      sort: { key: 'count', dir: 'desc' },
+      page: 4,
+      timeframe: { range: 'custom', from: '2026-01-01', to: '2026-02-01' },
+    };
+
+    expect(reducer(filtered, filtersCleared())).toEqual({
+      ...empty, search: 'bio', sort: { key: 'count', dir: 'desc' },
+    });
   });
 
   it('restores the query from the address: what it has, and the start for what it hasn\'t', () => {
