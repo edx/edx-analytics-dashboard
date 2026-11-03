@@ -84,21 +84,34 @@ class CourseSummariesPresenter(BasePresenter):
 
         return [summary for summary in summaries if matches_search(summary) and matches_filters(summary)]
 
-    def _get_summaries(self, course_ids=None):
+    def _get_cache_key(self, date_range=None):
+        """Returns the cache key of the full list of summaries, one per date range (see get_course_summaries)."""
+        if not date_range:
+            return self.CACHE_KEY
+        return '_'.join([self.CACHE_KEY] + [f'{key}-{value}' for key, value in sorted(date_range.items())])
+
+    def _get_summaries(self, course_ids=None, date_range=None):
         """Returns list of course summaries.
 
         If requesting full list and it's not cached or requesting a subset of course_summaries with the course_ids
         parameter, summaries will be fetched from the analytics data API.
         """
         summaries = None
+        cache_key = self._get_cache_key(date_range)
         if course_ids is None:
             # we only cache the full list of summaries
-            summaries = get_source_aware_cache(self.CACHE_KEY, self.client)
+            summaries = get_source_aware_cache(cache_key, self.client)
         if summaries is None:
             exclude = ['programs']  # we make a separate call to the programs endpoint
             if not switch_is_active('enable_course_passing'):
                 exclude.append('passing_users')
-            summaries = self.client.course_summaries().course_summaries(course_ids=course_ids, exclude=exclude)
+            if date_range:
+                # The client library has no date range arguments, so the request is made with its parameters.
+                summaries = self.client.course_summaries().do_request(
+                    course_ids=course_ids, data={'exclude': exclude, **date_range},
+                )
+            else:
+                summaries = self.client.course_summaries().course_summaries(course_ids=course_ids, exclude=exclude)
             summaries = [
                 {
                     field: (
@@ -110,7 +123,7 @@ class CourseSummariesPresenter(BasePresenter):
             ]
             if course_ids is None:
                 set_source_aware_cache(
-                    self.CACHE_KEY,
+                    cache_key,
                     summaries,
                     self.client,
                     settings.COURSE_SUMMARIES_CACHE_TIMEOUT,
@@ -124,18 +137,21 @@ class CourseSummariesPresenter(BasePresenter):
             return self.parse_api_datetime(summary['created'])
         return None
 
-    def get_course_summaries(self, course_ids=None):
+    def get_course_summaries(self, course_ids=None, date_range=None):
         """
         Returns course summaries that match those listed in course_ids.  If
         no course IDs provided, all data will be returned.
+
+        date_range is the Analytics API's date range, {'last_days': N} or {'start_date': 'YYYY-MM-DD', 'end_date':
+        'YYYY-MM-DD'}: the enrollment counts are then those of the range (see the API's course_summaries endpoint).
         """
         if course_ids and len(course_ids) > settings.COURSE_SUMMARIES_IDS_CUTOFF:
             # Request all courses from the Analytics API and filter here
-            all_summaries = self._get_summaries()
+            all_summaries = self._get_summaries(date_range=date_range)
             summaries = self.filter_summaries(all_summaries, course_ids)
         else:
             # Request courses only in ID list from the Analytics API
-            summaries = self._get_summaries(course_ids=course_ids)
+            summaries = self._get_summaries(course_ids=course_ids, date_range=date_range)
 
         # sort by title by default with "None" values at the end
         summaries = sorted(
