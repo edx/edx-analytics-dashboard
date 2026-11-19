@@ -13,6 +13,7 @@ const MESSAGES = {
   start_error: 'Insights React widgets failed to start',
   render_error: 'Insights React widget failed to render',
   invalid_update: 'Insights React widget received invalid data',
+  fetch_error: 'Insights React widget failed to load its data',
 };
 const DEFAULT_MESSAGE = 'Insights React widget failed';
 

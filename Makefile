@@ -120,8 +120,10 @@ quality: pycodestyle pylint ## run all code quality checks
 validate_python: test_python quality
 
 #FIXME validate_js: requirements.js
+# OPENSSL_CONF=/dev/null: PhantomJS's bundled OpenSSL can't read newer system OpenSSL configs
+# (libproviders.so) and fails to start.
 validate_js:
-	npm run test
+	OPENSSL_CONF=/dev/null npm run test
 	npm run check:paragon
 	npm run lint -s
 

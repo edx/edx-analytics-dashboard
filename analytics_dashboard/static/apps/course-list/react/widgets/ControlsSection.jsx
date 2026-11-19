@@ -125,7 +125,7 @@ export default function ControlsSection({
 
 ControlsSection.propTypes = {
   filtersEnabled: PropTypes.bool,
-  // Whether the Timeframe menu is shown: for now only in the preview, while its data is missing.
+  // Whether the Timeframe menu is shown: with the filters, when the server gives the rows of a range (index.js).
   timeframeEnabled: PropTypes.bool,
   // Whether the filters waiting for data (Sales Model, Funding Model) are shown before it comes: in the preview.
   pendingFiltersShown: PropTypes.bool,

@@ -428,9 +428,14 @@ dropdowns are only shown when the server enabled the filters (`enable_course_fil
 À la carte columns (`pendingFields`): a course run matches when it has learners in a selected segment. Like the pending
 columns, they are shown while `SHOW_PENDING_COLUMNS` is true, or once a row has their data; until the data comes,
 selecting one matches no course run. **Timeframe** (`components/controls/TimeframeDropdown.jsx`: All Time, Last 7, 30
-or 60 days, Custom with From and To) is kept in the `query` slice and the address (`timeframe`, `from`, `to`), but the
-server has no data by date yet (LP-1321), so it changes no number; it is shown only while
-`SHOW_PENDING_COLUMNS` is true.
+or 60 days, Custom with From and To) is kept in the `query` slice and the address (`timeframe`, `from`, `to`). Its
+numbers come from daily data that only the server has, so the page data's rows are All Time's, and
+`platform/course-rows-for-range.js` fetches the rows of any other range from `course_list_rows_url` (the server's
+`CourseIndexJSON`, with the address's `timeframe`, `from` and `to`), putting the courses in `loading` meanwhile; the
+table, cards and filters follow the stored rows. Custom needs both dates (with one, it is All Time). With a range,
+Total Enrollment is the enrollments made in it, and the current, Verified and Master's counts are those of its last
+day; the columns whose data has no daily version yet are "--". Timeframe is shown with the filters, when the page
+data has `course_list_rows_url`.
 
 **The look** follows the prototype, measured from it: the bar's controls are 34px high, 14px text, 8px apart; the
 menus are 260px to 340px wide. Every control is Paragon's: the dropdowns (`components/controls/FilterDropdown.jsx`,
@@ -468,7 +473,8 @@ just the page on the screen) and only the columns shown in the Columns menu, Cou
 builds the link: `filtered=true`, the search, the filters and `cols`, with the address's own functions (`searchParams`,
 `filterParams` in `platform/url-state.js`). `CourseIndexCSV` filters with `CourseSummariesPresenter.filter_by_query`
 and picks the columns from its `column_fields`. The legacy page's link has no `filtered=true`, so its file is still the
-whole list. The file is in the server's order, not the table's sort, and has no Timeframe. The filters travel in the
+whole list. The file is in the server's order, not the table's sort, and has the numbers of the Timeframe (the
+link has its `timeframe`, `from` and `to`). The filters travel in the
 URL, so a very large Course selection can exceed the web server's URL length.
 
 When you add a filter, add its id to `FILTER_IDS` and a check to `filter_by_query` in the server, and a case to

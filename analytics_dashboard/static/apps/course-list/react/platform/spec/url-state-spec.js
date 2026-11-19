@@ -1,4 +1,4 @@
-import connectUrlStateToStore, { buildHash, parseHash } from 'course-list/react/platform/url-state';
+import connectUrlStateToStore, { buildHash, parseHash, timeframeParams } from 'course-list/react/platform/url-state';
 import { resolveFilters } from 'course-list/react/registries/filters';
 import { coursesLoaded, coursesUnavailable } from 'course-list/react/state/courses-slice';
 import { filterChanged, pageChanged, searchChanged } from 'course-list/react/state/query-slice';
@@ -121,6 +121,14 @@ describe('the course list in the address of the page', () => {
         .toBe('#?text_search=demo&timeframe=custom&from=2026-01-01&to=2026-02-01&sortKey=count&order=desc&page=1');
       expect(buildHash({ query: { ...base, timeframe: { range: 'all', from: '', to: '' } } }))
         .toBe('#?text_search=demo&sortKey=count&order=desc&page=1');
+    });
+
+    it('gives the timeframe\'s keys to the CSV link and the rows of a range, with only the dates it has', () => {
+      expect(timeframeParams({ timeframe: { range: '7d', from: '', to: '' } })).toEqual([['timeframe', '7d']]);
+      expect(timeframeParams({ timeframe: { range: 'custom', from: '2026-01-01', to: '' } }))
+        .toEqual([['timeframe', 'custom'], ['from', '2026-01-01']]);
+      expect(timeframeParams({ timeframe: { range: 'all', from: '', to: '' } })).toEqual([]);
+      expect(timeframeParams({})).toEqual([]);
     });
 
     it('reads the Course filter for the courses the page has', () => {

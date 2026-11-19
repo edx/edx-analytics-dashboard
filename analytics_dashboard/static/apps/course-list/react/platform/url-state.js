@@ -172,6 +172,21 @@ export function searchParams(query) {
   return query.search.trim() !== '' ? [['text_search', query.search]] : [];
 }
 
+/**
+ * The [key, value] of the timeframe: nothing for All Time, otherwise timeframe and, with Custom, the dates it has.
+ * Also used by the link of Download CSV and to fetch the rows of a timeframe (platform/course-rows-for-range.js).
+ */
+export function timeframeParams(query) {
+  const { timeframe } = query;
+  if (!timeframe || timeframe.range === 'all') {
+    return [];
+  }
+  return [
+    ['timeframe', timeframe.range],
+    ...['from', 'to'].filter(field => timeframe[field]).map(field => [field, timeframe[field]]),
+  ];
+}
+
 /** The [key, value] of each filter that has selected values, in the order of the registry, as in the address. */
 export function filterParams(query, filters = filterRegistry) {
   return filters
@@ -189,11 +204,7 @@ export function encodeParams(params) {
  * the user has chosen them. Values are encoded like the legacy page's.
  */
 export function buildHash({ query, visibleColumns }, { filters = filterRegistry } = {}) {
-  const params = [...searchParams(query)];
-  if (query.timeframe && query.timeframe.range !== 'all') {
-    params.push(['timeframe', query.timeframe.range]);
-    ['from', 'to'].filter(field => query.timeframe[field]).forEach(field => params.push([field, query.timeframe[field]]));
-  }
+  const params = [...searchParams(query), ...timeframeParams(query)];
   params.push(...filterParams(query, filters));
   params.push(['sortKey', query.sort.key], ['order', query.sort.dir], ['page', String(query.page)]);
   if (visibleColumns) {

@@ -57,13 +57,25 @@ describe('the link of Download CSV', () => {
       .toBe('/csv/?x=1&filtered=true&cols=');
   });
 
-  it('has neither the sort, nor the page, nor the timeframe', () => {
-    const url = build({
-      query: {
-        ...query('', {}), sort: { key: 'count', dir: 'desc' }, page: 3, timeframe: { range: '7d', from: '', to: '' },
-      },
-    });
+  it('has neither the sort nor the page', () => {
+    const url = build({ query: { ...query('', {}), sort: { key: 'count', dir: 'desc' }, page: 3 } });
 
-    expect(url).not.toMatch(/sortKey|order=|page=|timeframe/);
+    expect(url).not.toMatch(/sortKey|order=|page=/);
+  });
+
+  it('has the timeframe after the search, as the address does, and nothing for All Time', () => {
+    const withTimeframe = timeframe => build({ query: { ...query('bio', { availability: ['Current'] }), timeframe } });
+
+    expect(withTimeframe({ range: '30d', from: '', to: '' }))
+      .toBe(`${BASE}?filtered=true&text_search=bio&timeframe=30d&availability=Current&cols=start_date%2Ccount`);
+    expect(withTimeframe({ range: 'custom', from: '2026-10-21', to: '2026-10-24' }))
+      .toContain('&timeframe=custom&from=2026-10-21&to=2026-10-24&');
+    expect(withTimeframe({ range: 'all', from: '', to: '' })).not.toContain('timeframe');
+  });
+
+  it('leaves the timeframe out when the page offers no filters (it is in the filter bar)', () => {
+    const url = build({ query: { ...query('', {}), timeframe: { range: '7d', from: '', to: '' } }, filtersEnabled: false });
+
+    expect(url).not.toContain('timeframe');
   });
 });
