@@ -2,7 +2,8 @@ import mountReact from 'components/react/mount-react';
 import { reportWidgetFailure } from 'components/react/monitoring';
 import ParagonProvider from 'components/react/paragon/ParagonProvider';
 import createCourseListStore from 'course-list/react/state/store';
-import connectPageModelToStore from 'course-list/react/platform/page-model-bridge';
+import connectRangeRowsToStore from 'course-list/react/platform/course-rows-for-range';
+import connectPageModelToStore, { syncPageModel } from 'course-list/react/platform/page-model-bridge';
 import createTooltipTracker, {
   createControlsTracker, createResultsTracker, trackPageView,
 } from 'course-list/react/platform/tracking';
@@ -19,8 +20,8 @@ const reportSectionFailure = (name, error) => reportWidgetFailure({
  * when the enable_react_course_list waffle flag is on, in which case courses/templates/courses/index.html renders
  * #course-list-react-root instead of the legacy course list.
  *
- * Creates the store, fills it from the page model, restores the view from the page's address, and mounts the page.
- * trackingModel sends the analytics events.
+ * Creates the store, fills it from the page model, restores the view from the page's address, makes the course rows
+ * follow the Timeframe, and mounts the page. trackingModel sends the analytics events.
  */
 export default function startReactPage({ courseModel, trackingModel }) {
   const element = document.getElementById('course-list-react-root');
@@ -33,15 +34,21 @@ export default function startReactPage({ courseModel, trackingModel }) {
   const trackResults = createResultsTracker(trackingModel);
   const filtersEnabled = courseModel.get('enable_course_filters') === true;
   const passingUsersEnabled = courseModel.get('enable_passing_users') === true;
-  // The view in the page's address (search, filters, sort, page, columns) is read before the page is drawn.
+  // The Timeframe is part of the filter bar. It needs the server's URL for the rows of a range.
+  const rowsUrl = courseModel.get('course_list_rows_url') || '';
+  const timeframeEnabled = filtersEnabled && rowsUrl !== '';
+  // The view in the page's address (search, timeframe, filters, sort, page, columns) is read before the page is drawn.
   connectUrlStateToStore(store, {
     switches: {
       passingUsersEnabled,
       filtersEnabled,
-      timeframeEnabled: filtersEnabled && SHOW_PENDING_COLUMNS,
+      timeframeEnabled,
       pendingFiltersShown: SHOW_PENDING_COLUMNS,
     },
   });
+  if (timeframeEnabled) {
+    connectRangeRowsToStore(store, { rowsUrl, showPageRows: () => syncPageModel(courseModel, store) });
+  }
   mountReact(element, CourseListPage, {
     store,
     wrapper: ParagonProvider,
@@ -51,8 +58,7 @@ export default function startReactPage({ courseModel, trackingModel }) {
       onTooltipShown: createTooltipTracker(trackingModel),
       controls: {
         filtersEnabled,
-        // Timeframe has no data yet (LP-1321): it is shown only in the preview, as the columns waiting for data.
-        timeframeEnabled: SHOW_PENDING_COLUMNS,
+        timeframeEnabled,
         pendingFiltersShown: SHOW_PENDING_COLUMNS,
         onSearch: track.searched,
         onFilter: track.filtered,

@@ -169,6 +169,50 @@ describe('startReactPage', () => {
     expect(pageViews).toHaveBeenCalledTimes(1);
   });
 
+  describe('the Timeframe', () => {
+    const ROWS_URL = '/courses/json/course_list/';
+    const titles = () => Array.prototype.map.call(root.querySelectorAll('.insights-course-title'), node => node.textContent);
+    let server;
+
+    beforeEach(() => {
+      server = sinon.fakeServer.create();
+    });
+
+    afterEach(() => {
+      server.restore();
+    });
+
+    it('is shown with the filters when the server gives the rows of a range, and shows the rows of the address\'s', () => {
+      const rangeRow = fixture.rows[0];
+      server.respondWith('GET', `${ROWS_URL}?timeframe=30d`, [
+        200, { 'Content-Type': 'application/json' }, JSON.stringify({ course_list_json: [rangeRow] }),
+      ]);
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#?timeframe=30d`);
+      start(modelWith({
+        course_list_json: fixture.rows,
+        programs_json: fixture.programs,
+        enable_course_filters: true,
+        course_list_rows_url: ROWS_URL,
+      }));
+
+      expect(root.querySelector('#timeframe-toggle')).not.toBeNull();
+      expect(server.requests.length).toBe(1);
+
+      act(() => server.respond());
+
+      expect(titles()).toEqual([rangeRow.catalog_course_title]);
+    });
+
+    it('is not shown, and nothing is fetched, without the server\'s URL for the rows of a range', () => {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#?timeframe=30d`);
+      start(modelWith({ course_list_json: fixture.rows, enable_course_filters: true }));
+
+      expect(root.querySelector('#timeframe-toggle')).toBeNull();
+      expect(server.requests.length).toBe(0);
+      expect(titles().length).toBe(fixture.rows.length);
+    });
+  });
+
   it('shows the view in the address of the page, and keeps the address up to date', () => {
     jasmine.clock().install();
     window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#?text_search=bio&sortKey=cumulative_count&order=desc`);

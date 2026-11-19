@@ -3,7 +3,8 @@ import { createSlice } from '@reduxjs/toolkit';
 // rows:     the course runs as the server sent them (only the valid ones)
 // programs: the programs as sent by the server (program_id, program_title, course_ids)
 // status:   'loading' until the page data is read, then 'ready'; 'unavailable' when the server sent no course data;
-//           'error' when the data is malformed.
+//           'error' when the data is malformed. 'loading' again while the rows of another Timeframe are fetched
+//           (platform/course-rows-for-range.js).
 export const initialState = { rows: [], programs: [], status: 'loading' };
 
 const isObject = value => typeof value === 'object' && value !== null;
@@ -26,12 +27,16 @@ const coursesSlice = createSlice({
       programs: action.payload.programs,
       status: 'ready',
     }),
+    // The rows and programs stay until the new ones come.
+    coursesLoading: state => ({ ...state, status: 'loading' }),
     coursesUnavailable: state => ({ ...state, status: 'unavailable' }),
     coursesFailed: state => ({ ...state, status: 'error' }),
   },
 });
 
-export const { coursesLoaded, coursesUnavailable, coursesFailed } = coursesSlice.actions;
+export const {
+  coursesLoaded, coursesLoading, coursesUnavailable, coursesFailed,
+} = coursesSlice.actions;
 
 export const selectStatus = state => state.courses.status;
 

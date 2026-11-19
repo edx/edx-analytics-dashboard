@@ -1,5 +1,5 @@
 import reducer, {
-  acceptValidRows, coursesFailed, coursesLoaded, coursesUnavailable, initialState, selectStatus,
+  acceptValidRows, coursesFailed, coursesLoaded, coursesLoading, coursesUnavailable, initialState, selectStatus,
 } from 'course-list/react/state/courses-slice';
 
 describe('courses slice', () => {
@@ -19,6 +19,13 @@ describe('courses slice', () => {
     const state = reducer(undefined, coursesLoaded({ rows: [{ course_id: 'a' }], programs: [] }));
 
     expect(reducer(state, coursesUnavailable())).toEqual({ rows: [{ course_id: 'a' }], programs: [], status: 'unavailable' });
+  });
+
+  it('loads again, keeping its rows and programs until the new ones come', () => {
+    const programs = [{ program_id: 'p', course_ids: ['a'] }];
+    const state = reducer(undefined, coursesLoaded({ rows: [{ course_id: 'a' }], programs }));
+
+    expect(reducer(state, coursesLoading())).toEqual({ rows: [{ course_id: 'a' }], programs, status: 'loading' });
   });
 
   it('becomes an error, keeping what it has', () => {
