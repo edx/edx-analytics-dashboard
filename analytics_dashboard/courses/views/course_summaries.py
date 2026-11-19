@@ -1,10 +1,14 @@
 import logging
+from datetime import datetime
 
+from analyticsclient.exceptions import InvalidRequestError, NotFoundError
+from analyticsclient.exceptions import TimeoutError as AnalyticsTimeoutError
 from braces.views import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from django.views.generic import View
 from rest_framework_csv.renderers import CSVRenderer
 from waffle import switch_is_active
 
@@ -31,6 +35,32 @@ logger = logging.getLogger(__name__)
 # enforces.
 MAX_SEARCH_LENGTH = 200
 FILTER_IDS = ('availability', 'pacing_type', 'program_ids', 'courses', 'sales', 'funding')
+# The Timeframe menu's ranges of a fixed number of days (static/apps/course-list/react/components/controls/
+# TimeframeDropdown.jsx), as the page writes them in its address.
+TIMEFRAME_DAYS = {'7d': 7, '30d': 30, '60d': 60}
+
+
+def get_date_range(params):
+    """
+    Returns the Analytics API's date range for the course list page's Timeframe, read from `params` in the page's
+    address format (timeframe, and with custom: from and to), or None for All Time.
+
+    7d, 30d and 60d are the last 7, 30 or 60 days of the data ({'last_days': N}: only the API knows its latest date);
+    custom is from and to, both included ({'start_date', 'end_date'}), when both are real dates and from is not after
+    to. Anything else is All Time, as the page shows it.
+    """
+    timeframe = params.get('timeframe')
+    if timeframe in TIMEFRAME_DAYS:
+        return {'last_days': TIMEFRAME_DAYS[timeframe]}
+    if timeframe == 'custom':
+        try:
+            start_date = datetime.strptime(params.get('from', ''), '%Y-%m-%d').date()
+            end_date = datetime.strptime(params.get('to', ''), '%Y-%m-%d').date()
+        except ValueError:
+            return None
+        if start_date <= end_date:
+            return {'start_date': start_date.isoformat(), 'end_date': end_date.isoformat()}
+    return None
 
 
 class CourseIndex(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, TrackedViewMixin, LastUpdatedView,
@@ -79,6 +109,8 @@ class CourseIndex(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, TrackedV
         if react_enabled:
             # Only sent when the flag is on, so the flag-off page data stays exactly as it was.
             data['enable_react_course_list'] = True
+            # Where the React page gets the course rows of a Timeframe (CourseIndexJSON).
+            data['course_list_rows_url'] = reverse('courses:index_json')
             # Not read by the React page, which computes the summary cards from the course rows so they can follow
             # the filters. Kept so the page data stays as it was until all the cards are built.
             data['summary'] = summary
@@ -130,9 +162,9 @@ class CourseIndexCSV(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, Datet
     The CSV of the course list. Without parameters it is the whole list, as the legacy page downloads it.
 
     The React page's link adds filtered=true, and then the file has the courses the page shows for its search and
-    filters (text_search and the ids in FILTER_IDS, in the page's address format) and only the columns it shows (cols,
-    the ids of the table's columns). Without filtered=true the parameters are ignored, so the legacy download is
-    unchanged.
+    filters (text_search and the ids in FILTER_IDS, in the page's address format), the numbers of its Timeframe
+    (timeframe, from, to; see get_date_range) and only the columns it shows (cols, the ids of the table's columns).
+    Without filtered=true the parameters are ignored, so the legacy download is unchanged.
     """
 
     csv_filename_suffix = 'course-list'
@@ -208,9 +240,12 @@ class CourseIndexCSV(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, Datet
             raise PermissionDenied
 
         enable_course_filters = switch_is_active('enable_course_filters')
+        filtered = self.request.GET.get('filtered') == 'true'
+        # The Timeframe is part of the filter bar, which the page shows only with the filters switch on.
+        date_range = get_date_range(self.request.GET) if filtered and enable_course_filters else None
 
         presenter = CourseSummariesPresenter(analytics_client=self.analytics_client)
-        summaries, _ = presenter.get_course_summaries(courses)
+        summaries, _ = presenter.get_course_summaries(courses, date_range=date_range)
 
         if not summaries:
             # Instead of returning a useless blank CSV, return a 404 error
@@ -223,7 +258,7 @@ class CourseIndexCSV(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, Datet
         programs_by_course = presenter.programs_by_course(programs)
 
         header = None
-        if self.request.GET.get('filtered') == 'true':
+        if filtered:
             search, filters, columns = self.get_page_query(enable_course_filters)
             summaries = presenter.filter_by_query(summaries, search, filters, programs_by_course)
             if columns is not None:
@@ -243,3 +278,41 @@ class CourseIndexCSV(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, Datet
             # Only these fields, in this order. With no course left, the file is the header row alone.
             return self.renderer.render(summaries, renderer_context={'header': header})
         return self.renderer.render(summaries)
+
+
+class CourseIndexJSON(AnalyticsV1Mixin, LoginRequiredMixin, View):
+    """
+    The course rows of the React course list for its Timeframe, as {"course_list_json": [...]}: the rows the page has
+    in its page data, with the numbers of the range in timeframe, from and to (see get_date_range; All Time without
+    them). The page asks for them when its Timeframe changes. Only with the enable_react_course_list flag on.
+
+    When the API has no summaries for the user's courses the list is empty. When it can't give a date range (it
+    reads its data from where there are no daily counts) the answer is a 400, and when it times out a 503.
+    """
+
+    # A request without a login gets a 403 rather than the login page, which a script can't use.
+    raise_exception = True
+
+    def get(self, request, *args, **kwargs):
+        if not react_course_list_enabled(request):
+            raise Http404
+        user = request.user
+        courses = permissions.get_user_course_permissions(user)
+        if not courses and not (user.is_superuser or user.is_staff):
+            # The user is probably not a course administrator and should not be using this application.
+            raise PermissionDenied
+
+        # The Timeframe is part of the filter bar, which the page shows only with the filters switch on.
+        date_range = get_date_range(request.GET) if switch_is_active('enable_course_filters') else None
+        presenter = CourseSummariesPresenter(analytics_client=self.analytics_client)
+        try:
+            summaries, _ = presenter.get_course_summaries(courses, date_range=date_range)
+        except NotFoundError:
+            summaries = []
+        except InvalidRequestError:
+            logger.warning('The Analytics API refused the course list date range %s for user %s.', date_range, user.id)
+            return JsonResponse({'error': 'The course list is not available for this timeframe.'}, status=400)
+        except AnalyticsTimeoutError:
+            logger.warning('The Analytics API timed out on the course list for user %s.', user.id)
+            return JsonResponse({'error': 'The course list took too long to load.'}, status=503)
+        return JsonResponse({'course_list_json': summaries})

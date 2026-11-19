@@ -382,6 +382,30 @@ class CourseIndexCSVFilteredTests(ViewTestMixin, TestCase):
         self.assertEqual(ignored, whole)
         self.assertIn(b'enrollment_modes.audit.count', ignored)
 
+    def presenter_date_range(self, params):
+        """ Requests the CSV and returns the date range that the presenter was asked for. """
+        with mock.patch(PRESENTER_SUMMARIES, return_value=(self.summaries(), None)) as presenter:
+            response = self.client.get(self.path(), params)
+        self.assertEqual(response.status_code, 200)
+        return presenter.call_args[1]['date_range']
+
+    @override_switch('enable_course_filters', active=True)
+    def test_filtered_follows_the_timeframe(self):
+        self.assertEqual(self.presenter_date_range({'filtered': 'true', 'timeframe': '60d'}), {'last_days': 60})
+        custom = {'filtered': 'true', 'timeframe': 'custom', 'from': '2026-10-21', 'to': '2026-10-24'}
+        self.assertEqual(self.presenter_date_range(custom), {'start_date': '2026-10-21', 'end_date': '2026-10-24'})
+        self.assertIsNone(self.presenter_date_range({'filtered': 'true'}))
+
+    @override_switch('enable_course_filters', active=True)
+    def test_the_timeframe_is_ignored_without_filtered(self):
+        """ The legacy download is always the whole list, as it is today. """
+        self.assertIsNone(self.presenter_date_range({'timeframe': '60d'}))
+
+    @override_switch('enable_course_filters', active=False)
+    def test_the_timeframe_is_ignored_without_the_filters_switch(self):
+        """ The page shows the Timeframe only with the filters switch on. """
+        self.assertIsNone(self.presenter_date_range({'filtered': 'true', 'timeframe': '60d'}))
+
     @override_switch('enable_course_filters', active=True)
     def test_filtered_without_parameters_is_the_whole_list(self):
         self.assertEqual(

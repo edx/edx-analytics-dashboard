@@ -132,5 +132,6 @@ app_name = 'courses'
 urlpatterns = [
     path('', course_summaries.CourseIndex.as_view(), name='index'),
     re_path(fr'^{settings.COURSE_ID_PATTERN}/', include(COURSE_URLS)),
-    path('csv/course_list/', course_summaries.CourseIndexCSV.as_view(), name='index_csv')
+    path('csv/course_list/', course_summaries.CourseIndexCSV.as_view(), name='index_csv'),
+    path('json/course_list/', course_summaries.CourseIndexJSON.as_view(), name='index_json'),
 ]

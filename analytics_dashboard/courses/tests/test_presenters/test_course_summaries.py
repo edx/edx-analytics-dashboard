@@ -350,3 +350,51 @@ class CourseSummariesPresenterTests(TestCase):
             'masters_enrollment': 1111,
         }
         self.assertEqual(metrics, expected)
+
+    def test_a_date_range_is_requested_with_the_range_parameters(self):
+        presenter = CourseSummariesPresenter(Client('base_url'))
+        course_ids = [CourseSamples.DEMO_COURSE_ID]
+        api_summaries = [self._API_SUMMARIES[CourseSamples.DEMO_COURSE_ID]]
+        with mock.patch('analyticsclient.course_summaries.CourseSummaries.do_request',
+                        mock.Mock(return_value=api_summaries)) as do_request:
+            with mock.patch('analyticsclient.course_summaries.CourseSummaries.course_summaries') as all_time:
+                summaries, _ = presenter.get_course_summaries(course_ids, date_range={'last_days': 30})
+
+        all_time.assert_not_called()
+        do_request.assert_called_once_with(
+            course_ids=course_ids, data={'exclude': ['programs', 'passing_users'], 'last_days': 30},
+        )
+        self.assertEqual([summary['course_id'] for summary in summaries], course_ids)
+
+    def test_each_date_range_of_the_full_list_has_its_own_cache(self):
+        cache.clear()
+        presenter = CourseSummariesPresenter(Client('base_url'))
+        all_time = [self._API_SUMMARIES[CourseSamples.DEMO_COURSE_ID]]
+        last_week = [dict(self._API_SUMMARIES[CourseSamples.DEMO_COURSE_ID], count=1)]
+        with mock.patch('analyticsclient.course_summaries.CourseSummaries.course_summaries',
+                        mock.Mock(return_value=all_time)):
+            with mock.patch('analyticsclient.course_summaries.CourseSummaries.do_request',
+                            mock.Mock(return_value=last_week)) as do_request:
+                self.assertEqual(presenter.get_course_summaries()[0][0]['count'], all_time[0]['count'])
+                self.assertEqual(presenter.get_course_summaries(date_range={'last_days': 7})[0][0]['count'], 1)
+                # Read again: from the cache, and each from its own.
+                self.assertEqual(presenter.get_course_summaries(date_range={'last_days': 7})[0][0]['count'], 1)
+                self.assertEqual(presenter.get_course_summaries()[0][0]['count'], all_time[0]['count'])
+
+        do_request.assert_called_once()
+        cache.clear()
+
+    def test_a_date_range_above_the_course_ids_cutoff_requests_the_full_list_for_the_range(self):
+        cache.clear()
+        presenter = CourseSummariesPresenter(Client('base_url'))
+        course_ids = [CourseSamples.DEMO_COURSE_ID] * (settings.COURSE_SUMMARIES_IDS_CUTOFF + 1)
+        date_range = {'start_date': '2026-10-21', 'end_date': '2026-10-24'}
+        with mock.patch('analyticsclient.course_summaries.CourseSummaries.do_request',
+                        mock.Mock(return_value=list(self._API_SUMMARIES.values()))) as do_request:
+            summaries, _ = presenter.get_course_summaries(course_ids, date_range=date_range)
+
+        do_request.assert_called_once_with(
+            course_ids=None, data={'exclude': ['programs', 'passing_users'], **date_range},
+        )
+        self.assertEqual([summary['course_id'] for summary in summaries], [CourseSamples.DEMO_COURSE_ID])
+        cache.clear()

@@ -3,8 +3,11 @@ import json
 from pathlib import Path
 
 import unittest.mock as mock
-from ddt import data, ddt
+from analyticsclient.exceptions import InvalidRequestError, NotFoundError
+from analyticsclient.exceptions import TimeoutError as AnalyticsTimeoutError
+from ddt import data, ddt, unpack
 from django.test import TestCase
+from django.urls import reverse
 from waffle.testutils import override_flag, override_switch
 
 import analytics_dashboard.courses.tests.utils as utils
@@ -12,6 +15,7 @@ from analytics_dashboard.courses.exceptions import PermissionsRetrievalFailedErr
 from analytics_dashboard.courses.tests.test_middleware import CoursePermissionsExceptionMixin
 from analytics_dashboard.courses.tests.test_views import ViewTestMixin
 from analytics_dashboard.courses.tests.utils import CourseSamples
+from analytics_dashboard.courses.views.course_summaries import get_date_range
 
 PERMISSIONS_METHOD = 'analytics_dashboard.courses.views.course_summaries.permissions.get_user_course_permissions'
 SUMMARIES_METHOD = \
@@ -144,7 +148,7 @@ class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, T
         response = self.get_course_index()
         self.assertFalse(response.context['enable_react_course_list'])
         course_data = json.loads(response.context['page_data'])['course']
-        for key in ('enable_react_course_list', 'summary', 'summary_text'):
+        for key in ('enable_react_course_list', 'summary', 'summary_text', 'course_list_rows_url'):
             self.assertNotIn(key, course_data)
         self.assertContains(response, 'data-stat-type="total_enrollment">')
         self.assertContains(response, 'course-list-app-container')
@@ -158,6 +162,7 @@ class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, T
         self.assertTrue(response.context['enable_react_course_list'])
         course_data = json.loads(response.context['page_data'])['course']
         self.assertIs(course_data['enable_react_course_list'], True)
+        self.assertEqual(course_data['course_list_rows_url'], reverse('courses:index_json'))
         self.assertEqual(course_data['summary'], response.context['summary'])
         self.assertEqual(course_data['summary_text'], SUMMARY_TEXT)
         # The legacy card and the React card have the same Total Enrollment label (the React tooltip differs: the
@@ -187,3 +192,126 @@ class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, T
         response = self.get_course_index(self.summary_with_total_enrollment(case['value']))
         course_data = json.loads(response.context['page_data'])['course']
         self.assertEqual(course_data['summary']['total_enrollment'], case['value'])
+
+
+@ddt
+class GetDateRangeTests(TestCase):
+    """ The Analytics API date range of the course list page's Timeframe. """
+
+    @data(
+        ({'timeframe': '7d'}, {'last_days': 7}),
+        ({'timeframe': '30d'}, {'last_days': 30}),
+        ({'timeframe': '60d', 'from': '2026-01-01', 'to': '2026-01-02'}, {'last_days': 60}),
+        (
+            {'timeframe': 'custom', 'from': '2026-10-21', 'to': '2026-10-24'},
+            {'start_date': '2026-10-21', 'end_date': '2026-10-24'},
+        ),
+        (
+            {'timeframe': 'custom', 'from': '2026-10-21', 'to': '2026-10-21'},
+            {'start_date': '2026-10-21', 'end_date': '2026-10-21'},
+        ),
+    )
+    @unpack
+    def test_a_timeframe_gives_its_range(self, params, expected):
+        self.assertEqual(get_date_range(params), expected)
+
+    @data(
+        {},
+        {'timeframe': 'all'},
+        {'timeframe': '90d'},
+        {'timeframe': 'custom'},
+        {'timeframe': 'custom', 'from': '2026-10-21'},
+        {'timeframe': 'custom', 'to': '2026-10-21'},
+        {'timeframe': 'custom', 'from': '2026-10-24', 'to': '2026-10-21'},
+        {'timeframe': 'custom', 'from': '2026-02-30', 'to': '2026-03-01'},
+        {'timeframe': 'custom', 'from': '21/10/2026', 'to': '2026-10-24'},
+    )
+    def test_anything_else_is_all_time(self, params):
+        self.assertIsNone(get_date_range(params))
+
+
+@ddt
+class CourseIndexJSONTests(ViewTestMixin, TestCase):
+    """ The course rows that the React course list asks for when its Timeframe changes. """
+    viewname = 'courses:index_json'
+
+    COURSE_IDS = [CourseSamples.DEMO_COURSE_ID, CourseSamples.DEPRECATED_DEMO_COURSE_ID]
+    ROWS = [{'course_id': CourseSamples.DEMO_COURSE_ID, 'count': 4, 'cumulative_count': 2}]
+
+    def get_mock_data(self, course_ids):
+        return [row for row in self.ROWS if row['course_id'] in course_ids], utils.CREATED_DATETIME
+
+    def get_json(self, params=None, **presenter_kwargs):
+        """ Requests the rows with the user's courses and the presenter mocked; returns the response and the mock. """
+        presenter_kwargs.setdefault('return_value', self.get_mock_data(self.COURSE_IDS))
+        with mock.patch(PERMISSIONS_METHOD, return_value=self.COURSE_IDS):
+            with mock.patch(SUMMARIES_METHOD, **presenter_kwargs) as summaries_presenter:
+                response = self.client.get(self.path(), params or {})
+        return response, summaries_presenter
+
+    def test_flag_off_is_a_404(self):
+        response, summaries_presenter = self.get_json({'timeframe': '30d'})
+
+        self.assertEqual(response.status_code, 404)
+        summaries_presenter.assert_not_called()
+
+    @override_flag('enable_react_course_list', active=True)
+    @override_switch('enable_course_filters', active=True)
+    @data(
+        ({'timeframe': '30d'}, {'last_days': 30}),
+        ({'timeframe': 'custom', 'from': '2026-10-21', 'to': '2026-10-24'},
+         {'start_date': '2026-10-21', 'end_date': '2026-10-24'}),
+        ({}, None),
+        ({'timeframe': 'custom', 'from': '2026-10-21'}, None),
+    )
+    @unpack
+    def test_rows_of_the_timeframe(self, params, date_range):
+        response, summaries_presenter = self.get_json(params)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/json')
+        self.assertEqual(response.json(), {'course_list_json': self.ROWS})
+        summaries_presenter.assert_called_once_with(self.COURSE_IDS, date_range=date_range)
+
+    @override_flag('enable_react_course_list', active=True)
+    def test_without_the_filters_switch_the_rows_are_all_time(self):
+        """ The page shows the Timeframe only with the filters switch on. """
+        response, summaries_presenter = self.get_json({'timeframe': '30d'})
+
+        self.assertEqual(response.status_code, 200)
+        summaries_presenter.assert_called_once_with(self.COURSE_IDS, date_range=None)
+
+    @override_flag('enable_react_course_list', active=True)
+    @override_switch('enable_course_filters', active=True)
+    def test_no_summaries_is_an_empty_list(self):
+        response, _ = self.get_json({'timeframe': '7d'}, side_effect=NotFoundError)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'course_list_json': []})
+
+    @override_flag('enable_react_course_list', active=True)
+    @override_switch('enable_course_filters', active=True)
+    @data((InvalidRequestError, 400), (AnalyticsTimeoutError, 503))
+    @unpack
+    def test_api_errors(self, error, status):
+        response, _ = self.get_json({'timeframe': '7d'}, side_effect=error)
+
+        self.assertEqual(response.status_code, status)
+        self.assertIn('error', response.json())
+
+    @override_flag('enable_react_course_list', active=True)
+    def test_a_user_without_courses_is_refused(self):
+        with mock.patch(PERMISSIONS_METHOD, return_value=[]):
+            with mock.patch(SUMMARIES_METHOD) as summaries_presenter:
+                response = self.client.get(self.path())
+
+        self.assertEqual(response.status_code, 403)
+        summaries_presenter.assert_not_called()
+
+    @override_flag('enable_react_course_list', active=True)
+    def test_a_user_who_is_not_logged_in_is_refused(self):
+        self.client.logout()
+        response, summaries_presenter = self.get_json({'timeframe': '7d'})
+
+        self.assertEqual(response.status_code, 403)
+        summaries_presenter.assert_not_called()
