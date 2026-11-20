@@ -9,7 +9,7 @@
   },
   "total_engagements": {
     "label": "Total Engagements",
-    "tooltip": "Active learners in the courses matching your filters."
+    "tooltip": "Learners who completed any course content in the courses matching your filters."
   },
   "enrollment_change_7_days": {
     "label": "Change in Last Week",

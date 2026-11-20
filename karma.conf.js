@@ -5,6 +5,11 @@ const path = require('path');
 const webpack = require('webpack');
 const { paragonImportsPlugin, transpiledPackagesRule } = require('./webpack/paragon');
 
+// PhantomJS is built against OpenSSL 1.x and fails to start ("Auto configuration failed") when it reads an OpenSSL 3
+// configuration, as on Ubuntu 22.04 and later. An empty configuration lets it start; the launcher passes the
+// environment on to PhantomJS.
+process.env.OPENSSL_CONF = process.env.OPENSSL_CONF || '/dev/null';
+
 module.exports = function (config) {
   'use strict';
 

@@ -96,12 +96,13 @@ class CourseIndex(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, TrackedV
                     'label': _('Current Enrollment'),
                     'tooltip': _('Current enrollments in the courses matching your filters.'),
                 },
-                # Only on the React page: the API doesn't send the data yet, so the card shows "--".
+                # Only on the React page. The API sends the number only from Snowflake; without it the card shows "--".
                 'total_engagements': {
                     # Translators: This is a label to identify the number of learners active in all of the
                     # instructor's courses.
                     'label': _('Total Engagements'),
-                    'tooltip': _('Active learners in the courses matching your filters.'),
+                    # Translators: The help text of a summary card. The filters are those of the course list below it.
+                    'tooltip': _('Learners who completed any course content in the courses matching your filters.'),
                 },
                 'enrollment_change_7_days': {
                     'label': _('Change in Last Week'),

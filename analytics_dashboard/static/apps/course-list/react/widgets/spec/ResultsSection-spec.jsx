@@ -101,9 +101,9 @@ describe('ResultsSection', () => {
     render();
 
     expect(headers()).toEqual([
-      'Course Name', 'Start Date', 'End Date', 'Total Enrollment', 'Current Enrollment', 'Change Last Week',
-      'Verified Enrollment', 'Passing Learners', 'Program', 'Sales Model', 'Funding Model', 'B2B Enrollment',
-      'B2C Enrollment', 'Subscription Enrollment', 'À la Carte Enrollment',
+      'Course Name', 'Start Date', 'End Date', 'Total Enrollment', 'Current Enrollment', 'Total Engagements',
+      'Engagement Rate', 'Change Last Week', 'Verified Enrollment', 'Passing Learners', 'Program', 'Sales Model',
+      'Funding Model', 'B2B Enrollment', 'B2C Enrollment', 'Subscription Enrollment', 'À la Carte Enrollment',
     ]);
   });
 
@@ -152,8 +152,9 @@ describe('ResultsSection', () => {
   });
 
   describe('the Download CSV link', () => {
-    const DEFAULT_COLUMNS = 'start_date,end_date,cumulative_count,count,count_change_7_days,verified_enrollment,'
-      + 'passing_users,program,sales_model,funding_model,b2b_count,b2c_count,subscription_count,alacarte_count';
+    const DEFAULT_COLUMNS = 'start_date,end_date,cumulative_count,count,total_engagements,engagement_rate,'
+      + 'count_change_7_days,verified_enrollment,passing_users,program,sales_model,funding_model,b2b_count,b2c_count,'
+      + 'subscription_count,alacarte_count';
 
     it('asks for the filtered file, with the columns shown', () => {
       render();
@@ -279,29 +280,30 @@ describe('ResultsSection', () => {
     const box = label => Array.prototype.find.call(boxes(), input => labelOf(input) === label);
     const open = () => act(() => toggle().click());
 
-    it('lists every column but Course Name, the engagement ones unticked, without a count on the button', () => {
+    it('lists every column but Course Name, all ticked, without a count on the button', () => {
       render();
       open();
 
       expect(toggle().textContent.trim()).toBe('Columns');
       expect(boxes().length).toBe(16);
       expect(box('Course Name')).toBeUndefined();
-      expect(box('Total Engagements').checked).toBe(false);
+      expect(box('Engagement Rate').checked).toBe(true);
+      expect(box('Total Engagements').checked).toBe(true);
       expect(box('Start Date').checked).toBe(true);
     });
 
-    it('hides and shows columns without changing the rows or the count, and reports each change', () => {
+    it('hides columns without changing the rows or the count, and reports each change', () => {
       render();
       open();
       act(() => box('Start Date').click());
-      act(() => box('Total Engagements').click());
+      act(() => box('Engagement Rate').click());
 
       expect(headers()).not.toContain('Start Date');
-      expect(headers()).toContain('Total Engagements');
+      expect(headers()).not.toContain('Engagement Rate');
       expect(element.querySelector('thead th').getAttribute('aria-sort')).toBe('ascending');
       expect(element.querySelectorAll('tbody tr').length).toBe(4);
       expect(element.querySelector('.insights-result-count').textContent).toBe('Course runs: 4');
-      expect(props.onColumnsChange.calls.allArgs()).toEqual([['start_date', false], ['total_engagements', true]]);
+      expect(props.onColumnsChange.calls.allArgs()).toEqual([['start_date', false], ['engagement_rate', false]]);
     });
 
     it('goes back to the default sort when the sorted column is hidden, so no hidden order is left', () => {

@@ -48,22 +48,22 @@ export default [
     tooltip: 'Learners currently enrolled in the course.',
     cell: 'number',
   },
-  // No data or ticket yet: the same open metric as the Total Engagements card.
+  // From the API's Snowflake course summaries (warehouse total_engaged_learners); the same metric as the Total
+  // Engagements card. Course runs that started before 2018 have no value ("--"); Aurora sends none at all.
   {
     id: 'total_engagements',
     label: 'Total Engagements',
-    tooltip: 'Learners active in the course.',
+    tooltip: 'Learners who completed any course content, including those who later unenrolled.',
     cell: 'number',
     pending: true,
-    defaultVisible: false,
   },
   {
     id: 'engagement_rate',
     label: 'Engagement Rate',
-    tooltip: 'Active learners as a share of current enrollment.',
+    tooltip: 'Total Engagements as a share of current enrollment. It can be above 100%, since Total Engagements '
+      + 'includes learners who later unenrolled.',
     cell: 'percent',
     pending: true,
-    defaultVisible: false,
   },
   {
     id: 'count_change_7_days',
