@@ -78,7 +78,7 @@ describe('SummaryCard', () => {
           <SummaryCard
             value={null}
             label="Total Engagements"
-            tooltip="Active learners in the courses matching your filters."
+            tooltip="Learners who completed any course content in the courses matching your filters."
             tooltipId="summary-tooltip-test"
             onTooltipShown={onTooltipShown}
           />

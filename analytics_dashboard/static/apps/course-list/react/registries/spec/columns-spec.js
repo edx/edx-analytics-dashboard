@@ -35,13 +35,13 @@ describe('columns registry', () => {
     ]);
   });
 
-  it('marks the columns that wait for data as pending, and starts the engagement ones hidden', () => {
+  it('marks the columns that wait for data as pending, and starts every column visible', () => {
     expect(columns.filter(entry => entry.pending).map(entry => entry.id)).toEqual([
       'total_engagements', 'engagement_rate', 'sales_model', 'funding_model', 'b2b_count', 'b2c_count',
       'subscription_count', 'alacarte_count',
     ]);
     expect(columns.filter(entry => entry.defaultVisible === false).map(entry => entry.id))
-      .toEqual(['total_engagements', 'engagement_rate']);
+      .toEqual([]);
   });
 
   it('shows Passing Learners only with the enable_course_passing switch, and Program only with the filters', () => {

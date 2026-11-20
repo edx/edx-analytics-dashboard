@@ -31,7 +31,8 @@ export default [
     textKey: 'current_enrollment',
     reduce: rows => sumOf(rows, row => row.count),
   },
-  // No data or ticket yet: the same open metric as the Total Engagements column.
+  // From the API's Snowflake course summaries; the same metric as the Total Engagements column. Course runs without
+  // a value (those that started before 2018) count as 0.
   {
     id: 'totalEngagements',
     textKey: 'total_engagements',
