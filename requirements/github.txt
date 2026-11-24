@@ -4,11 +4,7 @@
 #
 #    make upgrade
 #
-cachetools==6.2.0
-    # via
-    #   -r requirements/tox.txt
-    #   tox
-chardet==5.2.0
+cachetools==8.0.2
     # via
     #   -r requirements/tox.txt
     #   tox
@@ -16,38 +12,53 @@ colorama==0.4.6
     # via
     #   -r requirements/tox.txt
     #   tox
-coverage==7.10.7
+coverage==7.17.5
     # via -r requirements/github.in
-distlib==0.4.0
+distlib==0.4.4
     # via
     #   -r requirements/tox.txt
     #   virtualenv
-filelock==3.19.1
+filelock==4.3.1
     # via
     #   -r requirements/tox.txt
+    #   python-discovery
     #   tox
     #   virtualenv
-packaging==25.0
+packaging==26.4
     # via
     #   -r requirements/tox.txt
     #   pyproject-api
     #   tox
-platformdirs==4.4.0
+    #   virtualenv
+platformdirs==4.14.8
     # via
     #   -r requirements/tox.txt
     #   tox
     #   virtualenv
-pluggy==1.6.0
+pluggy==1.7.0
     # via
     #   -r requirements/tox.txt
     #   tox
-pyproject-api==1.9.1
+pyproject-api==1.12.6
     # via
     #   -r requirements/tox.txt
     #   tox
-tox==4.30.2
+python-discovery==1.9.7
+    # via
+    #   -r requirements/tox.txt
+    #   tox
+    #   virtualenv
+tomli-w==1.2.0
+    # via
+    #   -r requirements/tox.txt
+    #   tox
+tox==4.67.16
     # via -r requirements/tox.txt
-virtualenv==20.34.0
+typing-extensions==4.16.0
+    # via
+    #   -r requirements/tox.txt
+    #   tox
+virtualenv==21.15.13
     # via
     #   -r requirements/tox.txt
     #   tox
