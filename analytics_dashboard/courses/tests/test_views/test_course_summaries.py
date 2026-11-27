@@ -8,6 +8,8 @@ from analyticsclient.exceptions import TimeoutError as AnalyticsTimeoutError
 from ddt import data, ddt
 from django.core.cache import cache
 from django.test import TestCase
+from django_dynamic_fixture import G
+from social_django.models import UserSocialAuth
 from waffle.testutils import override_flag, override_switch
 
 import analytics_dashboard.courses.tests.utils as utils
@@ -15,6 +17,7 @@ from analytics_dashboard.courses.exceptions import PermissionsRetrievalFailedErr
 from analytics_dashboard.courses.tests.test_middleware import CoursePermissionsExceptionMixin
 from analytics_dashboard.courses.tests.test_views import ViewTestMixin
 from analytics_dashboard.courses.tests.utils import CourseSamples
+from analytics_dashboard.courses.waffle import LMS_GLOBAL_STAFF_ALL_COURSES_SWITCH
 
 PERMISSIONS_METHOD = 'analytics_dashboard.courses.views.course_summaries.permissions.get_user_course_permissions'
 SUMMARIES_METHOD = \
@@ -93,6 +96,17 @@ class CourseSummariesViewTests(ViewTestMixin, CoursePermissionsExceptionMixin, T
         self.grant_permission(self.user)
         response = self.client.get(self.path())
         self.assertEqual(response.status_code, 403)
+
+    @override_switch(LMS_GLOBAL_STAFF_ALL_COURSES_SWITCH, active=True)
+    def test_get_lms_global_staff(self):
+        """ With the switch on, LMS global staff who are not Insights staff see every course instead of a 403. """
+        G(UserSocialAuth, user=self.user, provider='edx-oauth2', extra_data={'administrator': True})
+        self.grant_permission(self.user)
+        with mock.patch(SUMMARIES_METHOD, return_value=self.get_mock_data([])) as summaries_presenter:
+            response = self.client.get(self.path())
+
+        self.assertEqual(response.status_code, 200)
+        summaries_presenter.assert_called_with(None)
 
     @mock.patch('analytics_dashboard.courses.permissions.get_user_course_permissions',
                 mock.Mock(side_effect=PermissionsRetrievalFailedError))

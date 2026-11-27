@@ -6,6 +6,8 @@ from ddt import data, ddt
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from django_dynamic_fixture import G
+from social_django.models import UserSocialAuth
 from waffle.testutils import override_switch
 
 from analytics_dashboard.courses.tests.test_views import ViewTestMixin
@@ -22,6 +24,7 @@ from analytics_dashboard.courses.tests.utils import (
     get_mock_course_summaries_csv,
     get_mock_programs,
 )
+from analytics_dashboard.courses.waffle import LMS_GLOBAL_STAFF_ALL_COURSES_SWITCH
 
 
 @ddt
@@ -319,3 +322,18 @@ class CourseIndexCSVTests(ViewTestMixin, TestCase):
 
     def test_response_no_data(self):
         self._test_csv([], '')
+
+    @override_switch(LMS_GLOBAL_STAFF_ALL_COURSES_SWITCH, active=True)
+    def test_response_lms_global_staff(self):
+        """ With the switch on, LMS global staff who are not Insights staff get the CSV of every course. """
+        G(UserSocialAuth, user=self.user, provider='edx-oauth2', extra_data={'administrator': True})
+        self.grant_permission(self.user)
+        summaries = get_mock_course_summaries([CourseSamples.DEMO_COURSE_ID])
+        with mock.patch(
+            'analytics_dashboard.courses.presenters.course_summaries.CourseSummariesPresenter.get_course_summaries',
+            return_value=(summaries, None),
+        ) as summaries_presenter:
+            response = self.client.get(self.path())
+
+        self.assertEqual(response.status_code, 200)
+        summaries_presenter.assert_called_with(None)
