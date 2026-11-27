@@ -383,6 +383,10 @@ SOCIAL_AUTH_EDX_OAUTH2_ISSUER = "http://127.0.0.1:8000"
 SOCIAL_AUTH_EDX_OAUTH2_URL_ROOT = "http://127.0.0.1:8000"
 SOCIAL_AUTH_EDX_OAUTH2_LOGOUT_URL = "http://127.0.0.1:8000/logout"
 
+# Store the LMS "administrator" claim (LMS global staff) from each login in the user's social auth extra_data.
+# Read by courses.permissions when the enable_lms_global_staff_all_courses waffle switch is on.
+SOCIAL_AUTH_EDX_OAUTH2_EXTRA_DATA = ['administrator']
+
 BACKEND_SERVICE_EDX_OAUTH2_KEY = "insights-backend-service-key"
 BACKEND_SERVICE_EDX_OAUTH2_SECRET = "insights-backend-service-secret"
 BACKEND_SERVICE_EDX_OAUTH2_PROVIDER_URL = "http://127.0.0.1:8000/oauth2"

@@ -5,7 +5,7 @@ for edx's analytics dashboard.
 
 
 from edx_toggles.toggles import SettingToggle
-from waffle import flag_is_active
+from waffle import flag_is_active, switch_is_active
 
 # .. toggle_name: ENROLLMENT_AGE_AVAILABLE
 # .. toggle_implementation: SettingToggle
@@ -37,3 +37,19 @@ ENABLE_REACT_COURSE_LIST_FLAG = 'enable_react_course_list'
 def react_course_list_enabled(request):
     """ Returns True if the course list should render its React widgets for this request. """
     return flag_is_active(request, ENABLE_REACT_COURSE_LIST_FLAG)
+
+
+# .. toggle_name: enable_lms_global_staff_all_courses
+# .. toggle_implementation: WaffleSwitch
+# .. toggle_default: False
+# .. toggle_description: When on, users the LMS reported as global staff at their last Insights login can see every
+#      course without Insights asking the LMS for their course list (for global staff the LMS returns every course).
+#      When off, Insights asks the LMS for their course list, as before.
+# .. toggle_use_cases: opt_in
+# .. toggle_creation_date: 2026-11-27
+LMS_GLOBAL_STAFF_ALL_COURSES_SWITCH = 'enable_lms_global_staff_all_courses'
+
+
+def lms_global_staff_all_courses_enabled():
+    """ Returns True if LMS global staff should get every course without the LMS course list call. """
+    return switch_is_active(LMS_GLOBAL_STAFF_ALL_COURSES_SWITCH)

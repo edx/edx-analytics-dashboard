@@ -9,6 +9,7 @@ from edx_django_utils.monitoring import set_custom_metric
 from edx_rest_api_client.client import OAuthAPIClient
 
 from analytics_dashboard.courses.exceptions import PermissionsRetrievalFailedError
+from analytics_dashboard.courses.waffle import lms_global_staff_all_courses_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +119,20 @@ def _get_lms_user_id_from_social_auth(user):
     return None
 
 
+def _is_lms_global_staff(user):
+    """ Return True if the LMS reported the user as global staff at their last login. """
+    social = user.social_auth.filter(provider=EdXOAuth2.name).order_by('-id').first()
+    return bool(social and (social.extra_data or {}).get('administrator') is True)
+
+
+def has_all_course_access(user):
+    """ Return True if the user can see every course without asking the LMS for their course list. """
+    if user.is_superuser or user.is_staff:
+        return True
+    # For LMS global staff the LMS returns every course, so asking it for their course list is not needed.
+    return lms_global_staff_all_courses_enabled() and _is_lms_global_staff(user)
+
+
 def get_user_course_permissions(user):
     """
     Return list of courses accessible by user or None to represent all courses.
@@ -126,7 +141,7 @@ def get_user_course_permissions(user):
         user (User) --  User for which course permissions should be returned
     """
     # ensure we don't request course permissions for users which would return all courses
-    if user.is_superuser or user.is_staff:
+    if has_all_course_access(user):
         return None
 
     key_courses, key_last_updated = _get_course_permission_cache_keys(user)
@@ -161,13 +176,10 @@ def user_can_view_course(user, course_id):
     Returns:
         bool -- True, if user can view course; otherwise, False.
     """
-
-    if user.is_superuser or user.is_staff:
-        return True
-
     courses = get_user_course_permissions(user)
 
-    return course_id in courses
+    # None means every course
+    return courses is None or course_id in courses
 
 
 def _refresh_user_course_permissions(user):

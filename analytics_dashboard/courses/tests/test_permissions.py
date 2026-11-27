@@ -10,9 +10,11 @@ from django.test.utils import override_settings
 from django_dynamic_fixture import G
 from edx_django_utils.cache import TieredCache
 from social_django.models import UserSocialAuth
+from waffle.testutils import override_switch
 
 from analytics_dashboard.courses import permissions
 from analytics_dashboard.courses.exceptions import PermissionsRetrievalFailedError
+from analytics_dashboard.courses.waffle import LMS_GLOBAL_STAFF_ALL_COURSES_SWITCH
 
 User = get_user_model()
 
@@ -182,6 +184,52 @@ class PermissionsTests(TestCase):
         mock_client.reset_mock()
         expected_calls = self._setup_mock_course_ids_responses_and_expects(mock_client, [self.new_course_id])
         self.assertEqual(permissions.get_user_course_permissions(self.user), [self.new_course_id])
+        self.assertCountEqual(expected_calls, mock_client.mock_calls)
+
+    @mock.patch('analytics_dashboard.courses.permissions.OAuthAPIClient')
+    def test_lms_global_staff_with_switch_off(self, mock_client):
+        """
+        Verify LMS global staff still get their course list from the LMS when the switch is off.
+        """
+        G(UserSocialAuth, user=self.user, provider='edx-oauth2', extra_data={'administrator': True})
+        expected_calls = self._setup_mock_course_ids_responses_and_expects(mock_client, [self.course_id])
+
+        with override_switch(LMS_GLOBAL_STAFF_ALL_COURSES_SWITCH, active=False):
+            self.assertEqual(permissions.get_user_course_permissions(self.user), [self.course_id])
+        self.assertCountEqual(expected_calls, mock_client.mock_calls)
+
+    @ddt.data(
+        (False, {'administrator': True}),  # LMS global staff
+        (True, {}),  # Insights staff
+    )
+    @ddt.unpack
+    @mock.patch('analytics_dashboard.courses.permissions.OAuthAPIClient')
+    def test_all_courses_with_switch_on(self, is_staff, extra_data, mock_client):
+        """
+        Verify LMS global staff and Insights staff get every course without the LMS call when the switch is on.
+        """
+        self.user.is_staff = is_staff
+        self.user.save()
+        G(UserSocialAuth, user=self.user, provider='edx-oauth2', extra_data=extra_data)
+
+        with override_switch(LMS_GLOBAL_STAFF_ALL_COURSES_SWITCH, active=True):
+            self.assertIsNone(permissions.get_user_course_permissions(self.user))
+            self.assertTrue(permissions.user_can_view_course(self.user, self.course_id))
+        self.assertFalse(mock_client.mock_calls)
+
+    @ddt.data({'administrator': False}, {}, None)
+    @mock.patch('analytics_dashboard.courses.permissions.OAuthAPIClient')
+    def test_not_lms_global_staff_with_switch_on(self, extra_data, mock_client):
+        """
+        Verify users the LMS did not report as global staff still get their course list from the LMS when the switch
+        is on: the claim is false or missing, or the user has no social auth record.
+        """
+        if extra_data is not None:
+            G(UserSocialAuth, user=self.user, provider='edx-oauth2', extra_data=extra_data)
+        expected_calls = self._setup_mock_course_ids_responses_and_expects(mock_client, [self.course_id])
+
+        with override_switch(LMS_GLOBAL_STAFF_ALL_COURSES_SWITCH, active=True):
+            self.assertEqual(permissions.get_user_course_permissions(self.user), [self.course_id])
         self.assertCountEqual(expected_calls, mock_client.mock_calls)
 
     def _get_access_token_client_calls(self):

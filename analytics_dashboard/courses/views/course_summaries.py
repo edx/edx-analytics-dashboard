@@ -61,7 +61,7 @@ class CourseIndex(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, TrackedV
         context = super().get_context_data(**kwargs)
         user = self.request.user
         courses = permissions.get_user_course_permissions(user)
-        if not courses and not (user.is_superuser or user.is_staff):
+        if courses is not None and not courses:  # None means every course
             # The user is probably not a course administrator and should not be using this application.
             raise PermissionDenied
 
@@ -130,7 +130,7 @@ class CourseIndexCSV(AnalyticsV1Mixin, CourseAPIMixin, LoginRequiredMixin, Datet
     def get_data(self):
         user = self.request.user
         courses = permissions.get_user_course_permissions(user)
-        if not courses and not (user.is_superuser or user.is_staff):
+        if courses is not None and not courses:  # None means every course
             # The user is probably not a course administrator and should not be using this application.
             raise PermissionDenied
 
